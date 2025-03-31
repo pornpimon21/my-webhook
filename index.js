@@ -52,7 +52,8 @@ app.post("/webhook", (req, res) => {
     }
 
     // ส่งคำตอบกลับไปยัง Dialogflow
-    res.json({ fulfillmentText: responseText });
+    res.status(200).json({
+        fulfillmentText: responseText});
 });
 
 app.listen(PORT, () => {
