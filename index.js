@@ -10,7 +10,7 @@ app.post("/webhook", (req, res) => {
 
     // ตัวอย่างข้อมูลเกรดและช่วงเกรด
     const grade = { min: 3.5, max: 4.0 };
-    
+
     // ตัวอย่างข้อมูลทักษะ (abilities)
     const abilities = ['เลข', 'วิทยาศาสตร์', 'ชอบทดลอง'];
 
@@ -46,11 +46,9 @@ app.post("/webhook", (req, res) => {
     } else if (intent === "welcome") {
         responseText = "สวัสดีค่ะ ยินดีต้อนรับสู่แชทบอทแนะนำคณะและสาขา กรุณาแจ้งชื่อของคุณค่ะ";
     } else if (intent === "get name") {
-        const name = req.body.queryResult.parameters.name || "คุณ";
-        responseText = `สวัสดีคุณ ${name} กรุณาระบุเกรดเฉลี่ยของคุณ (เช่น 3.5)`;
+        responseText = `สวัสดีคุณ ${req.body.queryResult.parameters.name} กรุณาระบุเกรดเฉลี่ยของคุณ (เช่น 3.5)`;
     } else if (intent === "get grade") {
-        const grade = req.body.queryResult.parameters.grade || "ไม่ระบุ";
-        responseText = `ขอบคุณค่ะ คุณได้เกรด ${grade} กรุณาระบุความสามารถหรือความถนัดของคุณ (เช่น เลข, วิทยาศาสตร์, คอมพิวเตอร์) คั่นด้วยเครื่องหมายคอมม่า`;
+        responseText = `ขอบคุณค่ะ คุณได้เกรด ${req.body.queryResult.parameters.grade} กรุณาระบุความสามารถหรือความถนัดของคุณ (เช่น เลข, วิทยาศาสตร์, คอมพิวเตอร์) คั่นด้วยเครื่องหมายคอมม่า`;
     }
 
     // ส่งคำตอบกลับไปยัง Dialogflow
