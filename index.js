@@ -5,15 +5,20 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 
 app.post("/webhook", (req, res) => {
+    console.log("ข้อมูลที่ได้รับจาก Dialogflow:", JSON.stringify(req.body, null, 2));
     const intent = req.body.queryResult.intent.displayName;
     let responseText = "ไม่เข้าใจคำถาม";
+
+    const ability = req.body.queryResult.parameters.ability || "ไม่มีข้อมูล"; // ดึงค่า ability
+
+    responseText = `ทักษะของคุณคือ : ${ability}`;
 
     // ตัวอย่างข้อมูลเกรดและช่วงเกรด
     const grade = { min: 3.5, max: 4.0 };
 
     // ตัวอย่างข้อมูลทักษะ (abilities)
-    const ability = ['เลข', 'วิทยาศาสตร์', 'ชอบทดลอง'];
 
+    
     // ข้อมูลคณะและสาขา (faculties and majors)
     const faculties = [
         { name: 'คณะแพทยศาสตร์', grade: 4.0, majors: ['แพทยศาสตร์', 'วิทยาศาสตร์การแพทย์'] },
