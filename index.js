@@ -15,12 +15,10 @@ app.post("/webhook", (req, res) => {
     const ability = req.body.queryResult.parameters.ability || "";
     const education = req.body.queryResult.parameters.education || "ไม่มีข้อมูล"; 
 
-
-    console.log("➡️ เกรดรวม :", grade);
-    console.log("➡️ เกรดรายวิชา :", subjectGrades);
-    console.log("➡️ ทักษะ :", ability);
-    console.log("➡️ ระดับการศึกษา :", education);
-
+    console.log("➡️ เกรดรวม:", grade);
+    console.log("➡️ เกรดรายวิชา:", subjectGrades);
+    console.log("➡️ ทักษะ:", ability);
+    console.log("➡️ ระดับการศึกษา:", education);
 
 
 
@@ -126,77 +124,62 @@ app.post("/webhook", (req, res) => {
         },
         ];
 
+    // ค้นหาสาขาที่ตรงกับเงื่อนไขและเรียงลำดับ
+    let matchedFaculties = faculties.filter(faculty => {
+    return faculty.majors.some(major => {
+        // ✅ ตรวจสอบเกรดขั้นต่ำของคณะ (ถ้ามี)
+        if (faculty.minGrade !== null && grade < faculty.minGrade) return false;
 
-    // ค้นหาสาขาที่ตรงกับเงื่อนไข
-    let matchedFaculties = {};
-
-    faculties.forEach(faculty => {
-        let matchedMajors = faculty.majors.filter(major => {
-            
-            
-        // ✅ ตรวจสอบเกรดขั้นต่ำ (ถ้ามี)
-            if (major.minGrade !== null && grade < major.minGrade) return false;
-           
         // ✅ ตรวจสอบเกรดเฉพาะวิชา (ถ้ามี)
-            if (major.subjectRequirements) {
-                for (let subject in major.subjectRequirements) {
-                    if (!subjectGrades[subject] || subjectGrades[subject] < major.subjectRequirements[subject]) {
-                        return false; // ถ้าเกรดวิชาไม่ถึงเกณฑ์
-                    }
+        if (major.subjectRequirements) {
+            for (let subject in major.subjectRequirements) {
+                if (!subjectGrades[subject] || subjectGrades[subject] < major.subjectRequirements[subject]) {
+                    return false; // ❌ ถ้าเกรดวิชาไม่ถึงเกณฑ์
                 }
             }
-            
-        // ✅ ตรวจสอบทักษะ (ถ้ามี)
-            if (ability.length > 0 && !major.skills.some(skill => ability.includes(skill))) return false;
+        }
 
-        // ✅ ตรวจสอบระดับการศึกษา
-            if (major.qualification && !major.qualification.includes(education)) return false;
+            // ✅ ตรวจสอบทักษะ (ถ้ามี)
+            if (ability.length > 0 && !faculty.skills.some(skill => ability.includes(skill))) return false;
+
+            // ✅ ตรวจสอบระดับการศึกษา
+            if (faculty.qualification && !faculty.qualification.includes(education)) return false;
 
             return true;
         });
+    }).sort((a, b) => (b.minGrade || 0) - (a.minGrade || 0)) // เรียงจากเกรดสูงสุดลงมา
+      .slice(0, 5); // เลือก 5 ลำดับแรก
 
-        if (matchedMajors.length > 0) {
-            matchedFaculties[faculty.name] = matchedMajors;
-        }
+    // ถ้าไม่มีสาขาที่ตรง
+    if (matchedFaculties.length === 0) {
+        return res.status(200).json({
+            fulfillmentText: "ขออภัย ไม่มีคณะหรือสาขาที่ตรงกับเกรด ทักษะ และคุณสมบัติของคุณ"
+        });
+    }
+
+    // ✅ สร้างข้อความตอบกลับ
+    responseText =` จากเกรดของคุณ (${grade}) และทักษะ "${ability}" แนะนำสาขาดังนี้:\n\n`;
+
+    matchedFaculties.forEach((faculty, index) => {
+        responseText += `🎓 ${index + 1}. ${faculty.name}\n`;
+        faculty.majors.forEach(major => {
+            responseText +=   ` - ${major.name}`;
+            if (faculty.minGrade !== null) {
+                responseText += ` (เกรดไม่น้อยกว่า: ${faculty.minGrade})`;
+            }
+            responseText +=` , รับจำนวน: ${faculty.seats} คน\n`;
+
+            if (major.subjectRequirements) {
+                for (let subject in major.subjectRequirements) {
+                    responseText +=     ` 📌 ต้องมีเกรดวิชา "${subject}" ไม่น้อยกว่า ${major.subjectRequirements[subject]}\n`;
+                }
+            }
+            responseText +=      `📌 คุณสมบัติ: ${faculty.qualification}\n`;
+        });
+        responseText += "\n";
     });
 
-        // ถ้าไม่มีสาขาที่ตรง
-        if (Object.keys(matchedFaculties).length === 0) {
-            return res.status(200).json({
-                fulfillmentText: "ขออภัย ไม่มีคณะหรือสาขาที่ตรงกับเกรด ทักษะ และคุณสมบัติของคุณ"
-            });
-        }
-
-   
-
-
-        if (intent === "get skill") {       
-        // คัดกรองคณะตามเกรดและทักษะ
-        const matchedFaculties = faculties
-        .map(faculty => ({
-            ...faculty,
-            majors: faculty.majors.filter(major => userGrade >= major.minGrade)
-        }))
-        .filter(faculty => faculty.majors.length > 0)
-        .slice(0, 5); // แสดง 5 อันดับแรก
-    
-    
-        if (matchedFaculties.length > 0) {
-            responseText = `จากเกรดของคุณ (${userGrade}) และทักษะ "${ability}" แนะนำ 5 อันดับแรก:\n\n`;
-            matchedFaculties.forEach((faculty, index) => {
-                responseText += `🎓 ${faculty.name}\n`;
-                faculty.majors.forEach(major => {
-                    responseText +=  `  - ${major.name} (เกรดไม่น้อยกว่า: ${major.minGrade}), รับจำนวน: ${major.seats} คน\n`;
-                    major.requirements.forEach(req => {
-                        responseText +=      `📌 ${req}\n`;
-                    });
-                });
-                responseText += "\n";
-            });
-        }
-
-  
-    } else if (intent === "welcome") {
+    if (intent === "welcome") {
         responseText = "สวัสดีค่ะ ยินดีต้อนรับสู่แชทบอทแนะนำคณะและสาขา กรุณาแจ้งชื่อของคุณค่ะ";
     } else if (intent === "get name") {
         responseText = `สวัสดีคุณ ${req.body.queryResult.parameters.name} กรุณาระบุเกรดเฉลี่ยของคุณ (เช่น 3.5)`;
