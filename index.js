@@ -125,23 +125,23 @@ app.post("/webhook", (req, res) => {
         ];
 
     // ค้นหาสาขาที่ตรงกับเงื่อนไขและเรียงลำดับ
-    matchedFaculties = faculties.filter(faculty => {
+    let matchedFaculties = faculties.filter(faculty => {
     return faculty.majors.some(major => {
-        // ✅ ตรวจสอบเกรดขั้นต่ำของคณะ (ถ้ามี)
-        if (faculty.minGrade !== null && grade < faculty.minGrade) return false;
-
+        // ✅ ตรวจสอบเกรดขั้นต่ำของสาขา (ถ้ามี)
+        if (major.grade !== null && grade < major.grade) return false;
+        
         // ✅ ตรวจสอบเกรดเฉพาะวิชา (ถ้ามี)
-        if (major.subjectRequirements) {
-            for (subject in major.subjectRequirements) {
-                if (!subjectGrades[subject] || subjectGrades[subject] < major.subjectRequirements[subject]) {
+        if (major.subject) {
+            for (let subject in major.subject) {
+                if (!subjectGrades[subject] || subjectGrades[subject] < major.subject[subject]) {
                     return false; // ❌ ถ้าเกรดวิชาไม่ถึงเกณฑ์
                 }
             }
         }
 
             // ✅ ตรวจสอบทักษะ (ถ้ามี)
-            if (ability.length > 0 && !faculty.skills.some(skill => ability.includes(skill))) return false;
-
+            if (ability.length > 0 && !major.ability.some(skill => ability.includes(skill))) return false;
+            
             // ✅ ตรวจสอบระดับการศึกษา
             if (faculty.qualification && !faculty.qualification.includes(education)) return false;
 
@@ -164,14 +164,14 @@ app.post("/webhook", (req, res) => {
         responseText += `🎓 ${index + 1}. ${faculty.name}\n`;
         faculty.majors.forEach(major => {
             responseText +=   ` - ${major.name}`;
-            if (faculty.minGrade !== null) {
-                responseText += ` (เกรดไม่น้อยกว่า: ${faculty.minGrade})`;
+            if (faculty.subject !== null) {
+                responseText += ` (เกรดไม่น้อยกว่า: ${faculty.subject})`;
             }
             responseText +=` , รับจำนวน: ${faculty.seats} คน\n`;
 
-            if (major.subjectRequirements) {
-                for (let subject in major.subjectRequirements) {
-                    responseText +=     ` 📌 ต้องมีเกรดวิชา "${subject}" ไม่น้อยกว่า ${major.subjectRequirements[subject]}\n`;
+            if (major.subject) {
+                for (let subject in major.subject) {
+                    responseText +=     ` 📌 ต้องมีเกรดวิชา "${subject}" ไม่น้อยกว่า ${major.subject[subject]}\n`;
                 }
             }
             responseText +=      `📌 คุณสมบัติ: ${faculty.qualification}\n`;
