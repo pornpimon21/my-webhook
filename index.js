@@ -12,7 +12,7 @@ app.post("/webhook", (req, res) => {
     const grade = { min: 3.5, max: 4.0 };
 
     // ตัวอย่างข้อมูลทักษะ (abilities)
-    const abilities = ['เลข', 'วิทยาศาสตร์', 'ชอบทดลอง'];
+    const ability = ['เลข', 'วิทยาศาสตร์', 'ชอบทดลอง'];
 
     // ข้อมูลคณะและสาขา (faculties and majors)
     const faculties = [
@@ -28,7 +28,7 @@ app.post("/webhook", (req, res) => {
     
         // แสดงข้อมูลทักษะ
         responseText += `ทักษะที่สามารถพัฒนาได้ ได้แก่:\n`;
-        abilities.forEach((ability, index) => {
+        ability.forEach((ability, index) => {
             responseText += `${index + 1}. ${ability}\n`;
         });
 
