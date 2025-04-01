@@ -125,14 +125,14 @@ app.post("/webhook", (req, res) => {
         ];
 
     // ค้นหาสาขาที่ตรงกับเงื่อนไขและเรียงลำดับ
-    let matchedFaculties = faculties.filter(faculty => {
+    matchedFaculties = faculties.filter(faculty => {
     return faculty.majors.some(major => {
         // ✅ ตรวจสอบเกรดขั้นต่ำของคณะ (ถ้ามี)
         if (faculty.minGrade !== null && grade < faculty.minGrade) return false;
 
         // ✅ ตรวจสอบเกรดเฉพาะวิชา (ถ้ามี)
         if (major.subjectRequirements) {
-            for (let subject in major.subjectRequirements) {
+            for (subject in major.subjectRequirements) {
                 if (!subjectGrades[subject] || subjectGrades[subject] < major.subjectRequirements[subject]) {
                     return false; // ❌ ถ้าเกรดวิชาไม่ถึงเกณฑ์
                 }
