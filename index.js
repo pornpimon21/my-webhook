@@ -147,7 +147,7 @@ app.post("/webhook", (req, res) => {
 
             return true;
         });
-    }).sort((a, b) => (b.minGrade || 0) - (a.minGrade || 0)) // เรียงจากเกรดสูงสุดลงมา
+    }).sort((a, b) => (b.grade || 0) - (a.grade || 0)) // เรียงจากเกรดสูงสุดลงมา
       .slice(0, 5); // เลือก 5 ลำดับแรก
 
     // ถ้าไม่มีสาขาที่ตรง
