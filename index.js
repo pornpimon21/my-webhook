@@ -184,15 +184,15 @@ app.post("/webhook", (req, res) => {
   // ✅ สร้างข้อความตอบกลับ
   let responseText = `แนะนำ 5 อันดับแรกตามเกรดของคุณ (${grade}) และทักษะ "${ability}":\n\n`;
 
-  matchedMajors.forEach((major, index) => {
-      responseText += `🎓 อันดับ ${index + 1}: ${major.facultyName} - ${major.majorName} (เกรดไม่น้อยกว่า: ${major.minGrade})\n`;
+  matchedMajors.forEach((majors, index) => {
+      responseText += `🎓 อันดับ ${index + 1}: ${majors.facultyName} - ${majors.majorsName} (เกรดไม่น้อยกว่า: ${majors.grade})\n`;
       
-      if (major.subjectRequirements) {
-          for (let subject in major.subjectRequirements) {
-              responseText +=      `📌 ต้องมีเกรดวิชา "${subject}" ไม่น้อยกว่า ${major.subjectRequirements[subject]}\n`;
+      if (majors.subject) {
+          for (let subject in major.subject) {
+              responseText +=      `📌 ต้องมีเกรดวิชา "${subject}" ไม่น้อยกว่า ${major.subject[subject]}\n`;
           }
       }
-      responseText +=     ` 📌 คุณสมบัติ: ${major.qualification}\n\n`;
+      responseText +=     ` 📌 คุณสมบัติ: ${majors.qualification}\n\n`;
   });
     { 
     if (intent === "welcome") {
