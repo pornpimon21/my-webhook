@@ -9,6 +9,37 @@ app.post("/webhook", (req, res) => {
     const intent = req.body.queryResult.intent.displayName;
     let responseText = "ไม่เข้าใจคำถาม";
 
+
+        // ตัวเลือกอื่น ๆ ของ Intent (welcome, get name, get grade)
+    if (intent === "welcome") {
+        responseText = "สวัสดีค่ะ ยินดีต้อนรับสู่แชทบอทแนะนำคณะและสาขา กรุณาแจ้งชื่อของคุณค่ะ";
+    } else if (intent === "get name") {
+        responseText = `สวัสดีคุณ ${req.body.queryResult.parameters.name} กรุณาระบุเกรดเฉลี่ยของคุณ (เช่น 3.5)`;
+    } else if (intent === "get grade") {
+        responseText = `ขอบคุณค่ะ คุณได้เกรด ${req.body.queryResult.parameters.grade} กรุณาระบุความสามารถหรือความถนัดของคุณ (เช่น เลข, วิทยาศาสตร์, คอมพิวเตอร์) คั่นด้วยเครื่องหมายคอมม่า`;
+    }
+
+// หลังจากตรวจสอบ intent พื้นฐาน
+if (intent !== "recommend-major") {
+    return res.status(200).json({
+        fulfillmentText: "กรุณากรอกข้อมูลให้ครบถ้วนเพื่อรับคำแนะนำคณะ/สาขา"
+    });
+}
+
+
+if (!grade || !ability) {
+    return res.status(200).json({
+        fulfillmentText: "กรุณาระบุเกรดและความสามารถของคุณให้ครบถ้วน"
+    });
+}
+
+
+function recommendMajors(grade, subjectGrades, ability, education) {
+    // ... logic การจับคู่คณะ/สาขา
+    return matchedMajors;
+}
+
+
     // รับค่าจาก Dialogflow
     const grade = parseFloat(req.body.queryResult.parameters.grade) || 0;
     const subjectGrades = req.body.queryResult.parameters.subjectGrades || {}; // เกรดเฉพาะวิชา
@@ -19,7 +50,6 @@ app.post("/webhook", (req, res) => {
     console.log("➡️ เกรดรายวิชา:", subjectGrades);
     console.log("➡️ ทักษะ:", ability);
     console.log("➡️ ระดับการศึกษา:", education);
-
     
     const faculties = [
         {
@@ -182,15 +212,6 @@ app.post("/webhook", (req, res) => {
         }
         responseText += `     📌 คุณสมบัติ: ${match.qualification}\n\n`;
     });
-
-    // ตัวเลือกอื่น ๆ ของ Intent (welcome, get name, get grade)
-    if (intent === "welcome") {
-        responseText = "สวัสดีค่ะ ยินดีต้อนรับสู่แชทบอทแนะนำคณะและสาขา กรุณาแจ้งชื่อของคุณค่ะ";
-    } else if (intent === "get name") {
-        responseText = `สวัสดีคุณ ${req.body.queryResult.parameters.name} กรุณาระบุเกรดเฉลี่ยของคุณ (เช่น 3.5)`;
-    } else if (intent === "get grade") {
-        responseText = `ขอบคุณค่ะ คุณได้เกรด ${req.body.queryResult.parameters.grade} กรุณาระบุความสามารถหรือความถนัดของคุณ (เช่น เลข, วิทยาศาสตร์, คอมพิวเตอร์) คั่นด้วยเครื่องหมายคอมม่า`;
-    }
 
     res.status(200).json({
         fulfillmentText: responseText
