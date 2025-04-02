@@ -9,6 +9,7 @@ app.post("/webhook", (req, res) => {
     const intent = req.body.queryResult.intent.displayName;
     let responseText = "ไม่เข้าใจคำถาม";
 
+    // รับค่าจาก Dialogflow
     const grade = parseFloat(req.body.queryResult.parameters.grade) || 0;
     const subjectGrades = req.body.queryResult.parameters.subjectGrades || {}; // เกรดเฉพาะวิชา
     const ability = req.body.queryResult.parameters.ability || "";
@@ -19,7 +20,7 @@ app.post("/webhook", (req, res) => {
     console.log("➡️ ทักษะ:", ability);
     console.log("➡️ ระดับการศึกษา:", education);
 
-
+    
     const faculties = [
         {
         name : 'คณะครุศาสตร์',
@@ -122,50 +123,51 @@ app.post("/webhook", (req, res) => {
         },
         ];
 
-  // Flatten ข้อมูลคณะ-สาขา: เก็บเป็น array ของ object ที่ประกอบด้วยคณะและสาขา
+  // Flatten: สร้าง array ของแต่ละคู่คณะ-สาขาที่ตรงเงื่อนไข
     let matchedMajors = [];
     faculties.forEach(faculty => {
         faculty.majors.forEach(major => {
+            let valid = true;
             // ตรวจสอบเกรดขั้นต่ำรวม (ถ้ามี)
-            if (major.grade !== null && grade < major.grade) return;
+            if (major.grade !== null && grade < major.grade) valid = false;
             // ตรวจสอบเกรดเฉพาะวิชา (ถ้ามี)
             if (major.subject) {
                 for (let subj in major.subject) {
                     if (!subjectGrades[subj] || subjectGrades[subj] < major.subject[subj]) {
-                        return; // ไม่ผ่านเงื่อนไขเกรดเฉพาะวิชา
+                        valid = false;
+                        break;
                     }
                 }
             }
-            // ตรวจสอบทักษะ: ใช้ค่าที่ผู้ใช้ป้อน (ability) เปรียบเทียบกับ major.ability
-            if (ability.length > 0 && !major.ability.some(skill => ability.includes(skill))) return;
+            // ตรวจสอบทักษะ: ใช้ค่าที่ผู้ใช้พิมพ์เข้ามา (ability) เปรียบเทียบกับ major.ability
+            if (ability.length > 0 && !major.ability.some(skill => ability.includes(skill))) valid = false;
             // ตรวจสอบระดับการศึกษา
-            if (major.qualification && !major.qualification.includes(education)) return;
-            // ถ้าผ่านทุกเงื่อนไข เก็บผลลัพธ์ พร้อมกับชื่อคณะ
-            matchedMajors.push({
-                faculty: faculty.name,
-                major: major.name,
-                grade: major.grade,
-                subject: major.subject,
-                seats: major.seats,
-                qualification: major.qualification
-            });
+            if (major.qualification && !major.qualification.includes(education)) valid = false;
+            if (valid) {
+                matchedMajors.push({
+                    faculty: faculty.name,
+                    major: major.name,
+                    grade: major.grade,
+                    subject: major.subject, // เกรดเฉพาะวิชา (ถ้ามี)
+                    seats: major.seats,
+                    qualification: major.qualification
+                });
+            }
         });
     });
 
-    // เรียงลำดับจากเกรดขั้นต่ำ (มากไปน้อย) ถ้าไม่มีเกรด ให้ถือเป็น 0
+    // เรียงลำดับคู่คณะ-สาขา โดยใช้เกรดขั้นต่ำจากมากไปน้อย (ถ้าไม่มี grade ถือเป็น 0)
     matchedMajors.sort((a, b) => (b.grade || 0) - (a.grade || 0));
-
     // เลือกแค่ 5 อันดับแรก
     matchedMajors = matchedMajors.slice(0, 5);
 
-    // ถ้าไม่มีผลลัพธ์
     if (matchedMajors.length === 0) {
         return res.status(200).json({
             fulfillmentText: "ขออภัย ไม่มีคณะหรือสาขาที่ตรงกับเกรด, ทักษะ และคุณสมบัติของคุณ"
         });
     }
 
-    // สร้างข้อความตอบกลับ (อันดับละ 1 คณะและ 1 สาขา)
+    // สร้างข้อความตอบกลับ: แสดงเป็นอันดับละ 1 คณะและ 1 สาขา
     responseText = `แนะนำ 5 อันดับแรกตามเกรดของคุณ (${grade}) และทักษะ "${ability}":\n\n`;
     matchedMajors.forEach((match, index) => {
         responseText += `🎓 อันดับ ${index + 1}: ${match.faculty} - ${match.major}`;
@@ -181,7 +183,7 @@ app.post("/webhook", (req, res) => {
         responseText += `     📌 คุณสมบัติ: ${match.qualification}\n\n`;
     });
 
-    // ตัวเลือกอื่น ๆ ของ Intent
+    // ตัวเลือกอื่น ๆ ของ Intent (welcome, get name, get grade)
     if (intent === "welcome") {
         responseText = "สวัสดีค่ะ ยินดีต้อนรับสู่แชทบอทแนะนำคณะและสาขา กรุณาแจ้งชื่อของคุณค่ะ";
     } else if (intent === "get name") {
