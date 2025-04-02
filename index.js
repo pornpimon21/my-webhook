@@ -10,7 +10,7 @@ app.post("/webhook", (req, res) => {
     let responseText = "ไม่เข้าใจคำถาม";
 
 
-        // ตัวเลือกอื่น ๆ ของ Intent (welcome, get name, get grade)
+    // ตัวเลือกอื่น ๆ ของ Intent (welcome, get name, get grade)
     if (intent === "welcome") {
         responseText = "สวัสดีค่ะ ยินดีต้อนรับสู่แชทบอทแนะนำคณะและสาขา กรุณาแจ้งชื่อของคุณค่ะ";
     } else if (intent === "get name") {
@@ -18,26 +18,6 @@ app.post("/webhook", (req, res) => {
     } else if (intent === "get grade") {
         responseText = `ขอบคุณค่ะ คุณได้เกรด ${req.body.queryResult.parameters.grade} กรุณาระบุความสามารถหรือความถนัดของคุณ (เช่น เลข, วิทยาศาสตร์, คอมพิวเตอร์) คั่นด้วยเครื่องหมายคอมม่า`;
     }
-
-// หลังจากตรวจสอบ intent พื้นฐาน
-if (intent !== "recommend-major") {
-    return res.status(200).json({
-        fulfillmentText: "กรุณากรอกข้อมูลให้ครบถ้วนเพื่อรับคำแนะนำคณะ/สาขา"
-    });
-}
-
-
-if (!grade || !ability) {
-    return res.status(200).json({
-        fulfillmentText: "กรุณาระบุเกรดและความสามารถของคุณให้ครบถ้วน"
-    });
-}
-
-
-function recommendMajors(grade, subjectGrades, ability, education) {
-    // ... logic การจับคู่คณะ/สาขา
-    return matchedMajors;
-}
 
 
     // รับค่าจาก Dialogflow
