@@ -156,12 +156,6 @@ app.post("/webhook", (req, res) => {
             // ตรวจสอบระดับการศึกษา
             if (major.qualification && !major.qualification.includes(education)) return;
 
-            // คำนวณคะแนนความเหมาะสม
-            let score = grade;
-            
-            // เพิ่มคะแนนถ้าทักษะตรง
-            const matchedSkills = major.ability.filter(skill => ability.includes(skill)).length;
-            score += matchedSkills * 0.1;
 
             matchedMajors.push({
                 faculty: faculty.name,
@@ -176,7 +170,7 @@ app.post("/webhook", (req, res) => {
     });
 
     // เรียงลำดับตามคะแนนความเหมาะสม
-    matchedMajors.sort((a, b) => b.score - a.score).slice(0, 5); // เลือก 5 อันดับแรก
+    matchedMajors.sort((a, b) => b.minGrade - a.minGrade).slice(0, 5); // เลือก 5 อันดับแรก
 
     // ถ้าไม่มีสาขาที่ตรง
     if (matchedMajors.length === 0) {
