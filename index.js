@@ -1,10 +1,20 @@
 const express = require("express");
 const app = express();
-const PORT = process.env.PORT || 8000;
+const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
 app.post("/webhook", (req, res) => {
+    // ตั้งเวลา timeout ว่าให้ตอบกลับภายในกี่วินาที (ถ้าค้างให้ส่งข้อความแทน)
+  setTimeout(() => {
+    if (!res.headersSent) { // ถ้ายังไม่ตอบกลับ
+      res.json({ fulfillmentText: "กำลังประมวลผล..." });
+    }
+  }, 8000); // 8 วินาที
+  
+  // โค้ดเดิม...
+});
+
     console.log("📥 ข้อมูลที่ได้รับจาก Dialogflow:", JSON.stringify(req.body, null, 2));
     const intent = req.body.queryResult.intent.displayName;
     let responseText = "ไม่เข้าใจคำถาม";
@@ -19,6 +29,11 @@ app.post("/webhook", (req, res) => {
         responseText = `ขอบคุณค่ะ คุณได้เกรด ${req.body.queryResult.parameters.grade} กรุณาระบุความสามารถหรือความถนัดของคุณ (เช่น เลข, วิทยาศาสตร์, คอมพิวเตอร์) คั่นด้วยเครื่องหมายคอมม่า`;
     }
 
+    if (!grade || !ability) {
+  return res.json({ 
+    fulfillmentText: "⚠️ โปรดระบุเกรดและทักษะให้ครบ" 
+  });
+}
 
     // รับค่าจาก Dialogflow
     const grade = parseFloat(req.body.queryResult.parameters.grade) || 0;
@@ -214,4 +229,3 @@ app.post("/webhook", (req, res) => {
     res.status(200).json({
         fulfillmentText: responseText
     });
-});
