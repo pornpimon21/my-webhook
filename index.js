@@ -13,7 +13,7 @@ app.post("/webhook", (req, res) => {
     const ability = req.body.queryResult.parameters.ability || "";
     const education = req.body.queryResult.parameters.education || "ไม่มีข้อมูล"; 
 
-    console.log("➡️ เกรดรวม:", grade);
+    console.log("➡️ เกรดรวม:", minGrade);
     console.log("➡️ ทักษะ:", ability);
     console.log("➡️ ระดับการศึกษา:", education);
 
@@ -29,7 +29,7 @@ app.post("/webhook", (req, res) => {
         { name : 'ภาษาต่างประเทศ วิชาเอกภาษาจีน', grade : 2.50, ability : ['การสื่อสาร', 'ภาษาจีน', 'สอน', 'ครุู', 'รักเด็ก', 'เข้าใจในการสอน'], seats: 60, qualification: "มัธยมศึกษาตอนปลายหรือเทียบเท่าทุกแผนการเรียน"},
         { name : 'ภาษาต่างประเทศ วิชาเอกภาษาเกาหลี', grade : 2.50, ability : ['การสื่อสาร', 'ภาษาเกาหลี', 'สอน', 'ครุู', 'รักเด็ก', 'เข้าใจในการสอน'], seats: 30, qualification: "มัธยมศึกษาตอนปลายหรือเทียบเท่าทุกแผนการเรียน"},
         { name : 'การศึกษาปฐมวัย', grade : 2.75, ability : ['รักเด็ก', 'อดทน', 'จัดกิจกรรมเด็ก', 'สอน', 'ครุู', 'เข้าใจในการสอน'], seats: 60, qualification: "มัธยมศึกษาตอนปลายหรือเทียบเท่าทุกแผนการเรียน"},
-        { name : 'คณิตศาสตร์', grade : 3.00, subject : { 'คณิตศาสตร์': 2.75 }, ability: ['เลข', 'คำนวณ', 'คณิต', 'สถิติ', 'แคลคูลัส', 'สอน', 'ครุู', 'รักเด็ก', 'เข้าใจในการสอน'], seats: 60, qualification: "มัธยมศึกษาตอนปลายหรือเทียบเท่าสาขาทางวิทย์-คณิต, ศิลป์-คำนวณหรือสาขาที่มีคณิตศาสตร์เพิ่มเติม"},
+        { name : 'คณิตศาสตร์', grade : 3.00, ability: ['เลข', 'คำนวณ', 'คณิต', 'สถิติ', 'แคลคูลัส', 'สอน', 'ครุู', 'รักเด็ก', 'เข้าใจในการสอน'], seats: 60, qualification: "มัธยมศึกษาตอนปลายหรือเทียบเท่าสาขาทางวิทย์-คณิต, ศิลป์-คำนวณหรือสาขาที่มีคณิตศาสตร์เพิ่มเติม"},
         { name : 'สังคมศึกษา', grade : 2.75, ability: ['สังคม', 'สอนประวัติศาสตร์', 'พูด', 'การเมือง', 'มารยาท', 'เข้าสังคม', 'สอน', 'ครุู', 'รักเด็ก', 'เข้าใจในการสอน'], seats: 60, qualification: "มัธยมศึกษาตอนปลายหรือเทียบเท่าทุกแผนการเรียน"},
         { name : 'พลศึกษา', grade : 2.75, ability: ['กีฬา', 'ออกกำลังกาย', 'พูด', 'สอน', 'ครุู', 'รักเด็ก', 'เข้าใจในการสอน'], seats: 60, qualification: "มัธยมศึกษาตอนปลายหรือเทียบเท่าทุกแผนการเรียน"},
         { name : 'เกษตรศา่สตร์', grade : 2.30, ability: ['สิ่งแวดล้อม', 'การอนุรักษ์', 'ต้นไม้', 'สอน', 'ครุู', 'รักเด็ก', 'เข้าใจในการสอน'], seats: 60, qualification: "มัธยมศึกษาตอนปลายหรือเทียบเท่าทุกแผนการเรียน"},
@@ -130,7 +130,7 @@ app.post("/webhook", (req, res) => {
             if (ability.length > 0 && !major.ability.some(skill => ability.includes(skill))) return false;
             
             // ✅ ตรวจสอบระดับการศึกษา
-            if (faculty.qualification && !faculty.qualification.includes(education)) return false;
+            if (major.qualification && !faculty.qualification.includes(education)) return false;
 
             return true;
         });
@@ -152,11 +152,11 @@ app.post("/webhook", (req, res) => {
         faculty.majors.forEach(major => {
             responseText +=   ` - ${major.name}`;
             if (faculty.subject !== null) {
-                responseText += ` (เกรดไม่น้อยกว่า: ${faculty.subject})`;
+                responseText += ` (เกรดไม่น้อยกว่า: ${major.subject})`;
             }
-            responseText +=` , รับจำนวน: ${faculty.seats} คน\n`;
+            responseText +=` , รับจำนวน: ${major.seats} คน\n`;
 
-            responseText +=      `📌 คุณสมบัติ: ${faculty.qualification}\n`;
+            responseText +=  `📌 คุณสมบัติ: ${major.qualification}\n`;
         });
         responseText += "\n";
     });
