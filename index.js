@@ -13,7 +13,7 @@ app.post("/webhook", (req, res) => {
     const ability = req.body.queryResult.parameters.ability || "";
     const education = req.body.queryResult.parameters.education || "ไม่มีข้อมูล"; 
 
-    console.log("➡️ เกรดรวม:", minGrade);
+    console.log("➡️ เกรดรวม:", grade);
     console.log("➡️ ทักษะ:", ability);
     console.log("➡️ ระดับการศึกษา:", education);
 
@@ -130,7 +130,7 @@ app.post("/webhook", (req, res) => {
             if (ability.length > 0 && !major.ability.some(skill => ability.includes(skill))) return false;
             
             // ✅ ตรวจสอบระดับการศึกษา
-            if (major.qualification && !faculty.qualification.includes(education)) return false;
+            if (major.qualification && !major.qualification.includes(education)) return false;
 
             return true;
         });
@@ -151,7 +151,7 @@ app.post("/webhook", (req, res) => {
         responseText += `🎓 ${index + 1}. ${faculty.name}\n`;
         faculty.majors.forEach(major => {
             responseText +=   ` - ${major.name}`;
-            if (faculty.subject !== null) {
+            if (major.subject !== null) {
                 responseText += ` (เกรดไม่น้อยกว่า: ${major.subject})`;
             }
             responseText +=` , รับจำนวน: ${major.seats} คน\n`;
