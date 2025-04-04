@@ -1,32 +1,25 @@
-const express = require("express");
-const app = express();
-const PORT = process.env.PORT || 3000;
-
-app.use(express.json());
-
 app.post("/webhook", (req, res) => {
-    console.log(" ข้อมูลที่ได้รับจาก Dialogflow:", JSON.stringify(req.body, null, 2));
+    console.log("ข้อมูลที่ได้รับจาก Dialogflow:", JSON.stringify(req.body, null, 2));
     const intent = req.body.queryResult.intent.displayName;
     let responseText = "ไม่เข้าใจคำถาม";
 
     const minGrade = parseFloat(req.body.queryResult.parameters.minGrade) || 0;
-    const subjectminGrades = req.body.queryResult.parameters.subjectminGrades || {}; // เกรดเฉพาะวิชา
-    const ability = req.body.queryResult.parameters.ability || "";
-    const education = req.body.queryResult.parameters.education || "ไม่มีข้อมูล"; 
+    const subjectminGrades = req.body.queryResult.parameters.subjectminGrades || {};
+    const ability = req.body.queryResult.parameters.ability || [];
+    const education = req.body.queryResult.parameters.education || "ไม่มีข้อมูล";
 
     console.log("➡️ เกรดรวม:", minGrade);
     console.log("➡️ ทักษะ:", ability);
     console.log("➡️ ระดับการศึกษา:", education);
-
-
+   
     const faculties = [
         {
         name : 'คณะครุศาสตร์',
         majors: [
-        { name : 'ภาษาไทย', minminGrade : 2.75, ability: ['ภาษาไทย', 'สอน', 'ครุู', 'รักเด็ก', 'เข้าใจในการสอน'], seats: 60, qualification: "มัธยมศึกษาตอนปลายหรือเทียบเท่าทุกแผนการเรียน ภาษาไทย เกรดเฉลี่ยไม่ต่ำกว่า 3.00 " },
-        { name : 'วิทยาศาสตร์ทั่วไป', minminminGrade : 2.50, ability : ['วิทยาศาสตร์', 'เคมี', 'ฟิสิกส์', 'ชีววิทยา', 'แล็บ'], seats: 60, seats: 60, qualification: "มัธยมศึกษาตอนปลายหรือเทียบเท่าสาขาทางวิทย์-คณิต, หรือสาขาที่เกี่ยวข้องกับวิทยาศาสตร์"},
-        { name : 'การประถมศึกษา', minminminGrade :  2.75, ability : ['สอนเด็กประถม', 'บริหารห้องเรียน', 'ออกแบบการเรียนการสอน', 'สอน', 'ครุู', 'รักเด็ก', 'เข้าใจในการสอน'], seats: 60, qualification: "มัธยมศึกษาตอนปลายหรือเทียบเท่าทุกแผนการเรียน"},
-        { name : 'ภาษาต่างประเทศ วิชาเอกภาษาอังกฤษ', minminminGrade : 2.75, ability : ['การสื่อสาร', 'ภาษาอังกฤษ', 'สอน', 'ครุู', 'รักเด็ก', 'เข้าใจในการสอน'], seats: 60, qualification: "มัธยมศึกษาตอนปลายหรือเทียบเท่าทุกแผนการเรียน"},
+        { name : 'ภาษาไทย', minGrade : 2.75, ability: ['ภาษาไทย', 'สอน', 'ครุู', 'รักเด็ก', 'เข้าใจในการสอน'], seats: 60, qualification: "มัธยมศึกษาตอนปลายหรือเทียบเท่าทุกแผนการเรียน ภาษาไทย เกรดเฉลี่ยไม่ต่ำกว่า 3.00 " },
+        { name : 'วิทยาศาสตร์ทั่วไป', minGrade : 2.50, ability : ['วิทยาศาสตร์', 'เคมี', 'ฟิสิกส์', 'ชีววิทยา', 'แล็บ'], seats: 60, seats: 60, qualification: "มัธยมศึกษาตอนปลายหรือเทียบเท่าสาขาทางวิทย์-คณิต, หรือสาขาที่เกี่ยวข้องกับวิทยาศาสตร์"},
+        { name : 'การประถมศึกษา', minGrade :  2.75, ability : ['สอนเด็กประถม', 'บริหารห้องเรียน', 'ออกแบบการเรียนการสอน', 'สอน', 'ครุู', 'รักเด็ก', 'เข้าใจในการสอน'], seats: 60, qualification: "มัธยมศึกษาตอนปลายหรือเทียบเท่าทุกแผนการเรียน"},
+        { name : 'ภาษาต่างประเทศ วิชาเอกภาษาอังกฤษ', minGrade : 2.75, ability : ['การสื่อสาร', 'ภาษาอังกฤษ', 'สอน', 'ครุู', 'รักเด็ก', 'เข้าใจในการสอน'], seats: 60, qualification: "มัธยมศึกษาตอนปลายหรือเทียบเท่าทุกแผนการเรียน"},
         { name : 'ภาษาต่างประเทศ วิชาเอกภาษาจีน', minGrade : 2.50, ability : ['การสื่อสาร', 'ภาษาจีน', 'สอน', 'ครุู', 'รักเด็ก', 'เข้าใจในการสอน'], seats: 60, qualification: "มัธยมศึกษาตอนปลายหรือเทียบเท่าทุกแผนการเรียน"},
         { name : 'ภาษาต่างประเทศ วิชาเอกภาษาเกาหลี', minGrade : 2.50, ability : ['การสื่อสาร', 'ภาษาเกาหลี', 'สอน', 'ครุู', 'รักเด็ก', 'เข้าใจในการสอน'], seats: 30, qualification: "มัธยมศึกษาตอนปลายหรือเทียบเท่าทุกแผนการเรียน"},
         { name : 'การศึกษาปฐมวัย', minGrade : 2.75, ability : ['รักเด็ก', 'อดทน', 'จัดกิจกรรมเด็ก', 'สอน', 'ครุู', 'เข้าใจในการสอน'], seats: 60, qualification: "มัธยมศึกษาตอนปลายหรือเทียบเท่าทุกแผนการเรียน"},
@@ -120,52 +113,53 @@ app.post("/webhook", (req, res) => {
         ]
         },
         ];
-
-    // ค้นหาสาขาที่ตรงกับเงื่อนไขและเรียงลำดับ
+    // ค้นหาสาขาที่ตรงกับเงื่อนไข
     let matchedFaculties = faculties.filter(faculty => {
-    return faculty.majors.some(major => {
-        // ✅ ตรวจสอบเกรดขั้นต่ำของสาขา (ถ้ามี)
-        if (major.minGrade !== null && minGrade < major.minGrade) return false;
+        return faculty.majors.some(major => {
+            if (major.minGrade !== null && minGrade < major.minGrade) return false;
+            
+            if (major.subject) {
+                for (let subject in major.subject) {
+                    if (!subjectminGrades[subject] || subjectminGrades[subject] < major.subject[subject]) {
+                        return false;
+                    }
+                }
+            }
 
-            // ✅ ตรวจสอบทักษะ (ถ้ามี)
             if (ability.length > 0 && !major.ability.some(skill => ability.includes(skill))) return false;
             
-            // ✅ ตรวจสอบระดับการศึกษา
-            if (faculty.qualification && !faculty.qualification.includes(education)) return false;
+            if (major.qualification && !major.qualification.includes(education)) return false;
 
             return true;
         });
-    }).sort((a, b) => (b.minGrade || 0) - (a.minGrade || 0)) // เรียงจากเกรดสูงสุดลงมา
-      .slice(0, 5); // เลือก 5 ลำดับแรก
+    }).sort((a, b) => (b.minGrade || 0) - (a.minGrade || 0))
+      .slice(0, 5);
 
-    // ถ้าไม่มีสาขาที่ตรง
-    if (matchedFaculties.length === 0) {
-        return res.status(200).json({
-            fulfillmentText: "ขออภัย ไม่มีคณะหรือสาขาที่ตรงกับเกรด ทักษะ และคุณสมบัติของคุณ"
+    // สร้าง response ตามรูปแบบที่ต้องการ
+    if (matchedFaculties.length > 0) {
+        responseText = "# ระบบการลงทุน (3.25) และการระยะเวลาการลงทุน, เวลาเวนคาย - แบบรายงานคน\n\n";
+        
+        matchedFaculties.forEach((faculty, index) => {
+            faculty.majors.forEach(major => {
+                responseText += `- กีฬา: ${index + 1}\n`;
+                responseText += `ตอบ: ${faculty.name}\n`;
+                responseText += `สาขา: ${major.name}\n`;
+                responseText += `เกษตรศึกษา: ${major.minGrade ? major.minGrade.toFixed(2) : 'ไม่มีเกณฑ์ขั้นต่ำ'}\n`;
+                responseText += `จำนวนวัน: ${major.seats} คน\n\n`;
+                responseText += `คุณสมบัติ: ${major.qualification}\n\n`;
+            });
         });
+    } else {
+        responseText = "ขออภัย ไม่พบคณะที่ตรงกับการตอบสนองคุณ";
     }
 
-    // ✅ สร้างข้อความตอบกลับ
-    responseText =` จากเกรดของคุณ (${minGrade}) และทักษะ "${ability}" แนะนำสาขาดังนี้:\n\n`;
-
-    matchedFaculties.forEach((faculty, index) => {
-        responseText += ` ${index + 1}. ${faculty.name}\n`;
-        faculty.majors.forEach(major => {
-            responseText +=   ` - ${major.name}`;
-          
-            responseText +=` , รับจำนวน: ${faculty.seats} คน\n`;
-
-            responseText +=      ` คุณสมบัติ: ${faculty.qualification}\n`;
-        });
-        responseText += "\n";
-    });
-
+    // ส่วนของ intents เดิม
     if (intent === "welcome") {
         responseText = "สวัสดีค่ะ ยินดีต้อนรับสู่แชทบอทแนะนำคณะและสาขา กรุณาแจ้งชื่อของคุณค่ะ";
     } else if (intent === "get name") {
         responseText = `สวัสดีคุณ ${req.body.queryResult.parameters.name} กรุณาระบุเกรดเฉลี่ยของคุณ (เช่น 3.5)`;
     } else if (intent === "get grade") {
-        responseText = `ขอบคุณค่ะ คุณได้เกรด ${req.body.queryResult.parameters.minGrade} กรุณาระบุความสามารถหรือความถนัดของคุณ (เช่น เลข, วิทยาศาสตร์, คอมพิวเตอร์) คั่นด้วยเครื่องหมายคอมม่า`;
+        responseText = `ขอบคุณค่ะ คุณได้เกรด ${req.body.queryResult.parameters.grade} กรุณาระบุความสามารถหรือความถนัดของคุณ (เช่น เลข, วิทยาศาสตร์, คอมพิวเตอร์) คั่นด้วยเครื่องหมายคอมม่า`;
     }
 
     // ส่งคำตอบกลับไปยัง Dialogflow
