@@ -5,7 +5,7 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 
 app.post("/webhook", (req, res) => {
-    console.log("📥 ข้อมูลที่ได้รับจาก Dialogflow:", JSON.stringify(req.body, null, 2));
+    console.log(" ข้อมูลที่ได้รับจาก Dialogflow:", JSON.stringify(req.body, null, 2));
     const intent = req.body.queryResult.intent.displayName;
     let responseText = "ไม่เข้าใจคำถาม";
 
@@ -14,7 +14,7 @@ app.post("/webhook", (req, res) => {
     const ability = req.body.queryResult.parameters.ability || "";
     const education = req.body.queryResult.parameters.education || "ไม่มีข้อมูล"; 
 
-    console.log("➡️ เกรดรวม:", grade);
+    console.log("➡️ เกรดรวม:", minGrade);
     console.log("➡️ ทักษะ:", ability);
     console.log("➡️ ระดับการศึกษา:", education);
 
@@ -125,7 +125,7 @@ app.post("/webhook", (req, res) => {
     let matchedFaculties = faculties.filter(faculty => {
     return faculty.majors.some(major => {
         // ✅ ตรวจสอบเกรดขั้นต่ำของสาขา (ถ้ามี)
-        if (major.minGrade !== null && grade < major.minGrade) return false;
+        if (major.minGrade !== null && minGrade < major.minGrade) return false;
 
             // ✅ ตรวจสอบทักษะ (ถ้ามี)
             if (ability.length > 0 && !major.ability.some(skill => ability.includes(skill))) return false;
@@ -146,16 +146,16 @@ app.post("/webhook", (req, res) => {
     }
 
     // ✅ สร้างข้อความตอบกลับ
-    responseText =` จากเกรดของคุณ (${grade}) และทักษะ "${ability}" แนะนำสาขาดังนี้:\n\n`;
+    responseText =` จากเกรดของคุณ (${minGrade}) และทักษะ "${ability}" แนะนำสาขาดังนี้:\n\n`;
 
     matchedFaculties.forEach((faculty, index) => {
-        responseText += `🎓 ${index + 1}. ${faculty.name}\n`;
+        responseText += ` ${index + 1}. ${faculty.name}\n`;
         faculty.majors.forEach(major => {
             responseText +=   ` - ${major.name}`;
           
             responseText +=` , รับจำนวน: ${faculty.seats} คน\n`;
 
-            responseText +=      `📌 คุณสมบัติ: ${faculty.qualification}\n`;
+            responseText +=      ` คุณสมบัติ: ${faculty.qualification}\n`;
         });
         responseText += "\n";
     });
@@ -165,7 +165,7 @@ app.post("/webhook", (req, res) => {
     } else if (intent === "get name") {
         responseText = `สวัสดีคุณ ${req.body.queryResult.parameters.name} กรุณาระบุเกรดเฉลี่ยของคุณ (เช่น 3.5)`;
     } else if (intent === "get grade") {
-        responseText = `ขอบคุณค่ะ คุณได้เกรด ${req.body.queryResult.parameters.grade} กรุณาระบุความสามารถหรือความถนัดของคุณ (เช่น เลข, วิทยาศาสตร์, คอมพิวเตอร์) คั่นด้วยเครื่องหมายคอมม่า`;
+        responseText = `ขอบคุณค่ะ คุณได้เกรด ${req.body.queryResult.parameters.minGrade} กรุณาระบุความสามารถหรือความถนัดของคุณ (เช่น เลข, วิทยาศาสตร์, คอมพิวเตอร์) คั่นด้วยเครื่องหมายคอมม่า`;
     }
 
     // ส่งคำตอบกลับไปยัง Dialogflow
@@ -176,4 +176,3 @@ app.post("/webhook", (req, res) => {
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
-
