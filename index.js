@@ -4,50 +4,47 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
-// ข้อมูลคณะและสาขาวิชา
-const faculties = [
-    {
-        name: "คณะครุศาสตร์",
-        majors: [
-            { name: "ภาษาไทย", grade: 2.75, ability: ["ภาษาไทย", "สอน", "ครุู"], seats: 60 },
-            { name: "คณิตศาสตร์", grade: 3.00, ability: ["เลข", "คำนวณ", "สอน"], seats: 60 }
-        ]
-    },
-    {
-        name: "คณะวิทยาการจัดการ",
-        majors: [
-            { name: "บัญชี", grade: null, ability: ["คำนวณ", "ทำบัญชี"], seats: 40 },
-            { name: "นิเทศศาสตร์", grade: null, ability: ["การแสดง", "สื่อสาร"], seats: 30 }
-        ]
-    }
-];
-
-// ฟังก์ชันค้นหาสาขาวิชาที่ตรงกับเกรดและความสามารถ
-function findMatchingMajors(grade, ability) {
-    return faculties.flatMap(faculty => 
-        faculty.majors
-            .filter(major => 
-                (major.grade === null || grade >= major.grade) &&
-                major.ability.some(a => ability.includes(a))
-            )
-            .map(major => `${faculty.name} - ${major.name}`)
-    );
-}
-
-// Webhook API
 app.post("/webhook", (req, res) => {
+    console.log("Received request body:", req.body);
+
     const { grade, ability } = req.body;
 
     if (grade === undefined || !Array.isArray(ability)) {
-        return res.status(400).json({ error: "ข้อมูลไม่ครบถ้วน (ต้องมี grade และ ability เป็น array)" });
+        return res.status(400).json({ error: "Invalid input data" });
     }
 
+    function findMatchingMajors(grade, ability) {
+        return faculties.flatMap(faculty => 
+            faculty.majors.filter(major => 
+                (major.grade === null || grade >= major.grade) &&
+                major.ability.some(a => ability.includes(a))
+            ).map(major => `${faculty.name} - ${major.name}`)
+        );
+    }
+
+    const faculties = [
+        {
+            name: 'คณะครุศาสตร์',
+            majors: [
+                { name: 'ภาษาไทย', grade: 2.75, ability: ['ภาษาไทย', 'สอน'], seats: 60 },
+                { name: 'วิทยาศาสตร์ทั่วไป', grade: 2.50, ability: ['วิทยาศาสตร์', 'เคมี'], seats: 60 }
+            ]
+        },
+        {
+            name: 'คณะมนุษยศาสตร์และสังคมศาสตร์',
+            majors: [
+                { name: 'รัฐประศาสนศาสตร์', grade: null, ability: ['สังคม', 'การเมือง'], seats: 50 }
+            ]
+        }
+    ];
+
+    console.log("Searching for matches...");
     const matchingMajors = findMatchingMajors(grade, ability);
+    console.log("Matching Majors:", matchingMajors);
 
     res.json({ matchingMajors });
 });
 
-// เริ่มต้นเซิร์ฟเวอร์
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
