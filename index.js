@@ -5,17 +5,15 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 
 app.post("/webhook", (req, res) => {
-    console.log("📥 ข้อมูลที่ได้รับจาก Dialogflow:", JSON.stringify(req.body, null, 2));
-    const intent = req.body.queryResult.intent.displayName;
-    let responseText = "ไม่เข้าใจคำถาม";
-
-    const grade = parseFloat(req.body.queryResult.parameters.grade) || 0;
-    const ability = req.body.queryResult.parameters.ability || "";
-    const education = req.body.queryResult.parameters.education || "ไม่มีข้อมูล"; 
-
-    console.log("➡️ เกรดรวม:", grade);
-    console.log("➡️ ทักษะ:", ability);
-    console.log("➡️ ระดับการศึกษา:", education);
+    function findMatchingMajors(grade, ability) {
+        return faculties.flatMap(faculty => 
+            faculty.majors.filter(major => 
+                (major.grade === null || grade >= major.grade) &&
+                major.ability.some(a => ability.includes(a))
+            ).map(major => `${faculty.name} - ${major.name}`)
+        );
+    }
+    
 
 
     const faculties = [
