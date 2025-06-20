@@ -14,6 +14,19 @@ const PORT = process.env.PORT || 3000;
 
 const uri = process.env.MONGODB_URI;
 
+
+const fs = require('fs');
+const path = require('path');
+
+// ถ้าไม่มีไฟล์ .json และมี ENV base64 -> สร้างไฟล์ใหม่
+const keyPath = path.join(__dirname, 'dialogflow-key.json');
+if (!fs.existsSync(keyPath) && process.env.GOOGLE_CREDENTIALS_BASE64) {
+  const buffer = Buffer.from(process.env.GOOGLE_CREDENTIALS_BASE64, 'base64');
+  fs.writeFileSync(keyPath, buffer);
+  console.log('✅ Created dialogflow-key.json from base64!');
+}
+
+
 mongoose.connect(uri)
 .then(() => console.log('✅ MongoDB connected!'))
 .catch(err => console.error('❌ MongoDB connection error:', err));
