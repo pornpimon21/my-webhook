@@ -377,12 +377,4 @@ app.post('/linewebhook',
 
 app.listen(PORT, () => {
   console.log(`✅ Server running at http://localhost:${PORT}`);
-<<<<<<< HEAD
-}); 
-
-
-
-
-=======
-}); 
->>>>>>> 29865f0 (Initial commit)
+});
