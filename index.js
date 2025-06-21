@@ -694,8 +694,8 @@ app.post("/webhook", async (req, res) => {
 if (intent === "get skills") {
   let abilities = params.ability;
   if (typeof abilities === "string") {
-    abilities = abilities.split(",").map(a => a.trim());
-  } else if (Array.isArray(abilities)) {
+    abilities = abilities.split(/[,\s]+/).map(a => a.trim());  // 🔁 ใช้ regex แยกทั้งคอมม่าและเว้นวรรค
+    } else if (Array.isArray(abilities)) {
     abilities = abilities.flatMap(item => item.split(",").map(a => a.trim()));
   }
   
