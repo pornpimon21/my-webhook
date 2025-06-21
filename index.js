@@ -826,6 +826,19 @@ app.post('/linewebhook',
           const userMessage = event.message.text;
           const sessionId = event.source.userId || uuid.v4();  // LINE user ID ใช้แทน session
 
+    
+    // ตรวจว่าเป็นการคลิกจาก Rich Menu หรือไม่
+    if (userMessage === 'แนะนำคณะ') {
+    // ส่ง "สวัสดี" เข้า Dialogflow เพื่อให้มันเริ่ม intent welcome เหมือนเดิม
+    const dialogflowResult = await detectIntentText(sessionId, 'สวัสดี');
+
+    await lineClient.replyMessage(event.replyToken, {
+      type: 'text',
+      text: dialogflowResult.fulfillmentText
+    });
+    return;
+  }
+
           const dialogflowResult = await detectIntentText(sessionId, userMessage);
         
           const replyText = dialogflowResult.fulfillmentText || 'ขออภัย ฉันไม่เข้าใจค่ะ';
