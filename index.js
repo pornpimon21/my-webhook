@@ -849,13 +849,13 @@ app.post('/linewebhook',
     
 // โหลด session เพื่อดึงอาชีพจาก recommendations ทุกอันดับ
 const session = await Session.findOne({ sessionId });
+
 if (session?.recommendations?.length > 0) {
   let careersText = '';
+
   session.recommendations.forEach((rec, index) => {
-    const faculty = faculties.find(f => f.name === rec.faculty);
-    const majorInfo = faculty?.majors.find(m => m.name === rec.major);
-    if (majorInfo?.careers?.length > 0) {
-      careersText += `\n\n📌 อันดับ ${index + 1}: ${faculty.name} / ${majorInfo.name}\n• ${majorInfo.careers.join('\n• ')}`;
+    if (rec.careers?.length > 0) {
+      careersText += `\n\n📌 อันดับ ${index + 1}: ${rec.faculty} / ${rec.major}\n• ${rec.careers.join('\n• ')}`;
     }
   });
 
@@ -867,7 +867,7 @@ if (session?.recommendations?.length > 0) {
       });
     }, 2000);
   }
-}    
+}
       return;
     }
               const dialogflowResult = await detectIntentText(sessionId, userMessage);
