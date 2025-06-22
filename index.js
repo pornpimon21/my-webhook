@@ -847,31 +847,20 @@ app.post('/linewebhook',
       type: 'text',
       text: dialogflowResult.fulfillmentText
     });
-
-// ส่งข้อความที่ 2 (อาชีพ) หลัง delay 1-2 วิ
-if (event.source?.type === 'user' && event.source.userId) {
-  setTimeout(async () => {
-    try {
-      const messages = recommendedMajors
-        .filter(m => m.careers?.length > 0)
-        .map(m => ({
+    
+    // ส่งข้อความที่ 2 (อาชีพ) หลัง delay 1-2 วิ
+    setTimeout(async () => {
+      const careers = majorInfo.careers || [];
+      if (careers.length > 0) {
+        await lineClient.pushMessage(event.source.userId, {
           type: 'text',
-          text: `💼 อาชีพที่เกี่ยวข้องกับ\n📘 ${m.name}:\n• ${m.careers.join('\n• ')}`
-        }));
-
-      if (messages.length > 0) {
-        // ส่งแบบแยกทีละข้อความ หรือรวมในครั้งเดียวก็ได้
-        for (const msg of messages) {
-          await lineClient.pushMessage(event.source.userId, msg);
-          await new Promise(res => setTimeout(res, 500)); // delay เล็กน้อยระหว่างข้อความ
-        }
+          text: `💼 อาชีพที่เกี่ยวข้อง:\n• ${careers.join('\n• ')}`
+        });
       }
-    } catch (error) {
-      console.error('❌ Error sending career messages:', error);
-    }
-  }, 2000); // delay แรก 2 วิ
-}
- }
+    }, 2000);
+    
+    return;
+     }
 
           const dialogflowResult = await detectIntentText(sessionId, userMessage);
         
