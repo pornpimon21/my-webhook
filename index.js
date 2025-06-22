@@ -838,9 +838,6 @@ app.post('/linewebhook',
           const userMessage = event.message.text;
           const sessionId = event.source.userId || uuid.v4();  // LINE user ID ใช้แทน session
 
-     // ดึง session จาก MongoDB
-    const session = await Session.findOne({ sessionId });
-
     // ตรวจว่าเป็นการคลิกจาก Rich Menu หรือไม่
     if (userMessage === 'แนะนำคณะ') {
       const dialogflowResult = await detectIntentText(sessionId, 'สวัสดี');
