@@ -843,31 +843,37 @@ app.post('/linewebhook',
 
     // ตรวจว่าเป็นการคลิกจาก Rich Menu หรือไม่
     if (userMessage === 'แนะนำคณะ') {
-    // ส่ง "สวัสดี" เข้า Dialogflow เพื่อให้มันเริ่ม intent welcome เหมือนเดิม
-    const dialogflowResult = await detectIntentText(sessionId, 'สวัสดี');
-
-    await lineClient.replyMessage(event.replyToken, {
-      type: 'text',
-      text: dialogflowResult.fulfillmentText
-    });
+      const dialogflowResult = await detectIntentText(sessionId, 'สวัสดี');
     
- // ส่งอาชีพหลัง delay ถ้ามี recommendations ใน session
- if (session?.recommendations?.length > 0) {
-  setTimeout(async () => {
-    for (const rec of session.recommendations) {
-      if (rec.careers.length > 0) {
-        await lineClient.pushMessage(event.source.userId, {
-          type: 'text',
-          text: `💼 อาชีพที่เกี่ยวข้องกับ ${rec.major}:\n• ${rec.careers.join('\n• ')}`
-        });
-        await new Promise(r => setTimeout(r, 500)); // delay ระหว่างข้อความ
-      }
+      await lineClient.replyMessage(event.replyToken, {
+        type: 'text',
+        text: dialogflowResult.fulfillmentText
+      });
+    
+// โหลด session เพื่อดึงอาชีพจาก recommendations ทุกอันดับ
+const session = await Session.findOne({ sessionId });
+if (session?.recommendations?.length > 0) {
+  let careersText = '';
+  session.recommendations.forEach((rec, index) => {
+    const faculty = faculties.find(f => f.name === rec.faculty);
+    const majorInfo = faculty?.majors.find(m => m.name === rec.major);
+    if (majorInfo?.careers?.length > 0) {
+      careersText += `\n\n📌 อันดับ ${index + 1}: ${faculty.name} / ${majorInfo.name}\n• ${majorInfo.careers.join('\n• ')}`;
     }
-  }, 2000);
+  });
+
+  if (careersText) {
+    setTimeout(async () => {
+      await lineClient.pushMessage(event.source.userId, {
+        type: 'text',
+        text: `💼 อาชีพที่เกี่ยวข้องกับคณะที่แนะนำ:${careersText}`
+      });
+    }, 2000);
   }
-  return; // ออกก่อน ไม่ให้ตอบซ้ำ
-  }
-          const dialogflowResult = await detectIntentText(sessionId, userMessage);
+}    
+      return;
+    }
+              const dialogflowResult = await detectIntentText(sessionId, userMessage);
         
           const replyText = dialogflowResult.fulfillmentText || 'ขออภัย ฉันไม่เข้าใจค่ะ';
         
