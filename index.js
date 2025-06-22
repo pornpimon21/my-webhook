@@ -806,6 +806,7 @@ session.recommendations = results.map((r, i) => {
     faculty: r.faculty,
     major: r.major,
     allAbilities: majorInfo.ability.join(", "),
+    careers: majorInfo.careers || [],  // เก็บอาชีพด้วย
     matchedAbilities: r.matchedAbilities.join(", ")
   };
 });
@@ -837,7 +838,9 @@ app.post('/linewebhook',
           const userMessage = event.message.text;
           const sessionId = event.source.userId || uuid.v4();  // LINE user ID ใช้แทน session
 
-    
+     // ดึง session จาก MongoDB
+    const session = await Session.findOne({ sessionId });
+
     // ตรวจว่าเป็นการคลิกจาก Rich Menu หรือไม่
     if (userMessage === 'แนะนำคณะ') {
     // ส่ง "สวัสดี" เข้า Dialogflow เพื่อให้มันเริ่ม intent welcome เหมือนเดิม
@@ -848,20 +851,22 @@ app.post('/linewebhook',
       text: dialogflowResult.fulfillmentText
     });
     
-    // ส่งข้อความที่ 2 (อาชีพ) หลัง delay 1-2 วิ
-    setTimeout(async () => {
-      const careers = majorInfo.careers || [];
-      if (careers.length > 0) {
+ // ส่งอาชีพหลัง delay ถ้ามี recommendations ใน session
+ if (session?.recommendations?.length > 0) {
+  setTimeout(async () => {
+    for (const rec of session.recommendations) {
+      if (rec.careers.length > 0) {
         await lineClient.pushMessage(event.source.userId, {
           type: 'text',
-          text: `💼 อาชีพที่เกี่ยวข้อง:\n• ${careers.join('\n• ')}`
+          text: `💼 อาชีพที่เกี่ยวข้องกับ ${rec.major}:\n• ${rec.careers.join('\n• ')}`
         });
+        await new Promise(r => setTimeout(r, 500)); // delay ระหว่างข้อความ
       }
-    }, 2000);
-    
-    return;
-     }
-
+    }
+  }, 2000);
+  }
+  return; // ออกก่อน ไม่ให้ตอบซ้ำ
+  }
           const dialogflowResult = await detectIntentText(sessionId, userMessage);
         
           const replyText = dialogflowResult.fulfillmentText || 'ขออภัย ฉันไม่เข้าใจค่ะ';
