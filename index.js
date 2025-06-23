@@ -364,62 +364,82 @@ app.post('/linewebhook',
       const events = req.body.events;
       // ทำงานกับ events ตามที่คุณเขียนไว้
       // ตัวอย่าง
-      await Promise.all(events.map(async (event) => {
-        if (event.type === 'message' && event.message.type === 'text') {
-          const userMessage = event.message.text;
-          const sessionId = event.source.userId || uuid.v4();  // LINE user ID ใช้แทน session
+// เพิ่มโค้ดในส่วน event handler ของ /linewebhook
 
-    // ตรวจว่าเป็นการคลิกจาก Rich Menu หรือไม่
+await Promise.all(events.map(async (event) => {
+  if (event.type === 'message' && event.message.type === 'text') {
+    const userMessage = event.message.text;
+    const sessionId = event.source.userId || uuid.v4();
+
+    // เรียก Dialogflow
+    const dialogflowResult = await detectIntentText(sessionId, userMessage);
+
+    // ถ้าผู้ใช้พิมพ์ 'แนะนำคณะ' (หรือข้อความใดๆ ที่ Dialogflow ตอบกลับผลลัพธ์)
     if (userMessage === 'แนะนำคณะ') {
-      const dialogflowResult = await detectIntentText(sessionId, 'สวัสดี');
-    
+      // ส่งข้อความตอบกลับพร้อมปุ่มดูอาชีพ
+ await lineClient.replyMessage(event.replyToken, {
+    type: 'template',
+    altText: 'แนะนำคณะและสาขา',
+    template: {
+      type: 'buttons',
+      text: dialogflowResult.fulfillmentText + '\n\nต้องการดูอาชีพที่เกี่ยวข้องไหม?',
+      actions: [
+        { type: 'postback', label: 'ดูอาชีพ', data: 'action=show_careers' },
+        { type: 'postback', label: 'ไม่ดูอาชีพ', data: 'action=no_careers' }
+      ]
+    }
+  });
+  return;
+}
+    // ถ้าคำสั่งปกติ ให้ตอบจาก Dialogflow
+    await lineClient.replyMessage(event.replyToken, {
+      type: 'text',
+      text: dialogflowResult.fulfillmentText || 'ขออภัย ฉันไม่เข้าใจค่ะ',
+    });
+  } else if (event.type === 'postback') {
+    // Handle postback event
+
+    const sessionId = event.source.userId || uuid.v4();
+    const data = event.postback.data;
+
+    if (data === 'action=show_careers') {
+      // ดึงข้อมูล session จาก DB
+      const session = await Session.findOne({ sessionId });
+
+      if (!session || !session.recommendations || session.recommendations.length === 0) {
+        await lineClient.replyMessage(event.replyToken, {
+          type: 'text',
+          text: '⚠️ ยังไม่มีข้อมูลคณะที่แนะนำ กรุณาพิมพ์ "แนะนำคณะ" ใหม่อีกครั้ง',
+        });
+        return;
+      }
+
+      // สร้างข้อความแสดงอาชีพ
+      let careersText = '';
+      session.recommendations.forEach((rec, index) => {
+        if (rec.careers && rec.careers.length > 0) {
+          careersText += `\n\n📌 อันดับ ${index + 1}: ${rec.faculty} / ${rec.major}\n• ${rec.careers.join('\n• ')}`;
+        }
+      });
+
       await lineClient.replyMessage(event.replyToken, {
         type: 'text',
-        text: dialogflowResult.fulfillmentText
+        text: `นี่คือตัวอย่างอาชีพที่เกี่ยวข้องกับคณะที่เราแนะนำให้คุณครับ/ค่ะ 👇${careersText}`
       });
-    
-// โหลด session เพื่อดึงอาชีพจาก recommendations ทุกอันดับ
-const session = await Session.findOne({ sessionId });
 
-if (session?.recommendations?.length > 0) {
-  let careersText = '';
-
-  session.recommendations.forEach((rec, index) => {
-    console.log(`อันดับ ${index + 1}`, rec); // 👈 ตรวจตรงนี้
-    if (rec.careers?.length > 0) {
-      careersText += `\n\n📌 อันดับ ${index + 1}: ${rec.faculty} / ${rec.major}\n• ${rec.careers.join('\n• ')}`;
+    } else if (data === 'action=no_careers') {
+      await lineClient.replyMessage(event.replyToken, {
+        type: 'text',
+        text: 'ขอบคุณค่ะ หากต้องการข้อมูลอื่นๆ สามารถถามได้เลยนะคะ',
+      });
+    } else {
+      await lineClient.replyMessage(event.replyToken, {
+        type: 'text',
+        text: 'ขออภัย ไม่เข้าใจคำสั่ง กรุณาลองใหม่ค่ะ',
+      });
     }
-  });
-
-  if (careersText) {
-    await lineClient.pushMessage(event.source.userId, {
-      type: 'text',
-      text: `💼 อาชีพที่เกี่ยวข้องกับคณะที่แนะนำ:${careersText}`
-    });
-  } else {
-    await lineClient.pushMessage(event.source.userId, {
-      type: 'text',
-      text: '❗️ไม่พบข้อมูลอาชีพจากคณะที่แนะนำ'
-    });
   }
-} else {
-  await lineClient.pushMessage(event.source.userId, {
-    type: 'text',
-    text: '⚠️ ไม่พบข้อมูลการแนะนำคณะ'
-  });
-}
-      return;
-    }
-              const dialogflowResult = await detectIntentText(sessionId, userMessage);
-        
-          const replyText = dialogflowResult.fulfillmentText || 'ขออภัย ฉันไม่เข้าใจค่ะ';
-        
-          await lineClient.replyMessage(event.replyToken, {
-            type: 'text',
-            text: replyText,
-          });
-        }
-    }));
+}));
 
       res.status(200).send('OK');
     } catch (err) {
