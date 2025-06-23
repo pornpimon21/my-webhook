@@ -344,9 +344,71 @@ session.recommendations = results.map((r, i) => {
 
 // บันทึกลง MongoDB
 await session.save();
-        return res.json({
-      fulfillmentText: reply
-    });
+
+// ตรวจสอบว่ามี replyToken จาก LINE หรือไม่ (มาจาก originalDetectIntentRequest)
+    const replyToken = req.body.originalDetectIntentRequest?.payload?.data?.replyToken;
+
+    if (replyToken) {
+      // ส่งข้อความพร้อม Flex Message ปุ่มดูอาชีพ
+     await lineClient.replyMessage(replyToken, [
+    {
+    type: 'text',
+    text: reply
+    },        
+    {
+          type: 'flex',
+          altText: 'ดูอาชีพที่เกี่ยวข้อง',
+          contents: {
+            type: 'bubble',
+            body: {
+              type: 'box',
+              layout: 'vertical',
+              contents: [
+                {
+                  type: 'text',
+                  text: 'คุณสามารถกดดูอาชีพที่เกี่ยวข้องเพิ่มเติมได้ด้านล่าง',
+                  wrap: true,
+                  size: 'sm',
+                  color: '#666666'
+                }
+              ]
+            },
+            footer: {
+              type: 'box',
+              layout: 'horizontal',
+              spacing: 'sm',
+              contents: [
+                {
+                  type: 'button',
+                  style: 'primary',
+                  color: '#1DB446',
+                  action: {
+                    type: 'postback',
+                    label: 'ดูอาชีพที่เกี่ยวข้อง',
+                    data: 'action=show_careers'
+                  }
+                },
+                {
+                  type: 'button',
+                  style: 'secondary',
+                  action: {
+                    type: 'postback',
+                    label: 'ไม่สนใจ',
+                    data: 'action=no_careers'
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]);
+      return res.status(200).send();
+    }
+    // ถ้าไม่ใช่ LINE ให้ตอบกลับข้อความธรรมดา
+  
+    return res.json({
+  fulfillmentText: reply // ใช้ reply แทน replyText
+   });
   }
 
   return res.json({
@@ -371,31 +433,21 @@ await Promise.all(events.map(async (event) => {
     const userMessage = event.message.text;
     const sessionId = event.source.userId || uuid.v4();
 
-    // เรียก Dialogflow
-    const dialogflowResult = await detectIntentText(sessionId, userMessage);
-
-    // ถ้าผู้ใช้พิมพ์ 'แนะนำคณะ' (หรือข้อความใดๆ ที่ Dialogflow ตอบกลับผลลัพธ์)
     if (userMessage === 'แนะนำคณะ') {
-      // ส่งข้อความตอบกลับพร้อมปุ่มดูอาชีพ
- await lineClient.replyMessage(event.replyToken, {
-    type: 'template',
-    altText: 'แนะนำคณะและสาขา',
-    template: {
-      type: 'buttons',
-      text: dialogflowResult.fulfillmentText + '\n\nต้องการดูอาชีพที่เกี่ยวข้องไหม?',
-      actions: [
-        { type: 'postback', label: 'ดูอาชีพ', data: 'action=show_careers' },
-        { type: 'postback', label: 'ไม่ดูอาชีพ', data: 'action=no_careers' }
-      ]
+      const dialogflowResult = await detectIntentText(sessionId, 'สวัสดี');
+      await lineClient.replyMessage(event.replyToken, {
+        type: 'text',
+        text: dialogflowResult.fulfillmentText
+      });
+      return;
     }
-  });
-  return;
-}
-    // ถ้าคำสั่งปกติ ให้ตอบจาก Dialogflow
+
+    const dialogflowResult = await detectIntentText(sessionId, userMessage);
     await lineClient.replyMessage(event.replyToken, {
       type: 'text',
       text: dialogflowResult.fulfillmentText || 'ขออภัย ฉันไม่เข้าใจค่ะ',
     });
+  
   } else if (event.type === 'postback') {
     // Handle postback event
 
