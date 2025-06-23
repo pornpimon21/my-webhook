@@ -56,7 +56,6 @@ async function detectIntentText(sessionId, text, languageCode = 'th') {
 }
 
 // ข้อมูลคณะและสาขา
-// ข้อมูลคณะและสาขา
 const faculties = [
   {
     name: 'คณะครุศาสตร์',
@@ -99,7 +98,7 @@ const faculties = [
         ]
       }
     ]
-  }
+  },
 ];
 
 // ฟังก์ชันเปรียบเทียบความใกล้เคียง
@@ -344,71 +343,9 @@ session.recommendations = results.map((r, i) => {
 
 // บันทึกลง MongoDB
 await session.save();
-
-// ตรวจสอบว่ามี replyToken จาก LINE หรือไม่ (มาจาก originalDetectIntentRequest)
-    const replyToken = req.body.originalDetectIntentRequest?.payload?.data?.replyToken;
-
-    if (replyToken) {
-      // ส่งข้อความพร้อม Flex Message ปุ่มดูอาชีพ
-     await lineClient.replyMessage(replyToken, [
-    {
-    type: 'text',
-    text: reply
-    },        
-    {
-          type: 'flex',
-          altText: 'ดูอาชีพที่เกี่ยวข้อง',
-          contents: {
-            type: 'bubble',
-            body: {
-              type: 'box',
-              layout: 'vertical',
-              contents: [
-                {
-                  type: 'text',
-                  text: 'คุณสามารถกดดูอาชีพที่เกี่ยวข้องเพิ่มเติมได้ด้านล่าง',
-                  wrap: true,
-                  size: 'sm',
-                  color: '#666666'
-                }
-              ]
-            },
-            footer: {
-              type: 'box',
-              layout: 'horizontal',
-              spacing: 'sm',
-              contents: [
-                {
-                  type: 'button',
-                  style: 'primary',
-                  color: '#1DB446',
-                  action: {
-                    type: 'postback',
-                    label: 'ดูอาชีพที่เกี่ยวข้อง',
-                    data: 'action=show_careers'
-                  }
-                },
-                {
-                  type: 'button',
-                  style: 'secondary',
-                  action: {
-                    type: 'postback',
-                    label: 'ไม่สนใจ',
-                    data: 'action=no_careers'
-                  }
-                }
-              ]
-            }
-          }
-        }
-      ]);
-      return res.status(200).send();
-    }
-    // ถ้าไม่ใช่ LINE ให้ตอบกลับข้อความธรรมดา
-  
-    return res.json({
-  fulfillmentText: reply // ใช้ reply แทน replyText
-   });
+        return res.json({
+      fulfillmentText: reply
+    });
   }
 
   return res.json({
@@ -419,79 +356,106 @@ await session.save();
 // --- เริ่มเพิ่มโค้ด LINE bot ที่นี่ ---
 // สำหรับ LINE webhook ต้องใช้ express.raw() เพื่อให้ middleware ตรวจสอบ signature ได้ถูกต้อง
 app.post('/linewebhook',
-  express.raw({ type: 'application/json' }), // ต้อง parse raw body แบบนี้ก่อน
+  express.raw({ type: 'application/json' }),
   line.middleware(lineConfig),
   async (req, res) => {
     try {
       const events = req.body.events;
-      // ทำงานกับ events ตามที่คุณเขียนไว้
-      // ตัวอย่าง
-// เพิ่มโค้ดในส่วน event handler ของ /linewebhook
 
-await Promise.all(events.map(async (event) => {
-  if (event.type === 'message' && event.message.type === 'text') {
-    const userMessage = event.message.text;
-    const sessionId = event.source.userId || uuid.v4();
+      await Promise.all(events.map(async (event) => {
+        if (event.type === 'message' && event.message.type === 'text') {
+          const userMessage = event.message.text.trim();
+          const sessionId = event.source.userId || uuid.v4();
 
-    if (userMessage === 'แนะนำคณะ') {
-      const dialogflowResult = await detectIntentText(sessionId, 'สวัสดี');
-      await lineClient.replyMessage(event.replyToken, {
-        type: 'text',
-        text: dialogflowResult.fulfillmentText
-      });
-      return;
-    }
+          // ✅ Intent เริ่มต้น
+          if (userMessage === 'แนะนำคณะ') {
+            const dialogflowResult = await detectIntentText(sessionId, 'สวัสดี');
 
-    const dialogflowResult = await detectIntentText(sessionId, userMessage);
-    await lineClient.replyMessage(event.replyToken, {
-      type: 'text',
-      text: dialogflowResult.fulfillmentText || 'ขออภัย ฉันไม่เข้าใจค่ะ',
-    });
-  
-  } else if (event.type === 'postback') {
-    // Handle postback event
+            // ส่งข้อความตอบกลับจาก Dialogflow
+            await lineClient.replyMessage(event.replyToken, {
+              type: 'text',
+              text: dialogflowResult.fulfillmentText,
+            });
 
-    const sessionId = event.source.userId || uuid.v4();
-    const data = event.postback.data;
+            // ส่งปุ่มให้เลือกดูอาชีพหรือไม่
+            await lineClient.pushMessage(event.source.userId, {
+              type: 'template',
+              altText: 'คุณต้องการดูอาชีพที่เกี่ยวข้องหรือไม่?',
+              template: {
+                type: 'buttons',
+                text: 'คุณต้องการดูอาชีพที่เกี่ยวข้องกับคณะที่แนะนำหรือไม่?',
+                actions: [
+                  {
+                    type: 'message',
+                    label: 'ดูอาชีพหลังเรียนจบ',
+                    text: 'ดูอาชีพหลังเรียนจบ'
+                  },
+                  {
+                    type: 'message',
+                    label: 'ไม่ดูตอนนี้',
+                    text: 'ไม่ดูตอนนี้'
+                  }
+                ]
+              }
+            });
 
-    if (data === 'action=show_careers') {
-      // ดึงข้อมูล session จาก DB
-      const session = await Session.findOne({ sessionId });
+            return;
+          }
 
-      if (!session || !session.recommendations || session.recommendations.length === 0) {
-        await lineClient.replyMessage(event.replyToken, {
-          type: 'text',
-          text: '⚠️ ยังไม่มีข้อมูลคณะที่แนะนำ กรุณาพิมพ์ "แนะนำคณะ" ใหม่อีกครั้ง',
-        });
-        return;
-      }
+          // ✅ กรณีดูอาชีพ
+          if (userMessage === 'ดูอาชีพหลังเรียนจบ') {
+            const session = await Session.findOne({ sessionId });
 
-      // สร้างข้อความแสดงอาชีพ
-      let careersText = '';
-      session.recommendations.forEach((rec, index) => {
-        if (rec.careers && rec.careers.length > 0) {
-          careersText += `\n\n📌 อันดับ ${index + 1}: ${rec.faculty} / ${rec.major}\n• ${rec.careers.join('\n• ')}`;
+            if (session?.recommendations?.length > 0) {
+              let careersText = '';
+
+              session.recommendations.forEach((rec, index) => {
+                if (rec.careers?.length > 0) {
+                  careersText += `\n\n📌 อันดับ ${index + 1}: ${rec.faculty} / ${rec.major}\n• ${rec.careers.join('\n• ')}`;
+                }
+              });
+
+              if (careersText) {
+                await lineClient.replyMessage(event.replyToken, {
+                  type: 'text',
+                  text: `💼 อาชีพที่เกี่ยวข้องกับคณะที่แนะนำ:${careersText}`
+                });
+              } else {
+                await lineClient.replyMessage(event.replyToken, {
+                  type: 'text',
+                  text: '❗️ไม่พบข้อมูลอาชีพจากคณะที่แนะนำ'
+                });
+              }
+            } else {
+              await lineClient.replyMessage(event.replyToken, {
+                type: 'text',
+                text: '⚠️ ไม่พบข้อมูลการแนะนำคณะ'
+              });
+            }
+            return;
+          }
+
+          // ✅ กรณีไม่ดูตอนนี้
+          if (userMessage === 'ไม่ดูตอนนี้') {
+            await lineClient.replyMessage(event.replyToken, {
+              type: 'text',
+              text: `ไม่เป็นไรค่ะ 😊\nหากคุณต้องการดูข้อมูลอาชีพที่เกี่ยวข้องในภายหลัง\nสามารถพิมพ์ว่า "ดูอาชีพหลังเรียนจบ" ได้ตลอดเวลานะคะ`
+            });
+            return;
+          }
+
+          // ✅ กรณีข้อความอื่น
+          const fallbackText = `ขออภัยค่ะ ระบบยังไม่เข้าใจข้อความนี้\nหากต้องการดูอาชีพที่เกี่ยวข้องกับคณะที่แนะนำ\nพิมพ์ว่า "ดูอาชีพหลังเรียนจบ" ได้เลยนะคะ 🙏`;
+
+          const dialogflowResult = await detectIntentText(sessionId, userMessage);
+          const replyText = dialogflowResult.fulfillmentText || fallbackText;
+
+          await lineClient.replyMessage(event.replyToken, {
+            type: 'text',
+            text: replyText,
+          });
         }
-      });
-
-      await lineClient.replyMessage(event.replyToken, {
-        type: 'text',
-        text: `นี่คือตัวอย่างอาชีพที่เกี่ยวข้องกับคณะที่เราแนะนำให้คุณครับ/ค่ะ 👇${careersText}`
-      });
-
-    } else if (data === 'action=no_careers') {
-      await lineClient.replyMessage(event.replyToken, {
-        type: 'text',
-        text: 'ขอบคุณค่ะ หากต้องการข้อมูลอื่นๆ สามารถถามได้เลยนะคะ',
-      });
-    } else {
-      await lineClient.replyMessage(event.replyToken, {
-        type: 'text',
-        text: 'ขออภัย ไม่เข้าใจคำสั่ง กรุณาลองใหม่ค่ะ',
-      });
-    }
-  }
-}));
+      }));
 
       res.status(200).send('OK');
     } catch (err) {
