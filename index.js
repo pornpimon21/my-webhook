@@ -88,6 +88,18 @@ const faculties = [
       }
     ]
   },
+  { name : 'วิทยาลัยน่าน',
+    majors: [
+      { 
+        name : 'การจัดการ', 
+        grade : null, 
+        ability: ['บริหารธุรกิจ', 'การตลาด', 'การจัดการ', 'การวางแผน', 'การเป็นผู้ประกอบการ', 'การขาย', 'การบริหาร', 'การจัดการ', 'การสื่อสาร', 'ตัดสินใจและแก้ปัญหา'], 
+        quota: 40, 
+        condition: "มัธยมศึกษาตอนปลายหรือเทียบเท่าทุกแผนการเรียน",
+        reason : ''
+      }
+    ]
+  },
 ];
 
 // ฟังก์ชันเปรียบเทียบความใกล้เคียง
@@ -373,28 +385,32 @@ if (session?.recommendations?.length > 0) {
   let careersText = '';
 
   session.recommendations.forEach((rec, index) => {
-    console.log(`อันดับ ${index + 1}`, rec); // ตรวจสอบข้อมูลแต่ละอันดับ
-    careersText += `\n\n📌 อันดับ ${index + 1}: ${rec.faculty} / ${rec.major}\n`;
+    console.log(`อันดับ ${index + 1}`, rec); // 👈 ตรวจตรงนี้
     if (rec.careers?.length > 0) {
-      careersText += `• ${rec.careers.join('\n• ')}`;
-    } else {
-      careersText += '❗️ ยังไม่มีข้อมูลอาชีพสำหรับสาขานี้';
+      careersText += `\n\n📌 อันดับ ${index + 1}: ${rec.faculty} / ${rec.major}\n• ${rec.careers.join('\n• ')}`;
     }
   });
 
-  await lineClient.pushMessage(event.source.userId, {
-    type: 'text',
-    text: `💼 อาชีพที่เกี่ยวข้องกับคณะที่แนะนำ:${careersText}`
-  });
+  if (careersText) {
+    await lineClient.pushMessage(event.source.userId, {
+      type: 'text',
+      text: `💼 อาชีพที่เกี่ยวข้องกับคณะที่แนะนำ:${careersText}`
+    });
+  } else {
+    await lineClient.pushMessage(event.source.userId, {
+      type: 'text',
+      text: '❗️ไม่พบข้อมูลอาชีพจากคณะที่แนะนำ'
+    });
+  }
 } else {
   await lineClient.pushMessage(event.source.userId, {
     type: 'text',
     text: '⚠️ ไม่พบข้อมูลการแนะนำคณะ'
   });
 }
-return;
-}
-          const dialogflowResult = await detectIntentText(sessionId, userMessage);
+      return;
+    }
+              const dialogflowResult = await detectIntentText(sessionId, userMessage);
         
           const replyText = dialogflowResult.fulfillmentText || 'ขออภัย ฉันไม่เข้าใจค่ะ';
         
