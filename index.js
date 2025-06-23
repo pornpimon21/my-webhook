@@ -899,6 +899,9 @@ if (session?.recommendations?.length > 0) {
 );
 // --- จบโค้ด LINE bot --- ใชไหม 
 
+
+
+
 app.listen(PORT, () => {
   console.log(`✅ Server running at http://localhost:${PORT}`);
 });
