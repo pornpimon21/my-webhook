@@ -56,6 +56,7 @@ async function detectIntentText(sessionId, text, languageCode = 'th') {
 }
 
 // ข้อมูลคณะและสาขา
+// ข้อมูลคณะและสาขา
 const faculties = [
   {
     name: 'คณะครุศาสตร์',
@@ -363,60 +364,53 @@ app.post('/linewebhook',
       const events = req.body.events;
       // ทำงานกับ events ตามที่คุณเขียนไว้
       // ตัวอย่าง
-  await Promise.all(events.map(async (event) => {
-  let dialogflowResult = { fulfillmentText: '' };
+      await Promise.all(events.map(async (event) => {
         if (event.type === 'message' && event.message.type === 'text') {
           const userMessage = event.message.text;
           const sessionId = event.source.userId || uuid.v4();  // LINE user ID ใช้แทน session
 
-// ตรวจว่าเป็นการคลิกจาก Rich Menu หรือไม่
-if (userMessage === 'แนะนำคณะ') {
-  const dialogflowResult = await detectIntentText(sessionId, 'สวัสดี');
+    // ตรวจว่าเป็นการคลิกจาก Rich Menu หรือไม่
+    if (userMessage === 'แนะนำคณะ') {
+      const dialogflowResult = await detectIntentText(sessionId, 'สวัสดี');
+    
+      await lineClient.replyMessage(event.replyToken, {
+        type: 'text',
+        text: dialogflowResult.fulfillmentText
+      });
+    
+// โหลด session เพื่อดึงอาชีพจาก recommendations ทุกอันดับ
+const session = await Session.findOne({ sessionId });
 
-  await lineClient.replyMessage(event.replyToken, {
-    type: 'text',
-    text: dialogflowResult.fulfillmentText
-  });
-
-  const session = await Session.findOne({ sessionId });
-
-  if (!session || !session.recommendations || session.recommendations.length === 0) {
-    await lineClient.pushMessage(event.source.userId, {
-      type: 'text',
-      text: '⚠️ ยังไม่มีข้อมูลคณะที่แนะนำ กรุณาพิมพ์ใหม่อีกครั้ง เช่น "เริ่มต้น"'
-    });
-    return;
-  }
-
-  // ✅ ใส่ตรงนี้
-  const hasCareerData = session.recommendations.some(r => r.careers && r.careers.length > 0);
-  if (!hasCareerData) {
-    await lineClient.pushMessage(event.source.userId, {
-      type: 'text',
-      text: '❗️ไม่พบข้อมูลอาชีพจากคณะที่แนะนำ'
-    });
-    return;
-  }
-
-  // 📝 สร้างข้อความส่งกลับ
+if (session?.recommendations?.length > 0) {
   let careersText = '';
+
   session.recommendations.forEach((rec, index) => {
+    console.log(`อันดับ ${index + 1}`, rec); // 👈 ตรวจตรงนี้
     if (rec.careers?.length > 0) {
       careersText += `\n\n📌 อันดับ ${index + 1}: ${rec.faculty} / ${rec.major}\n• ${rec.careers.join('\n• ')}`;
     }
   });
-  await lineClient.pushMessage(event.source.userId, {
-  type: 'text',
-  text: `นี่คือตัวอย่างอาชีพที่เกี่ยวข้องกับคณะที่เราแนะนำให้คุณครับ/ค่ะ 👇`
-  });
 
+  if (careersText) {
+    await lineClient.pushMessage(event.source.userId, {
+      type: 'text',
+      text: `💼 อาชีพที่เกี่ยวข้องกับคณะที่แนะนำ:${careersText}`
+    });
+  } else {
+    await lineClient.pushMessage(event.source.userId, {
+      type: 'text',
+      text: '❗️ไม่พบข้อมูลอาชีพจากคณะที่แนะนำ'
+    });
+  }
+} else {
   await lineClient.pushMessage(event.source.userId, {
     type: 'text',
-    text: `💼 อาชีพที่เกี่ยวข้องกับคณะที่แนะนำ:${careersText}`
+    text: '⚠️ ไม่พบข้อมูลการแนะนำคณะ'
   });
-
-  return;
 }
+      return;
+    }
+              const dialogflowResult = await detectIntentText(sessionId, userMessage);
         
           const replyText = dialogflowResult.fulfillmentText || 'ขออภัย ฉันไม่เข้าใจค่ะ';
         
