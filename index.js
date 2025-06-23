@@ -367,41 +367,40 @@ app.post('/linewebhook',
           const userMessage = event.message.text.trim();
           const sessionId = event.source.userId || uuid.v4();
 
-          // ✅ Intent เริ่มต้น
-          if (userMessage === 'แนะนำคณะ') {
-            const dialogflowResult = await detectIntentText(sessionId, 'สวัสดี');
+// ✅ Intent เริ่มต้น
+if (userMessage === 'แนะนำคณะ') {
+  const dialogflowResult = await detectIntentText(sessionId, 'สวัสดี');
 
-            // ส่งข้อความตอบกลับจาก Dialogflow
-            await lineClient.replyMessage(event.replyToken, {
-              type: 'text',
-              text: dialogflowResult.fulfillmentText,
-            });
-
-            // ส่งปุ่มให้เลือกดูอาชีพหรือไม่
-            await lineClient.pushMessage(event.source.userId, {
-              type: 'template',
-              altText: 'คุณต้องการดูอาชีพที่เกี่ยวข้องหรือไม่?',
-              template: {
-                type: 'buttons',
-                text: 'คุณต้องการดูอาชีพที่เกี่ยวข้องกับคณะที่แนะนำหรือไม่?',
-                actions: [
-                  {
-                    type: 'message',
-                    label: 'ดูอาชีพหลังเรียนจบ',
-                    text: 'ดูอาชีพหลังเรียนจบ'
-                  },
-                  {
-                    type: 'message',
-                    label: 'ไม่ดูตอนนี้',
-                    text: 'ไม่ดูตอนนี้'
-                  }
-                ]
-              }
-            });
-
-            return;
+  // ส่งข้อความและปุ่มใน replyMessage เดียวกัน
+  await lineClient.replyMessage(event.replyToken, [
+    {
+      type: 'text',
+      text: dialogflowResult.fulfillmentText,
+    },
+    {
+      type: 'template',
+      altText: 'คุณต้องการดูอาชีพที่เกี่ยวข้องหรือไม่?',
+      template: {
+        type: 'buttons',
+        text: 'คุณต้องการดูอาชีพที่เกี่ยวข้องกับคณะที่แนะนำหรือไม่?',
+        actions: [
+          {
+            type: 'message',
+            label: 'ดูอาชีพหลังเรียนจบ',
+            text: 'ดูอาชีพหลังเรียนจบ'
+          },
+          {
+            type: 'message',
+            label: 'ไม่ดูตอนนี้',
+            text: 'ไม่ดูตอนนี้'
           }
+        ]
+      }
+    }
+  ]);
 
+  return;
+}
           // ✅ กรณีดูอาชีพ
           if (userMessage === 'ดูอาชีพหลังเรียนจบ') {
             const session = await Session.findOne({ sessionId });
