@@ -363,7 +363,8 @@ app.post('/linewebhook',
       const events = req.body.events;
       // ทำงานกับ events ตามที่คุณเขียนไว้
       // ตัวอย่าง
-      await Promise.all(events.map(async (event) => {
+  await Promise.all(events.map(async (event) => {
+  let dialogflowResult = { fulfillmentText: '' };
         if (event.type === 'message' && event.message.type === 'text') {
           const userMessage = event.message.text;
           const sessionId = event.source.userId || uuid.v4();  // LINE user ID ใช้แทน session
@@ -404,7 +405,6 @@ if (userMessage === 'แนะนำคณะ') {
       careersText += `\n\n📌 อันดับ ${index + 1}: ${rec.faculty} / ${rec.major}\n• ${rec.careers.join('\n• ')}`;
     }
   });
-  
   await lineClient.pushMessage(event.source.userId, {
   type: 'text',
   text: `นี่คือตัวอย่างอาชีพที่เกี่ยวข้องกับคณะที่เราแนะนำให้คุณครับ/ค่ะ 👇`
