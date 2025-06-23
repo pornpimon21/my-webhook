@@ -39,11 +39,6 @@ const lineClient = new line.Client(lineConfig);
 const projectId = process.env.DIALOGFLOW_PROJECT_ID;
 const sessionClient = new SessionsClient();
 
-function createSessionId(userId) {
-  return `projects/${projectId}/agent/sessions/${userId}`;
-}
-
-
 async function detectIntentText(sessionId, text, languageCode = 'th') {
   const sessionPath = sessionClient.projectAgentSessionPath(projectId, sessionId);
   const request = {
@@ -372,8 +367,8 @@ app.post('/linewebhook',
       await Promise.all(events.map(async (event) => {
         if (event.type === 'message' && event.message.type === 'text') {
           const userMessage = event.message.text;
-          const sessionId = createSessionId(event.source.userId);
-
+          const sessionId = event.source.userId || uuid.v4();  // LINE user ID ใช้แทน session     
+          
     // ตรวจว่าเป็นการคลิกจาก Rich Menu หรือไม่
 if (userMessage === 'แนะนำคณะ') {
   const dialogflowResult = await detectIntentText(sessionId, 'สวัสดี');
