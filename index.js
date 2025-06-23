@@ -39,6 +39,11 @@ const lineClient = new line.Client(lineConfig);
 const projectId = process.env.DIALOGFLOW_PROJECT_ID;
 const sessionClient = new SessionsClient();
 
+function createSessionId(userId) {
+  return `projects/${projectId}/agent/sessions/${userId}`;
+}
+
+
 async function detectIntentText(sessionId, text, languageCode = 'th') {
   const sessionPath = sessionClient.projectAgentSessionPath(projectId, sessionId);
   const request = {
@@ -367,7 +372,7 @@ app.post('/linewebhook',
       await Promise.all(events.map(async (event) => {
         if (event.type === 'message' && event.message.type === 'text') {
           const userMessage = event.message.text;
-          const sessionId = event.source.userId || uuid.v4();  // LINE user ID ใช้แทน session
+          const sessionId = createSessionId(event.source.userId);
 
     // ตรวจว่าเป็นการคลิกจาก Rich Menu หรือไม่
 if (userMessage === 'แนะนำคณะ') {
@@ -385,14 +390,16 @@ if (userMessage === 'แนะนำคณะ') {
   await new Promise(resolve => setTimeout(resolve, 2000));
 
   // โหลด session แล้วส่งข้อความอาชีพ
-  const session = await Session.findOne({ sessionId });
+const session = await Session.findOne({ sessionId });
+console.log('Session recommendations:', session?.recommendations);
   if (session?.recommendations?.length > 0) {
-    let careersText = '';
-    session.recommendations.forEach((rec, index) => {
-      if (rec.careers?.length > 0) {
-        careersText += `\n\n📌 อันดับ ${index + 1}: ${rec.faculty} / ${rec.major}\n• ${rec.careers.join('\n• ')}`;
-      }
-    });
+let careersText = '';
+session.recommendations.forEach((rec, index) => {
+  console.log(`Recommendation ${index + 1} careers:`, rec.careers);
+  if (Array.isArray(rec.careers) && rec.careers.length > 0) {
+    careersText += `\n\n📌 อันดับ ${index + 1}: ${rec.faculty} / ${rec.major}\n• ${rec.careers.join('\n• ')}`;
+  }
+});
 
     if (careersText) {
       await lineClient.pushMessage(event.source.userId, {
