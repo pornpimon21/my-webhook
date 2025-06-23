@@ -854,19 +854,28 @@ if (session?.recommendations?.length > 0) {
   let careersText = '';
 
   session.recommendations.forEach((rec, index) => {
+    console.log(`อันดับ ${index + 1}`, rec); // 👈 ตรวจตรงนี้
     if (rec.careers?.length > 0) {
       careersText += `\n\n📌 อันดับ ${index + 1}: ${rec.faculty} / ${rec.major}\n• ${rec.careers.join('\n• ')}`;
     }
   });
 
   if (careersText) {
-    setTimeout(async () => {
-      await lineClient.pushMessage(event.source.userId, {
-        type: 'text',
-        text: `💼 อาชีพที่เกี่ยวข้องกับคณะที่แนะนำ:${careersText}`
-      });
-    }, 2000);
+    await lineClient.pushMessage(event.source.userId, {
+      type: 'text',
+      text: `💼 อาชีพที่เกี่ยวข้องกับคณะที่แนะนำ:${careersText}`
+    });
+  } else {
+    await lineClient.pushMessage(event.source.userId, {
+      type: 'text',
+      text: '❗️ไม่พบข้อมูลอาชีพจากคณะที่แนะนำ'
+    });
   }
+} else {
+  await lineClient.pushMessage(event.source.userId, {
+    type: 'text',
+    text: '⚠️ ไม่พบข้อมูลการแนะนำคณะ'
+  });
 }
       return;
     }
@@ -888,7 +897,8 @@ if (session?.recommendations?.length > 0) {
     }
   }
 );
-// --- จบโค้ด LINE bot ---
+// --- จบโค้ด LINE bot --- ใชไหม 
+
 
 
 
