@@ -88,18 +88,6 @@ const faculties = [
       }
     ]
   },
-  { name : 'วิทยาลัยน่าน',
-    majors: [
-      { 
-        name : 'การจัดการ', 
-        grade : null, 
-        ability: ['บริหารธุรกิจ', 'การตลาด', 'การจัดการ', 'การวางแผน', 'การเป็นผู้ประกอบการ', 'การขาย', 'การบริหาร', 'การจัดการ', 'การสื่อสาร', 'ตัดสินใจและแก้ปัญหา'], 
-        quota: 40, 
-        condition: "มัธยมศึกษาตอนปลายหรือเทียบเท่าทุกแผนการเรียน",
-        reason : ''
-      }
-    ]
-  },
 ];
 
 // ฟังก์ชันเปรียบเทียบความใกล้เคียง
@@ -368,57 +356,48 @@ app.post('/linewebhook',
         if (event.type === 'message' && event.message.type === 'text') {
           const userMessage = event.message.text;
           const sessionId = event.source.userId || uuid.v4();  // LINE user ID ใช้แทน session
-          
+
     // ตรวจว่าเป็นการคลิกจาก Rich Menu หรือไม่
-if (userMessage === 'แนะนำคณะ') {
-  const dialogflowResult = await detectIntentText(sessionId, 'สวัสดี');
-  
-  const reply = dialogflowResult.fulfillmentText;
-
-  // ส่งข้อความแนะนำคณะก่อน
-  await lineClient.replyMessage(event.replyToken, {
-    type: 'text',
-    text: reply
-  });
-
-  // หน่วง 2 วินาทีก่อนส่งข้อความอาชีพ
-  await new Promise(resolve => setTimeout(resolve, 2000));
-
-// โหลด session แล้วส่งข้อความอาชีพ
+    if (userMessage === 'แนะนำคณะ') {
+      const dialogflowResult = await detectIntentText(sessionId, 'สวัสดี');
+    
+      await lineClient.replyMessage(event.replyToken, {
+        type: 'text',
+        text: dialogflowResult.fulfillmentText
+      });
+    
+// โหลด session เพื่อดึงอาชีพจาก recommendations ทุกอันดับ
 const session = await Session.findOne({ sessionId });
-console.log('Loaded session:', session);
 
 if (session?.recommendations?.length > 0) {
   let careersText = '';
+
   session.recommendations.forEach((rec, index) => {
-    console.log(`Recommendation ${index + 1} careers:`, rec.careers);
-    if (Array.isArray(rec.careers) && rec.careers.length > 0) {
+    console.log(`อันดับ ${index + 1}`, rec); // 👈 ตรวจตรงนี้
+    if (rec.careers?.length > 0) {
       careersText += `\n\n📌 อันดับ ${index + 1}: ${rec.faculty} / ${rec.major}\n• ${rec.careers.join('\n• ')}`;
     }
   });
 
   if (careersText) {
-    console.log('Sending careers message:', careersText);
     await lineClient.pushMessage(event.source.userId, {
       type: 'text',
       text: `💼 อาชีพที่เกี่ยวข้องกับคณะที่แนะนำ:${careersText}`
     });
   } else {
-    console.log('No careers found in recommendations');
     await lineClient.pushMessage(event.source.userId, {
       type: 'text',
       text: '❗️ไม่พบข้อมูลอาชีพจากคณะที่แนะนำ'
     });
   }
 } else {
-  console.log('No recommendations found in session');
   await lineClient.pushMessage(event.source.userId, {
     type: 'text',
     text: '⚠️ ไม่พบข้อมูลการแนะนำคณะ'
   });
 }
-  return;
-}
+      return;
+    }
               const dialogflowResult = await detectIntentText(sessionId, userMessage);
         
           const replyText = dialogflowResult.fulfillmentText || 'ขออภัย ฉันไม่เข้าใจค่ะ';
