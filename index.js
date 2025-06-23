@@ -175,7 +175,7 @@ async function saveSession(session) {
 }
 
 // Webhook Endpoint
-//app.use('/webhook', express.json());//
+app.use('/webhook', express.json());//
 app.post("/webhook", async (req, res) => {
   const eventId = req.body.originalDetectIntentRequest?.payload?.data?.webhookEventId;
 
