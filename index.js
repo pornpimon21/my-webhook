@@ -39,11 +39,6 @@ const lineClient = new line.Client(lineConfig);
 const projectId = process.env.DIALOGFLOW_PROJECT_ID;
 const sessionClient = new SessionsClient();
 
-function createSessionId(userId) {
-  return `projects/${projectId}/agent/sessions/${userId}`;
-}
-
-
 async function detectIntentText(sessionId, text, languageCode = 'th') {
   const sessionPath = sessionClient.projectAgentSessionPath(projectId, sessionId);
   const request = {
@@ -372,7 +367,7 @@ app.post('/linewebhook',
       await Promise.all(events.map(async (event) => {
         if (event.type === 'message' && event.message.type === 'text') {
           const userMessage = event.message.text;
-          const sessionId = createSessionId(event.source.userId);
+          const sessionId = event.source.userId || uuid.v4();  // LINE user ID ใช้แทน session
           
     // ตรวจว่าเป็นการคลิกจาก Rich Menu หรือไม่
 if (userMessage === 'แนะนำคณะ') {
@@ -389,36 +384,39 @@ if (userMessage === 'แนะนำคณะ') {
   // หน่วง 2 วินาทีก่อนส่งข้อความอาชีพ
   await new Promise(resolve => setTimeout(resolve, 2000));
 
-  // โหลด session แล้วส่งข้อความอาชีพ
+// โหลด session แล้วส่งข้อความอาชีพ
 const session = await Session.findOne({ sessionId });
-console.log('Session recommendations:', session?.recommendations);
-  if (session?.recommendations?.length > 0) {
-let careersText = '';
-session.recommendations.forEach((rec, index) => {
-  console.log(`Recommendation ${index + 1} careers:`, rec.careers);
-  if (Array.isArray(rec.careers) && rec.careers.length > 0) {
-    careersText += `\n\n📌 อันดับ ${index + 1}: ${rec.faculty} / ${rec.major}\n• ${rec.careers.join('\n• ')}`;
-  }
-});
+console.log('Loaded session:', session);
 
-    if (careersText) {
-      await lineClient.pushMessage(event.source.userId, {
-        type: 'text',
-        text: `💼 อาชีพที่เกี่ยวข้องกับคณะที่แนะนำ:${careersText}`
-      });
-    } else {
-      await lineClient.pushMessage(event.source.userId, {
-        type: 'text',
-        text: '❗️ไม่พบข้อมูลอาชีพจากคณะที่แนะนำ'
-      });
+if (session?.recommendations?.length > 0) {
+  let careersText = '';
+  session.recommendations.forEach((rec, index) => {
+    console.log(`Recommendation ${index + 1} careers:`, rec.careers);
+    if (Array.isArray(rec.careers) && rec.careers.length > 0) {
+      careersText += `\n\n📌 อันดับ ${index + 1}: ${rec.faculty} / ${rec.major}\n• ${rec.careers.join('\n• ')}`;
     }
-  } else {
+  });
+
+  if (careersText) {
+    console.log('Sending careers message:', careersText);
     await lineClient.pushMessage(event.source.userId, {
       type: 'text',
-      text: '⚠️ ไม่พบข้อมูลการแนะนำคณะ'
+      text: `💼 อาชีพที่เกี่ยวข้องกับคณะที่แนะนำ:${careersText}`
+    });
+  } else {
+    console.log('No careers found in recommendations');
+    await lineClient.pushMessage(event.source.userId, {
+      type: 'text',
+      text: '❗️ไม่พบข้อมูลอาชีพจากคณะที่แนะนำ'
     });
   }
-
+} else {
+  console.log('No recommendations found in session');
+  await lineClient.pushMessage(event.source.userId, {
+    type: 'text',
+    text: '⚠️ ไม่พบข้อมูลการแนะนำคณะ'
+  });
+}
   return;
 }
               const dialogflowResult = await detectIntentText(sessionId, userMessage);
