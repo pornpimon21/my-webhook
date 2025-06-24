@@ -283,9 +283,9 @@ results.forEach((r, i) => {
 
   // ทำข้อความอาชีพให้อ่านง่าย (ถ้ามี)
   let careersText = "";
-  if (r.careers && r.careers.length > 0) {
+  if (majorInfo.careers && majorInfo.careers.length > 0) {
     careersText = "💼 อาชีพที่เกี่ยวข้อง:\n";
-    careersText += r.careers.map(career => `  • ${career}`).join("\n") + "\n";
+    careersText += majorInfo.careers.map(career => `  • ${career}`).join("\n") + "\n";
   }
 
   reply += `\n━━━━━━━━━━━━━━━━━━━━\n` + // เส้นแบ่งก่อนแต่ละอันดับ
