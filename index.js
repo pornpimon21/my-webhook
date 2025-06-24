@@ -347,7 +347,7 @@ app.post("/webhook", async (req, res) => {
                   type: 'buttons',
                   title: '📌 อาชีพที่เกี่ยวข้อง',
                   text: 'เลือกอันดับที่คุณต้องการดูอาชีพ',
-                  actions: session.recommendations.slice(0, 5).map(r => ({
+                  actions: session.recommendations.slice(0, 3).map(r => ({
                     type: 'postback',
                     label: `อันดับ ${r.rank}`,
                     data: `career|${r.rank}`
