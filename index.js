@@ -172,8 +172,8 @@ app.post("/webhook", async (req, res) => {
     }
   }  const intent = req.body.queryResult?.intent?.displayName || "";
    const params = req.body.queryResult?.parameters || {};
-   const sessionId = req.body.session;
-
+   const sessionId = req.body.session || "default-session";
+   
    const session = await getSession(sessionId);
    session.sessionId = sessionId;  // เซ็ตที่นี่แค่ครั้งเดียว  
 
@@ -353,9 +353,7 @@ app.post('/linewebhook',
       await Promise.all(events.map(async (event) => {
         if (event.type === 'message' && event.message.type === 'text') {
           const userMessage = event.message.text;
-          const sessionId = `projects/chatboturu/agent/sessions/${event.source.userId}`;
-          const session = await getSession(sessionId);
-          console.log(session);  // หรือใช้ข้อมูล session ที่ได้
+          const sessionId = event.source.userId || uuid.v4();  // LINE user ID ใช้แทน session
 
           // ถ้าผู้ใช้พิมพ์ "แนะนำคณะ" ให้ส่งข้อความต้อนรับ Dialogflow
           if (userMessage === 'แนะนำคณะ') {
