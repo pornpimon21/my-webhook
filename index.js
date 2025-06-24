@@ -60,44 +60,32 @@ const faculties = [
   {
     name: 'คณะครุศาสตร์',
     majors: [
-      {
-        name: 'ภาษาไทย',
-        grade: 2.75,
-        ability: [
-          'ภาษาไทย', 'สอน', 'ครู', 'รักเด็ก', 'เข้าใจในการสอน',
-          'การเขียน', 'สื่อสาร', 'วรรณกรรม', 'การอ่าน', 'จับใจความ',
-          'ไวยากรณ์', 'เรียบเรียง'
-        ],
-        quota: 60,
-        condition: 'มัธยมศึกษาตอนปลายหรือเทียบเท่าทุกแผนการเรียน เกรดวิชาภาษาไทยไม่ต่ำกว่า 3.0',
-        reason: 'คุณมีความสามารถด้านภาษาไทย และรักในการสื่อสารผ่านภาษา เหมาะกับการถ่ายทอดความรู้ทางภาษาให้ผู้อื่น',
+  {
+        name : 'ภาษาไทย',
+        grade : 2.75,
+        ability : ['ภาษาไทย', 'สอน', 'ครู', 'รักเด็ก', 'เข้าใจในการสอน', 'การเขียน', 'สื่อสาร', 'วรรณกรรม', 'การอ่าน', 'จับใจความ', 'ไวยากรณ์', 'เรียบเรียง'],
+        quota : 60,
+        condition : "มัธยมศึกษาตอนปลายหรือเทียบเท่าทุกแผนการเรียน เกรดวิชาภาษาไทยไม่ต่ำกว่า 3.0",
+        reason : 'คุณมีความสามารถด้านภาษาไทย และรักในการสื่อสารผ่านภาษา เหมาะกับการถ่ายทอดความรู้ทางภาษาให้ผู้อื่น',
         careers: [
-          'ครูสอนภาษาไทย',
-          'นักเขียน',
-          'บรรณาธิการ',
-          'นักพิสูจน์อักษร',
-          'นักวิจารณ์วรรณกรรม',
-          'นักประชาสัมพันธ์'
+          "ครูสอนภาษาไทย",
+          "นักเขียน",
+          "บรรณาธิการ"
         ]
       },
       {
-        name: 'วิทยาศาสตร์ทั่วไป',
-        grade: 2.50,
-        ability: [
-          'วิทยาศาสตร์', 'เคมี', 'ฟิสิกส์', 'ชีววิทยา', 'แล็บ'
-        ],
-        quota: 60,
-        condition: 'มัธยมศึกษาตอนปลายหรือเทียบเท่าสาขาทางวิทย์-คณิต, หรือสาขาที่เกี่ยวข้องกับวิทยาศาสตร์',
-        reason: 'คุณมีความสนใจในหลักการทางวิทยาศาสตร์ และมีทักษะในการทดลองและวิเคราะห์ เหมาะกับการสอนหรือวิจัยในสายวิทยาศาสตร์',
+        name : 'วิทยาศาสตร์ทั่วไป', 
+        grade : 2.50, 
+        ability : ['วิทยาศาสตร์', 'เคมี', 'ฟิสิกส์', 'ชีววิทยา', 'แล็บ'], 
+        quota : 60, 
+        condition : "มัธยมศึกษาตอนปลายหรือเทียบเท่าสาขาทางวิทย์-คณิต, หรือสาขาที่เกี่ยวข้องกับวิทยาศาสตร์",
+        reason : '',
         careers: [
-          'ครูวิทยาศาสตร์',
-          'นักวิจัย',
-          'นักวิทยาศาสตร์ห้องแล็บ',
-          'เจ้าหน้าที่วิเคราะห์สิ่งแวดล้อม',
-          'นักเทคนิคห้องปฏิบัติการ'
+          "นักวิชาการ",
+          "นักเคมี",
+          "นักฟิสิกส์"
         ]
-      }
-    ]
+      }    ]
   },
 ];
 
@@ -175,7 +163,7 @@ async function saveSession(session) {
 }
 
 // Webhook Endpoint
-app.use('/webhook', express.json());//
+app.use('/webhook', express.json());
 app.post("/webhook", async (req, res) => {
   const eventId = req.body.originalDetectIntentRequest?.payload?.data?.webhookEventId;
 
@@ -189,14 +177,12 @@ app.post("/webhook", async (req, res) => {
     } catch (err) {
       console.error("❌ EventLog error:", err.message);
     }
-  }
-
-  const intent = req.body.queryResult?.intent?.displayName || "";
+  }  const intent = req.body.queryResult?.intent?.displayName || "";
   const params = req.body.queryResult?.parameters || {};
   const sessionId = req.body.session || "default-session";
 
-  const session = await getSession(sessionId);
-  session.sessionId = sessionId;  // เซ็ตที่นี่แค่ครั้งเดียว  
+   const session = await getSession(sessionId);
+   session.sessionId = sessionId;  // เซ็ตที่นี่แค่ครั้งเดียว  
 
   if (intent === "welcome") {
     return res.json({
@@ -233,32 +219,31 @@ app.post("/webhook", async (req, res) => {
     });
   }
 
-  if (intent === "get skills") {
-    let abilities = params.ability;
-    if (typeof abilities === "string") {
-      abilities = abilities.split(/[,\s]+/).map(a => a.trim());  // 🔁 ใช้ regex แยกทั้งคอมม่าและเว้นวรรค
+if (intent === "get skills") {
+  let abilities = params.ability;
+  if (typeof abilities === "string") {
+    abilities = abilities.split(/[,\s]+/).map(a => a.trim());  // 🔁 ใช้ regex แยกทั้งคอมม่าและเว้นวรรค
     } else if (Array.isArray(abilities)) {
-      abilities = abilities.flatMap(item => item.split(",").map(a => a.trim()));
-    }
+    abilities = abilities.flatMap(item => item.split(",").map(a => a.trim()));
+  }
+  
+  abilities = abilities.filter(a => a.length > 0);
+  abilities = [...new Set(abilities)];
 
-    abilities = abilities.filter(a => a.length > 0);
-    abilities = [...new Set(abilities)];
+  const grade = session.grade;
+  const name = session.name;
 
-    const grade = session.grade;
-    const name = session.name;
+  if (!grade) {
+    return res.json({
+      fulfillmentText: "กรุณาระบุเกรดก่อนค่ะ"
+    });
+  }
 
-    if (!grade) {
-      return res.json({
-        fulfillmentText: "กรุณาระบุเกรดก่อนค่ะ"
-      });
-    }
-
-    if (abilities.length === 0) {
-      return res.json({
-        fulfillmentText: "กรุณาระบุความสามารถอย่างน้อย 1 อย่างค่ะ"
-      });
-    }
-
+  if (abilities.length === 0) {
+    return res.json({
+      fulfillmentText: "กรุณาระบุความสามารถอย่างน้อย 1 อย่างค่ะ"
+    });
+  }
     let validAbilities = new Set();
     let invalid = [];
 
@@ -284,158 +269,150 @@ app.post("/webhook", async (req, res) => {
       });
     }
 
-    // สร้างข้อความตอบกลับ
-    let reply = `👋 สวัสดีค่ะคุณ${name || ''}\n\n` +
-      `📊 ข้อมูลที่คุณกรอกมา:\n` +
-      `- เกรดเฉลี่ย: ${grade}\n` +
-      `- ความสามารถ: ${abilities.join(", ")}\n\n`;
+    const abilitiesInputText = abilities.join(", ");
+
+    let reply = `ขอบคุณค่ะคุณ${name || ''} จากข้อมูลที่คุณกรอกมามีดังนี้  \n` +
+    `เกรดเฉลี่ย : ${grade}    \n` +
+    `ความสามารถหรือความถนัดของคุณ : ${abilitiesInputText}  \n\n` +
+    `เราขอแนะนำคณะและสาขาที่เหมาะสมกับคุณดังนี้ : \n`;
 
     results.forEach((r, i) => {
       const majorInfo = faculties
         .find(f => f.name === r.faculty)
         .majors.find(m => m.name === r.major);
-
+    
       const requiredGrade = majorInfo.grade !== null ? majorInfo.grade : 'ไม่ระบุ';
-
-      reply += `✨ อันดับ ${i + 1}: ${r.faculty} - ${r.major}\n` +
-        `📌 เกรดขั้นต่ำ: ${requiredGrade}\n` +
-        `📚 ทักษะที่สาขานี้ต้องการ:\n${majorInfo.ability.map(a => `- ${a}`).join("\n")}\n\n` +
-        `🔍 ทักษะที่ตรง: ${r.matchedAbilities.join(", ")}\n` +
-        `📝 คุณสมบัติ: ${majorInfo.condition}\n` +
-        `💡 เหตุผลแนะนำ: ${majorInfo.reason}\n` +
-        `👥 จำนวนรับ: ${majorInfo.quota} คน\n\n` +
-        `------------------------\n\n`;
+      const allAbilitiesText = majorInfo.ability.join(", ");
+      const matchedAbilitiesText = r.matchedAbilities.join(", ");
+      const quotaText = majorInfo.quota ? `   - รับจำนวน : ${majorInfo.quota} คน\n` : "";
+      const conditionText = majorInfo.condition ? `   - คุณสมบัติ : ${majorInfo.condition}\n` : "";
+      const reasonText = majorInfo.reason ? `   - เหตุผลที่เหมาะสม : ${majorInfo.reason}\n` : "";
+    
+      reply += `🎓 อันดับที่ ${i + 1} ${r.faculty}\n` +
+               `   - สาขา : ${r.major}\n` +
+               `   - เกรดเฉลี่ยขั้นต่ำที่กำหนด : ${requiredGrade}\n` +
+               `   - ทักษะความสามารถ : ${allAbilitiesText}\n` +
+               `   - ความสามารถของคุณที่ตรงกับสาขานี้ : ${matchedAbilitiesText}\n` +
+               quotaText +
+               conditionText +
+               reasonText +
+               `\n`;
     });
+
+
     
 // ✅ เก็บข้อมูลผู้ใช้ด้านบนสุดก่อนเลย และ // เก็บค่าผลลัพธ์ทั้งหมดใน session แบบ array (ไม่รวม quota, gradeRequirement, etc.) 5 ลำดับ
- // เก็บข้อมูล session
-    session.sessionId = sessionId;
-    session.name = name;
-    session.grade = grade;
-    session.abilitiesInputText = abilities.join(", ");
+session.sessionId = sessionId;
+session.name = name;
+session.grade = grade;
+session.abilitiesInputText = abilities.join(", ");
 
-    session.recommendations = results.map((r, i) => {
-      const majorInfo = faculties
-        .find(f => f.name === r.faculty)
-        .majors.find(m => m.name === r.major);
+// แล้วค่อย map results
+session.recommendations = results.map((r, i) => {
+  const majorInfo = faculties
+    .find(f => f.name === r.faculty)
+    .majors.find(m => m.name === r.major);
 
-      return {
-        rank: i + 1,
-        faculty: r.faculty,
-        major: r.major,
-        allAbilities: majorInfo.ability.join(", "),
-        careers: majorInfo.careers || [],
-        matchedAbilities: r.matchedAbilities.join(", ")
-      };
+  return {
+    rank: i + 1,
+    faculty: r.faculty,
+    major: r.major,
+    allAbilities: majorInfo.ability.join(", "),
+    careers: majorInfo.careers || [],  // เก็บอาชีพด้วย
+    matchedAbilities: r.matchedAbilities.join(", ")
+  };
+});
+
+// บันทึกลง MongoDB
+await session.save();
+        return res.json({
+      fulfillmentText: reply
     });
-
-    await session.save();
-
-   // ส่งข้อความตอบกลับพร้อม quick reply ผ่าน LINE
-    await lineClient.replyMessage(req.body.originalDetectIntentRequest.payload.data.replyToken, {
-      type: 'text',
-      text: reply + '\n\nต้องการดูรายละเอียดอาชีพหลังเรียนจบหรือไม่?',
-      quickReply: {
-        items: [
-          {
-            type: 'action',
-            action: {
-              type: 'message',
-              label: 'ดูอาชีพทั้งหมด',
-              text: 'ดูอาชีพทั้งหมด'
-            }
-          },
-          {
-            type: 'action',
-            action: {
-              type: 'message',
-              label: 'เลือกดูเป็นสาขา',
-              text: 'เลือกดูเป็นสาขา'
-            }
-          },
-          {
-            type: 'action',
-            action: {
-              type: 'message',
-              label: 'ยังไม่ดู',
-              text: 'ยังไม่ดู'
-            }
-          }
-        ]
-      }
-    });
-
-    return res.sendStatus(200);
   }
 
   return res.json({
     fulfillmentText: "ขออภัย ไม่เข้าใจคำสั่ง กรุณาลองใหม่"
   });
-}); // ปิด app.post("/webhook")
-
+});
 
 // --- เริ่มเพิ่มโค้ด LINE bot ที่นี่ ---
 // สำหรับ LINE webhook ต้องใช้ express.raw() เพื่อให้ middleware ตรวจสอบ signature ได้ถูกต้อง
 app.post('/linewebhook',
-  express.raw({ type: 'application/json' }),
+  express.raw({ type: 'application/json' }), // ต้อง parse raw body แบบนี้ก่อน
   line.middleware(lineConfig),
   async (req, res) => {
     try {
       const events = req.body.events;
-
+      // ทำงานกับ events ตามที่คุณเขียนไว้
+      // ตัวอย่าง
       await Promise.all(events.map(async (event) => {
         if (event.type === 'message' && event.message.type === 'text') {
           const userMessage = event.message.text;
-          const sessionId = event.source.userId || uuid.v4();
+          const sessionId = event.source.userId || uuid.v4();  // LINE user ID ใช้แทน session
 
-          if (userMessage === 'แนะนำคณะ') {
-            const dialogflowResult = await detectIntentText(sessionId, 'สวัสดี');
-            await lineClient.replyMessage(event.replyToken, {
-              type: 'text',
-              text: dialogflowResult.fulfillmentText
-            });
+    // ตรวจว่าเป็นการคลิกจาก Rich Menu หรือไม่
+    if (userMessage === 'แนะนำคณะ') {
+      const dialogflowResult = await detectIntentText(sessionId, 'สวัสดี');
+    
+      await lineClient.replyMessage(event.replyToken, {
+        type: 'text',
+        text: dialogflowResult.fulfillmentText
+      });
+    
+// โหลด session เพื่อดึงอาชีพจาก recommendations ทุกอันดับ
+const session = await Session.findOne({ sessionId });
 
-            const session = await Session.findOne({ sessionId });
+if (session?.recommendations?.length > 0) {
+  let careersText = '';
 
-            if (session?.recommendations?.length > 0) {
-              let careersText = '';
+  session.recommendations.forEach((rec, index) => {
+    console.log(`อันดับ ${index + 1}`, rec); // 👈 ตรวจตรงนี้
+    if (rec.careers?.length > 0) {
+      careersText += `\n\n📌 อันดับ ${index + 1}: ${rec.faculty} / ${rec.major}\n• ${rec.careers.join('\n• ')}`;
+    }
+  });
 
-              session.recommendations.forEach((rec, index) => {
-                if (rec.careers?.length > 0) {
-                  careersText += `\n\n📌 อันดับ ${index + 1}: ${rec.faculty} / ${rec.major}\n• ${rec.careers.join('\n• ')}`;
-                }
-              });
-
-              if (careersText) {
-                await lineClient.pushMessage(event.source.userId, {
-                  type: 'text',
-                  text: `💼 อาชีพที่เกี่ยวข้องกับคณะที่แนะนำ:${careersText}`
-                });
-              } else {
-                await lineClient.pushMessage(event.source.userId, {
-                  type: 'text',
-                  text: '❗️ไม่พบข้อมูลอาชีพจากคณะที่แนะนำ'
-                });
-              }
-            }
-          } else {
-            const dialogflowResult = await detectIntentText(sessionId, userMessage);
-            await lineClient.replyMessage(event.replyToken, {
-              type: 'text',
-              text: dialogflowResult.fulfillmentText
-            });
-          }
+  if (careersText) {
+    await lineClient.pushMessage(event.source.userId, {
+      type: 'text',
+      text: `💼 อาชีพที่เกี่ยวข้องกับคณะที่แนะนำ:${careersText}`
+    });
+  } else {
+    await lineClient.pushMessage(event.source.userId, {
+      type: 'text',
+      text: '❗️ไม่พบข้อมูลอาชีพจากคณะที่แนะนำ'
+    });
+  }
+} else {
+  await lineClient.pushMessage(event.source.userId, {
+    type: 'text',
+    text: '⚠️ ไม่พบข้อมูลการแนะนำคณะ'
+  });
+}
+      return;
+    }
+              const dialogflowResult = await detectIntentText(sessionId, userMessage);
+        
+          const replyText = dialogflowResult.fulfillmentText || 'ขออภัย ฉันไม่เข้าใจค่ะ';
+        
+          await lineClient.replyMessage(event.replyToken, {
+            type: 'text',
+            text: replyText,
+          });
         }
-      }));
+    }));
 
       res.status(200).send('OK');
     } catch (err) {
-      console.error('LINE webhook error:', err);
+      console.error(err);
       res.status(500).send('Error');
     }
   }
 );
-// --- จบโค้ด LINE bot ---
+// --- จบโค้ด LINE bot --- ใชไหม 
+
+
+
 
 app.listen(PORT, () => {
   console.log(`✅ Server running at http://localhost:${PORT}`);
