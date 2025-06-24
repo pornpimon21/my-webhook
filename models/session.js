@@ -1,5 +1,4 @@
-// models/session.js
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const sessionSchema = new mongoose.Schema({
   sessionId: String,
@@ -11,11 +10,15 @@ const sessionSchema = new mongoose.Schema({
       rank: Number,
       faculty: String,
       major: String,
-      allAbilities: String,
-      matchedAbilities: String,
-      careers: [String] // ✅ เพิ่มตรงนี้ เพื่อเก็บอาชีพที่เกี่ยวข้องกับสาขา
+      requiredGrade: Number,
+      abilities: [String],
+      matchedAbilities: [String],
+      quota: Number,
+      condition: String,
+      reason: String,
+      careers: [String]
     }
   ]
 }, { timestamps: true });
 
-module.exports = mongoose.model("Session", sessionSchema);
+module.exports = mongoose.model('Session', sessionSchema);
