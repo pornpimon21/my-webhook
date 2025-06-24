@@ -409,7 +409,8 @@ app.post('/linewebhook',
                         type: "text",
                         text: `🏫 สาขา : ${rec.major}`,
                         size: "sm",
-                        margin: "sm"
+                        margin: "sm",
+                        color : "#000000"
                       }
                     ]
                   },
@@ -418,50 +419,89 @@ app.post('/linewebhook',
                     layout: "vertical",
                     spacing: "sm",
                     contents: [
-                      {
+                     {
                         type: "text",
-                        text: `📊 เกรดขั้นต่ำที่กำหนด : ${rec.requiredGrade !== null ? rec.requiredGrade : 'ไม่ระบุ'}`,
+                        text: "📊 เกรดขั้นต่ำที่กำหนด",
                         size: "sm",
+                        weight: "bold",
                         wrap: true
+                     },
+                     {
+                        type: "text",
+                        text: rec.requiredGrade !== null ? `${rec.requiredGrade}` : "ไม่ระบุ",
+                        size: "sm",
+                        wrap: true,
+                        margin: "xs"
                       },
                       {
                         type: "text",
-                        text: `🛠️ ทักษะความสามารถ : ${rec.abilities.join(", ")}`,
-                        size: "sm",
-                        wrap: true
-                      },
-                      {
-                        type: "text",
-                        text: `✅ ความสามารถของคุณที่ตรงกับสาขานี้ : ${rec.matchedAbilities.join(", ")}`,
-                        size: "sm",
-                        wrap: true
-                      },
-                      {
-                        type: "text",
-                        text: rec.quota ? `👥 รับจำนวน : ${rec.quota} คน` : '👥 รับจำนวน : ไม่ระบุ',
-                        size: "sm",
-                        wrap: true
-                      },
-                   {
-                        type: "text",
-                        text: "📄 คุณสมบัติ :",
+                        text: "🛠️ ทักษะความสามารถ",
                         size: "sm",
                         weight: "bold",
                         wrap: true
                       },
-                    {
+                      {
+                        type: "text",
+                        text: rec.abilities && rec.abilities.length > 0 ? `${rec.abilities.join(", ")}` : "ไม่ระบุ",
+                        size: "sm",
+                        wrap: true,
+                        margin: "xs"
+                      },
+                      {
+                        type: "text",
+                        text: "✅ ความสามารถของคุณที่ตรงกับสาขานี้",
+                        size: "sm",
+                        weight: "bold",
+                        wrap: true
+                      },
+                      {
+                        type: "text",
+                        text: rec.matchedAbilities && rec.matchedAbilities.length > 0 ? `${rec.matchedAbilities.join(", ")}` : "ไม่ระบุ",
+                        size: "sm",
+                        wrap: true,
+                        margin: "xs"
+                      },
+                      {
+                        type: "text",
+                        text: "👥 รับจำนวน",
+                        size: "sm",
+                        weight: "bold",
+                        wrap: true
+                      },
+                      {
+                        type: "text",
+                        text: rec.quota ? `${rec.quota} คน` : "ไม่ระบุ",
+                        size: "sm",
+                        wrap: true,
+                        margin: "xs"
+                      },
+                      {
+                        type: "text",
+                        text: "📄 คุณสมบัติ",
+                        size: "sm",
+                        weight: "bold",
+                        wrap: true
+                      },
+                      {
                         type: "text",
                         text: rec.condition ? rec.condition : "ไม่ระบุ",
                         size: "sm",
                         wrap: true,
                         margin: "xs"
-                    },
-
+                      },
                       {
                         type: "text",
-                        text: rec.reason ? `💡 เหตุผลที่เหมาะสม : ${rec.reason}` : '💡 เหตุผลที่เหมาะสม : ไม่ระบุ',
+                        text: "💡 เหตุผลที่เหมาะสม",
                         size: "sm",
+                        weight: "bold",
                         wrap: true
+                      },
+                      {
+                        type: "text",
+                        text: rec.reason ? rec.reason : "ไม่ระบุ",
+                        size: "sm",
+                        wrap: true,
+                        margin: "xs"
                       },
                       {
                         type: "text",
