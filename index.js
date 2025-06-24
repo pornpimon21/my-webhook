@@ -172,8 +172,9 @@ app.post("/webhook", async (req, res) => {
     }
   }  const intent = req.body.queryResult?.intent?.displayName || "";
    const params = req.body.queryResult?.parameters || {};
-   const sessionId = req.body.session || "default-session";
+   const sessionFull = req.body.session || "default-session";
    
+   const sessionId = sessionFull.split('/').pop();  // ดึงแค่ userId   
    const session = await getSession(sessionId);
    session.sessionId = sessionId;  // เซ็ตที่นี่แค่ครั้งเดียว  
 
