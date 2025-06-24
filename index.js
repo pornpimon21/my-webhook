@@ -385,7 +385,7 @@ app.post('/linewebhook',
               const bubbles = session.recommendations.map((rec) => {
                 return {
                   type: "bubble",
-                  size: "mega",
+                  size: "mega", 
                   header: {
                     type: "box",
                     layout: "vertical",
@@ -444,7 +444,7 @@ app.post('/linewebhook',
                       },
                       {
                         type: "text",
-                        text: rec.condition ? `📄 คุณสมบัติ : ${rec.condition}` : '📄 คุณสมบัติ : ไม่ระบุ',
+                        text: rec.condition ? `📄 คุณสมบัติ  ${rec.condition}` : '📄 คุณสมบัติ : ไม่ระบุ',
                         size: "sm",
                         wrap: true
                       },
@@ -494,6 +494,11 @@ app.post('/linewebhook',
                     ]
                   }
                 };
+              });
+
+            await lineClient.replyMessage(event.replyToken, {
+              type: 'text',
+              text: introText
               });
 
               await lineClient.replyMessage(event.replyToken, {
