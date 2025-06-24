@@ -24,7 +24,7 @@ if (!fs.existsSync(keyPath) && process.env.GOOGLE_CREDENTIALS_BASE64) {
 process.env.GOOGLE_APPLICATION_CREDENTIALS = keyPath;
 
 // --- Connect to MongoDB ---
-mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('✅ MongoDB connected!'))
   .catch(err => console.error('❌ MongoDB connection error:', err));
 
@@ -74,7 +74,7 @@ const faculties = [
         ability: ['วิทยาศาสตร์', 'เคมี', 'ฟิสิกส์', 'ชีววิทยา', 'แล็บ'],
         quota: 60,
         condition: "มัธยมศึกษาตอนปลายหรือเทียบเท่าสาขาทางวิทย์-คณิต, หรือสาขาที่เกี่ยวข้องกับวิทยาศาสตร์",
-        reason: '',
+        reason: 'คุณมีความสามารถด้านวิทยาศาสตร์ เหมาะกับการถ่ายทอดความรู้',
         careers: ["นักวิชาการ", "นักเคมี", "นักฟิสิกส์"],
       },
     ],
@@ -330,41 +330,41 @@ app.post('/linewebhook',
         if (event.type === 'message' && event.message.type === 'text') {
           const userMessage = event.message.text;
           const sessionId = event.source.userId || uuid.v4();
+if (userMessage === 'แนะนำคณะ') {
+  // เรียก Dialogflow intent 'welcome'
+  const dialogflowResult = await detectIntentText(sessionId, 'สวัสดี');
 
-          if (userMessage === 'แนะนำคณะ') {
-            // เรียก Dialogflow intent 'welcome' หรือข้อความแนะนำเบื้องต้น
-            const dialogflowResult = await detectIntentText(sessionId, 'สวัสดี');
+  // ดึงข้อมูล session เพื่อดูว่าเคยแนะนำหรือยัง
+  const session = await Session.findOne({ sessionId });
 
-            // ตอบข้อความแนะนำคณะก่อน
-            await lineClient.replyMessage(event.replyToken, {
-              type: 'text',
-              text: dialogflowResult.fulfillmentText
-            });
+  const messages = [
+    {
+      type: 'text',
+      text: dialogflowResult.fulfillmentText
+    }
+  ];
 
-            // ดึงข้อมูล session เพื่อดึงข้อมูลอาชีพที่แนะนำ
-            const session = await Session.findOne({ sessionId });
+  if (session?.recommendations?.length > 0) {
+    const careerButtonsMessage = createCareerButtons(session.recommendations);
 
-            if (session?.recommendations?.length > 0) {
-              const careerButtonsMessage = createCareerButtons(session.recommendations);
+    if (careerButtonsMessage) {
+      messages.push(careerButtonsMessage);
+    } else {
+      messages.push({
+        type: 'text',
+        text: '❗️ ไม่พบข้อมูลอาชีพที่เกี่ยวข้อง'
+      });
+    }
+  } else {
+    messages.push({
+      type: 'text',
+      text: '⚠️ ไม่พบข้อมูลการแนะนำคณะ'
+    });
+  }
 
-              if (careerButtonsMessage) {
-                // ส่งข้อความปุ่มอาชีพไปยังผู้ใช้
-                await lineClient.pushMessage(event.source.userId, careerButtonsMessage);
-              } else {
-                await lineClient.pushMessage(event.source.userId, {
-                  type: 'text',
-                  text: '❗️ ไม่พบข้อมูลอาชีพที่เกี่ยวข้อง'
-                });
-              }
-            } else {
-              await lineClient.pushMessage(event.source.userId, {
-                type: 'text',
-                text: '⚠️ ไม่พบข้อมูลการแนะนำคณะ'
-              });
-            }
-
-            return;
-          }
+  await lineClient.replyMessage(event.replyToken, messages);
+  return;
+}
 
           // กรณีข้อความทั่วไป ส่งให้ Dialogflow วิเคราะห์ intent
           const dialogflowResult = await detectIntentText(sessionId, userMessage);
