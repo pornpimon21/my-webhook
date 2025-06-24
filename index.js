@@ -496,21 +496,20 @@ app.post('/linewebhook',
                 };
               });
 
-            await lineClient.replyMessage(event.replyToken, {
-              type: 'text',
-              text: introText
-              });
-
-              await lineClient.replyMessage(event.replyToken, {
-                type: "flex",
-                altText: "ผลลัพธ์แนะนำคณะและสาขา",
-                contents: {
-                  type: "carousel",
-                  contents: bubbles
-                }
-              });
-
-              return;  // หยุดโค้ดตรงนี้เพื่อไม่ส่งข้อความอื่นซ้ำ
+await lineClient.replyMessage(event.replyToken, [
+    {
+      type: 'text',
+      text: introText
+    },
+    {
+      type: "flex",
+      altText: "ผลลัพธ์แนะนำคณะและสาขา",
+      contents: {
+        type: "carousel",
+        contents: bubbles
+      }
+    }
+  ]);              return;  // หยุดโค้ดตรงนี้เพื่อไม่ส่งข้อความอื่นซ้ำ
             } else {
               // กรณี session ไม่มี recommendations
               await lineClient.replyMessage(event.replyToken, {
