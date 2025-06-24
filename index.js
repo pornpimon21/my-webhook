@@ -173,7 +173,7 @@ app.post("/webhook", async (req, res) => {
   }  const intent = req.body.queryResult?.intent?.displayName || "";
    const params = req.body.queryResult?.parameters || {};
    const sessionFull = req.body.session || "default-session";
-   
+
    const sessionId = sessionFull.split('/').pop();  // ดึงแค่ userId   
    const session = await getSession(sessionId);
    session.sessionId = sessionId;  // เซ็ตที่นี่แค่ครั้งเดียว  
@@ -375,7 +375,12 @@ app.post('/linewebhook',
             // ดึงข้อมูล session จาก MongoDB
             const session = await getSession(sessionId);
 
-            if (session && session.recommendations && session.recommendations.length > 0) {
+          if (session && session.recommendations && session.recommendations.length > 0) {
+          // สร้างข้อความแนะนำก่อน carousel
+          const introText = `🙏 ขอบคุณค่ะคุณ${session.name || ''} จากข้อมูลที่คุณกรอกมามีดังนี้\n` +
+                      `📘 เกรดเฉลี่ย : ${session.grade}\n` +
+                      `🧠 ความสามารถหรือความถนัดของคุณ : ${session.abilitiesInputText}\n\n` +
+                      `เราขอแนะนำคณะและสาขาที่เหมาะสมกับคุณ 5 ลำดับดังนี้ :`;              
               // สร้าง Flex Message carousel
               const bubbles = session.recommendations.map((rec) => {
                 return {
@@ -402,7 +407,7 @@ app.post('/linewebhook',
                       },
                       {
                         type: "text",
-                        text: `🏫 สาขา: ${rec.major}`,
+                        text: `🏫 สาขา : ${rec.major}`,
                         size: "sm",
                         margin: "sm"
                       }
@@ -415,43 +420,43 @@ app.post('/linewebhook',
                     contents: [
                       {
                         type: "text",
-                        text: `📊 เกรดขั้นต่ำที่กำหนด: ${rec.requiredGrade !== null ? rec.requiredGrade : 'ไม่ระบุ'}`,
+                        text: `📊 เกรดขั้นต่ำที่กำหนด : ${rec.requiredGrade !== null ? rec.requiredGrade : 'ไม่ระบุ'}`,
                         size: "sm",
                         wrap: true
                       },
                       {
                         type: "text",
-                        text: `🛠️ ทักษะความสามารถ: ${rec.abilities.join(", ")}`,
+                        text: `🛠️ ทักษะความสามารถ : ${rec.abilities.join(", ")}`,
                         size: "sm",
                         wrap: true
                       },
                       {
                         type: "text",
-                        text: `✅ ความสามารถของคุณที่ตรงกับสาขานี้: ${rec.matchedAbilities.join(", ")}`,
+                        text: `✅ ความสามารถของคุณที่ตรงกับสาขานี้ : ${rec.matchedAbilities.join(", ")}`,
                         size: "sm",
                         wrap: true
                       },
                       {
                         type: "text",
-                        text: rec.quota ? `👥 รับจำนวน: ${rec.quota} คน` : '👥 รับจำนวน: ไม่ระบุ',
+                        text: rec.quota ? `👥 รับจำนวน : ${rec.quota} คน` : '👥 รับจำนวน : ไม่ระบุ',
                         size: "sm",
                         wrap: true
                       },
                       {
                         type: "text",
-                        text: rec.condition ? `📄 คุณสมบัติ: ${rec.condition}` : '📄 คุณสมบัติ: ไม่ระบุ',
+                        text: rec.condition ? `📄 คุณสมบัติ : ${rec.condition}` : '📄 คุณสมบัติ : ไม่ระบุ',
                         size: "sm",
                         wrap: true
                       },
                       {
                         type: "text",
-                        text: rec.reason ? `💡 เหตุผลที่เหมาะสม: ${rec.reason}` : '💡 เหตุผลที่เหมาะสม: ไม่ระบุ',
+                        text: rec.reason ? `💡 เหตุผลที่เหมาะสม : ${rec.reason}` : '💡 เหตุผลที่เหมาะสม : ไม่ระบุ',
                         size: "sm",
                         wrap: true
                       },
                       {
                         type: "text",
-                        text: `💼 อาชีพที่เกี่ยวข้อง:`,
+                        text: `💼 อาชีพที่เกี่ยวข้อง`,
                         weight: "bold",
                         margin: "md",
                         size: "sm"
