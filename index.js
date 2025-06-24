@@ -496,20 +496,22 @@ app.post('/linewebhook',
                 };
               });
 
-await lineClient.replyMessage(event.replyToken, [
-    {
-      type: 'text',
-      text: introText
-    },
-    {
-      type: "flex",
-      altText: "ผลลัพธ์แนะนำคณะและสาขา",
-      contents: {
-        type: "carousel",
-        contents: bubbles
-      }
-    }
-  ]);              return;  // หยุดโค้ดตรงนี้เพื่อไม่ส่งข้อความอื่นซ้ำ
+// 1. ส่งข้อความแนะนำก่อน
+await lineClient.replyMessage(event.replyToken, {
+  type: 'text',
+  text: introText
+});
+
+// 2. ใช้ pushMessage เพื่อแสดง bubble carousel (ทั้งหมด)
+await lineClient.pushMessage(event.source.userId, {
+  type: "flex",
+  altText: "ผลลัพธ์แนะนำคณะและสาขา",
+  contents: {
+    type: "carousel",
+    contents: bubbles
+  }
+});  
+  return;  // หยุดโค้ดตรงนี้เพื่อไม่ส่งข้อความอื่นซ้ำ
             } else {
               // กรณี session ไม่มี recommendations
               await lineClient.replyMessage(event.replyToken, {
