@@ -363,26 +363,33 @@ app.post('/linewebhook',
 
           // STEP 1: คำสั่ง "ค้นหาข้อมูล" -> แสดง Flex Message เลือกคณะ
           if (userMessage === 'ค้นหาข้อมูล') {
-            // สร้าง bubbles สำหรับคณะ (ปุ่มสีสลับเขียว/ฟ้า)
-            const facultyBubbles = faculties.map((faculty, index) => ({
-              type: "bubble",
-              size: "micro",
-              footer: {
-                type: "box",
-                layout: "vertical",
-                contents: [
-                  {
-                    type: "button",
-                    style: (index % 2 === 0) ? "primary" : "secondary", // สลับสีปุ่ม
-                    action: {
-                      type: "message",
-                      label: faculty.name,
-                      text: faculty.name
-                    }
-                  }
-                ]
-              }
-            }));
+
+         await lineClient.replyMessage(event.replyToken, {
+         type: 'text',
+         text: '🙏 สวัสดีค่ะ!\nกรุณาเลือกคณะที่สนใจของคุณด้านล่างนี้ค่ะ 😊\n➡️ เพื่อดูรายละเอียดและสาขาต่าง ๆ'
+         });
+
+            // สร้าง bubbles สำหรับคณะ (ปุ่มสีสลับฟ้า/ชมพู)
+const facultyBubbles = faculties.map((faculty, index) => ({
+  type: "bubble",
+  size: "micro",
+  footer: {
+    type: "box",
+    layout: "vertical",
+    contents: [
+      {
+        type: "button",
+        style: "primary",
+        color: (index % 2 === 0) ? "#1E90FF" : "#FF69B4", 
+        action: {
+          type: "message",
+          label: faculty.name,
+          text: faculty.name
+        }
+      }
+    ]
+  }
+}));
 
             await lineClient.replyMessage(event.replyToken, {
               type: "flex",
@@ -398,6 +405,13 @@ app.post('/linewebhook',
           // STEP 2: เลือกคณะ -> แสดง Flex Message เลือกสาขา (ปุ่มสีสลับส้ม/เหลือง)
           const selectedFaculty = faculties.find(f => f.name === userMessage);
           if (selectedFaculty) {
+
+         // ส่งข้อความก่อน
+         await lineClient.replyMessage(event.replyToken, {
+         type: 'text',
+         text: `🎓 กรุณาเลือกสาขาที่สนใจในคณะ\n"${selectedFaculty.name}" ด้านล่างนี้ค่ะ 😊`
+         });
+
             const majorBubbles = selectedFaculty.majors.map((major, index) => ({
               type: "bubble",
               size: "micro",
@@ -407,7 +421,8 @@ app.post('/linewebhook',
                 contents: [
                   {
                     type: "button",
-                    style: (index % 2 === 0) ? "primary" : "secondary", // สลับสีปุ่ม
+                    style: "primary",
+                    color: (index % 2 === 0) ? "#FFA500" : "#FFFF00", // สลับสีปุ่ม
                     action: {
                       type: "message",
                       label: major.name,
@@ -449,14 +464,15 @@ app.post('/linewebhook',
                 contents: [
                   {
                     type: "text",
-                    text: `📚 คณะ: ${matchedFaculty.name}`,
+                    text: `📚 คณะ${matchedFaculty.name}`,
                     weight: "bold",
                     size: "lg",
                     wrap: true
                   },
                   {
                     type: "text",
-                    text: `📘 สาขา: ${matchedMajor.name}`,
+                    text: `📘 สาขา${matchedMajor.name}`,
+                    weight: "bold",
                     size: "md",
                     wrap: true,
                     margin: "sm"
@@ -468,38 +484,114 @@ app.post('/linewebhook',
                 layout: "vertical",
                 spacing: "sm",
                 contents: [
-                  {
-                    type: "text",
-                    text: `📊 เกรดขั้นต่ำ: ${matchedMajor.grade}`,
-                    size: "sm",
-                    wrap: true
-                  },
-                  {
-                    type: "text",
-                    text: `📌 เงื่อนไข: ${matchedMajor.condition}`,
-                    size: "sm",
-                    wrap: true
-                  },
-                  {
-                    type: "text",
-                    text: `🧠 ความสามารถที่ควรมี: ${matchedMajor.ability.join(", ")}`,
-                    size: "sm",
-                    wrap: true
-                  },
-                  {
-                    type: "text",
-                    text: `✅ เหตุผลที่เหมาะสม: ${matchedMajor.reason}`,
-                    size: "sm",
-                    wrap: true
-                  },
-                  {
-                    type: "text",
-                    text: `🎯 อาชีพที่เกี่ยวข้อง: ${matchedMajor.careers.join(", ")}`,
-                    size: "sm",
-                    wrap: true
-                  }
-                ]
+              {
+                type: "text",
+                text: "📊 เกรดขั้นต่ำ",
+                size: "sm",
+                weight: "bold",
+                wrap: true,
+                margin: "md"   // เว้นช่องว่าง 1 บรรทัด
               },
+              {
+                type: "text",
+                text: matchedMajor.grade ? matchedMajor.grade : "ไม่ระบุ",                
+                size: "sm",
+                wrap: true, 
+                margin: "xs"  // เว้นช่องว่างเล็กน้อยด้านบน
+              },
+                     {
+                        type: "text",
+                        text: "🧠 ทักษะความสามารถ",
+                        size: "sm",
+                        weight: "bold",
+                        color: "#000000",
+                        wrap: true,
+                        margin: "md"  // เว้นบรรทัดบนพอเหมาะ
+                     },
+                     {
+                        type: "text",
+                        text: matchedMajor.ability.join(", "),
+                        size: "sm",
+                        wrap: true,
+                        margin: "xs"  // เว้นช่องว่างเล็กน้อยด้านบนระหว่างหัวข้อกับรายละเอียด
+                     },
+                     {
+                        type: "text",
+                        text: "👥 รับจำนวน",
+                        weight: "bold",
+                        size: "sm",
+                        margin: "md"
+                      },
+                      {
+                        type: "text",
+                        text: matchedMajor.quota ? `${matchedMajor.quota} คน` : "ไม่ระบุ",
+                        size: "sm",
+                        wrap: true,
+                        margin: "xs"
+                      },
+
+                     {
+                        type: "text",
+                        text: "📌 คุณสมบัติ",
+                        weight: "bold",
+                        size: "sm",
+                        margin: "md"
+                      },
+                      {
+                        type: "text",
+                        text: matchedMajor.condition,
+                        size: "sm",
+                        wrap: true,
+                        margin: "xs"
+                      },
+                     {
+                        type: "text",
+                        text: matchedMajor.ability.join(", "),
+                        size: "sm",
+                        wrap: true,
+                        margin: "xs"  // เว้นบรรทัดเล็กน้อยจากหัวข้อ
+                     },                 
+                     {
+                        type: "text",
+                        text: "✅ เหตุผลที่เหมาะสม",
+                        size: "sm",
+                        weight: "bold",
+                        color: "#000000",
+                        wrap: true,
+                        margin: "md"  // เว้นบรรทัดบน
+                     },
+                     {
+                        type: "text",
+                        text: matchedMajor.reason,
+                        size: "sm",
+                        wrap: true,
+                        margin: "xs"  // เว้นบรรทัดเล็กน้อยใต้หัวข้อ
+                      },
+                      {
+                        type: "text",
+                        text: `💼 อาชีพที่เกี่ยวข้อง`,
+                        weight: "bold",
+                        margin: "md",
+                        size: "sm"
+                      },
+                      ...(matchedMajor.careers && matchedMajor.careers.length > 0 ? 
+                        matchedMajor.careers.map(career => ({
+                          type: "text",
+                          text: `• ${career}`,
+                          size: "sm",
+                          margin: "xs",
+                          wrap: true
+                        }))
+                        : [{
+                          type: "text",
+                          text: "ไม่ระบุ",
+                          size: "sm",
+                          margin: "xs",
+                          wrap: true
+                        }]
+                      )
+                    ]
+                  },
               footer: {
                 type: "box",
                 layout: "horizontal",
