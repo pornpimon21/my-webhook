@@ -496,14 +496,15 @@ if (matchedMajor) {
       contents: [
         {
           type: "text",
-          text: `📚 คณะ: ${matchedFaculty.name}`,  // แสดงคณะก่อน
+          text: `📚 คณะ${matchedFaculty.name}`,  // เพิ่มเว้นวรรคและเครื่องหมาย
           weight: "bold",
           size: "lg",
           wrap: true
         },
         {
           type: "text",
-          text: `📘 สาขา: ${matchedMajor.name}`,   // แสดงสาขาหลัง
+          text: `📘 สาขา${matchedMajor.name}`,
+          weight: "bold",
           size: "md",
           wrap: true,
           margin: "sm"
@@ -517,34 +518,113 @@ if (matchedMajor) {
       contents: [
         {
           type: "text",
-          text: `📊 เกรดขั้นต่ำ: ${matchedMajor.grade}`,
+          text: "📊 เกรดขั้นต่ำ",
           size: "sm",
-          wrap: true
+          weight: "bold",
+          wrap: true,
+          margin: "md"
         },
         {
           type: "text",
-          text: `📌 เงื่อนไข: ${matchedMajor.condition}`,
+          text: matchedMajor.grade ? matchedMajor.grade : "ไม่ระบุ",
           size: "sm",
-          wrap: true
+          wrap: true,
+          margin: "xs"
         },
         {
           type: "text",
-          text: `🧠 ความสามารถที่ควรมี: ${matchedMajor.ability.join(", ")}`,
+          text: "🧠 ทักษะความสามารถ",
           size: "sm",
-          wrap: true
+          weight: "bold",
+          color: "#000000",
+          wrap: true,
+          margin: "md"
         },
         {
           type: "text",
-          text: `✅ เหตุผลที่เหมาะสม: ${matchedMajor.reason}`,
+          text: Array.isArray(matchedMajor.ability) && matchedMajor.ability.length > 0
+            ? matchedMajor.ability.join(", ")
+            : "ไม่ระบุ",
           size: "sm",
-          wrap: true
+          wrap: true,
+          margin: "xs"
         },
         {
           type: "text",
-          text: `🎯 อาชีพที่เกี่ยวข้อง: ${matchedMajor.careers.join(", ")}`,
+          text: "👥 รับจำนวน",
+          weight: "bold",
           size: "sm",
-          wrap: true
-        }
+          margin: "md"
+        },
+        {
+          type: "text",
+          text: matchedMajor.quota ? `${matchedMajor.quota} คน` : "ไม่ระบุ",
+          size: "sm",
+          wrap: true,
+          margin: "xs"
+        },
+        {
+          type: "text",
+          text: "📌 คุณสมบัติ",
+          weight: "bold",
+          size: "sm",
+          margin: "md"
+        },
+        {
+          type: "text",
+          text: matchedMajor.condition ? matchedMajor.condition : "ไม่ระบุ",
+          size: "sm",
+          wrap: true,
+          margin: "xs"
+        },
+        {
+          type: "text",
+          text: Array.isArray(matchedMajor.ability) && matchedMajor.ability.length > 0
+            ? matchedMajor.ability.join(", ")
+            : "ไม่ระบุ",
+          size: "sm",
+          wrap: true,
+          margin: "xs"
+        },
+        {
+          type: "text",
+          text: "✅ เหตุผลที่เหมาะสม",
+          size: "sm",
+          weight: "bold",
+          color: "#000000",
+          wrap: true,
+          margin: "md"
+        },
+        {
+          type: "text",
+          text: matchedMajor.reason ? matchedMajor.reason : "ไม่ระบุ",
+          size: "sm",
+          wrap: true,
+          margin: "xs"
+        },
+        {
+          type: "text",
+          text: `💼 อาชีพที่เกี่ยวข้อง`,
+          weight: "bold",
+          margin: "md",
+          size: "sm"
+        },
+        ...(Array.isArray(matchedMajor.careers) && matchedMajor.careers.length > 0
+          ? matchedMajor.careers.map(career => ({
+              type: "text",
+              text: `• ${career}`,
+              size: "sm",
+              margin: "xs",
+              wrap: true
+            }))
+          : [{
+              type: "text",
+              text: "ไม่ระบุ",
+              size: "sm",
+              margin: "xs",
+              wrap: true
+            }]
+        )
       ]
     },
     footer: {
@@ -564,13 +644,13 @@ if (matchedMajor) {
     }
   };
 
-            await lineClient.replyMessage(event.replyToken, {
-              type: "flex",
-              altText: `ข้อมูลคณะและสาขา ${matchedFaculty.name} - ${matchedMajor.name}`,
-              contents: bubble
-            });
-            return;
-          }
+  await lineClient.replyMessage(event.replyToken, {
+    type: "flex",
+    altText: `ข้อมูลคณะและสาขา ${matchedFaculty.name} - ${matchedMajor.name}`,
+    contents: bubble
+  });
+  return;
+}
           
           // ตรวจสอบ Intent จาก Dialogflow
           const dialogflowResult = await detectIntentText(sessionId, userMessage);
