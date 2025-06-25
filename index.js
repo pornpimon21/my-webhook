@@ -363,12 +363,6 @@ app.post('/linewebhook',
 
 // STEP 1: คำสั่ง "ค้นหาข้อมูล" -> แสดง Flex Message เลือกคณะ
 if (userMessage === 'ค้นหาข้อมูล') {
-
-  await lineClient.replyMessage(event.replyToken, {
-    type: 'text',
-    text: '🙏 สวัสดีค่ะ!\nกรุณาเลือกคณะที่สนใจของคุณด้านล่างนี้ค่ะ 😊\n➡️ เพื่อดูรายละเอียดและสาขาต่าง ๆ'
-  });
-
   // สร้าง bubbles สำหรับคณะ (ปุ่มสีสลับฟ้า/ชมพู)
   const facultyBubbles = faculties.map((faculty, index) => ({
     type: "bubble",
@@ -385,7 +379,8 @@ if (userMessage === 'ค้นหาข้อมูล') {
           align: "center",
           wrap: true
         }
-      ]
+      ],
+      paddingAll: "10px"
     },
     footer: {
       type: "box",
@@ -401,31 +396,32 @@ if (userMessage === 'ค้นหาข้อมูล') {
             text: faculty.name
           }
         }
-      ]
+      ],
+      paddingAll: "10px",
+      spacing: "sm"
     }
   }));
 
-  await lineClient.replyMessage(event.replyToken, {
-    type: "flex",
-    altText: "กรุณาเลือกคณะที่สนใจ",
-    contents: {
-      type: "carousel",
-      contents: facultyBubbles
+  await lineClient.replyMessage(event.replyToken, [
+    {
+      type: 'text',
+      text: '🙏 สวัสดีค่ะ!\nกรุณาเลือกคณะที่สนใจของคุณด้านล่างนี้ค่ะ 😊\n➡️ เพื่อดูรายละเอียดและสาขาต่าง ๆ'
+    },
+    {
+      type: "flex",
+      altText: "กรุณาเลือกคณะที่สนใจ",
+      contents: {
+        type: "carousel",
+        contents: facultyBubbles
+      }
     }
-  });
+  ]);
   return;
 }
 
-// STEP 2: เลือกคณะ -> แสดง Flex Message เลือกสาขา (ปุ่มสีสลับส้ม/เหลือง)
+// STEP 2: เลือกคณะ -> แสดง Flex Message เลือกสาขา
 const selectedFaculty = faculties.find(f => f.name === userMessage);
 if (selectedFaculty) {
-
-  // ส่งข้อความก่อน
-  await lineClient.replyMessage(event.replyToken, {
-    type: 'text',
-    text: `🎓 กรุณาเลือกสาขาที่สนใจในคณะ\n"${selectedFaculty.name}" ด้านล่างนี้ค่ะ 😊`
-  });
-
   const majorBubbles = selectedFaculty.majors.map((major, index) => ({
     type: "bubble",
     size: "micro",
@@ -441,7 +437,8 @@ if (selectedFaculty) {
           align: "center",
           wrap: true
         }
-      ]
+      ],
+      paddingAll: "10px"
     },
     footer: {
       type: "box",
@@ -457,18 +454,26 @@ if (selectedFaculty) {
             text: major.name
           }
         }
-      ]
+      ],
+      paddingAll: "10px",
+      spacing: "sm"
     }
   }));
 
-  await lineClient.replyMessage(event.replyToken, {
-    type: "flex",
-    altText: `กรุณาเลือกสาขาใน "${selectedFaculty.name}"`,
-    contents: {
-      type: "carousel",
-      contents: majorBubbles
+  await lineClient.replyMessage(event.replyToken, [
+    {
+      type: 'text',
+      text: `🎓 กรุณาเลือกสาขาที่สนใจในคณะ\n"${selectedFaculty.name}" ด้านล่างนี้ค่ะ 😊`
+    },
+    {
+      type: "flex",
+      altText: `กรุณาเลือกสาขาใน "${selectedFaculty.name}"`,
+      contents: {
+        type: "carousel",
+        contents: majorBubbles
+      }
     }
-  });
+  ]);
   return;
 }
           // STEP 3: เลือกสาขา -> แสดงข้อมูลสาขาแบบ Flex Message
