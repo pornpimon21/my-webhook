@@ -476,170 +476,93 @@ if (selectedFaculty) {
   ]);
   return;
 }
-          // STEP 3: เลือกสาขา -> แสดงข้อมูลสาขาแบบ Flex Message
-          let matchedMajor, matchedFaculty;
-          for (const faculty of faculties) {
-            const found = faculty.majors.find(m => m.name === userMessage);
-            if (found) {
-              matchedMajor = found;
-              matchedFaculty = faculty;
-              break;
-            }
+ // STEP 3: เลือกสาขา
+  let matchedMajor, matchedFaculty;
+  for (const faculty of faculties) {
+    const found = faculty.majors.find(m => m.name === userMessage);
+    if (found) {
+      matchedMajor = found;
+      matchedFaculty = faculty;
+      break;
+    }
+  }
+
+if (matchedMajor) {
+  const bubble = {
+    type: "bubble",
+    header: {
+      type: "box",
+      layout: "vertical",
+      contents: [
+        {
+          type: "text",
+          text: `📚 คณะ: ${matchedFaculty.name}`,  // แสดงคณะก่อน
+          weight: "bold",
+          size: "lg",
+          wrap: true
+        },
+        {
+          type: "text",
+          text: `📘 สาขา: ${matchedMajor.name}`,   // แสดงสาขาหลัง
+          size: "md",
+          wrap: true,
+          margin: "sm"
+        }
+      ]
+    },
+    body: {
+      type: "box",
+      layout: "vertical",
+      spacing: "sm",
+      contents: [
+        {
+          type: "text",
+          text: `📊 เกรดขั้นต่ำ: ${matchedMajor.grade}`,
+          size: "sm",
+          wrap: true
+        },
+        {
+          type: "text",
+          text: `📌 เงื่อนไข: ${matchedMajor.condition}`,
+          size: "sm",
+          wrap: true
+        },
+        {
+          type: "text",
+          text: `🧠 ความสามารถที่ควรมี: ${matchedMajor.ability.join(", ")}`,
+          size: "sm",
+          wrap: true
+        },
+        {
+          type: "text",
+          text: `✅ เหตุผลที่เหมาะสม: ${matchedMajor.reason}`,
+          size: "sm",
+          wrap: true
+        },
+        {
+          type: "text",
+          text: `🎯 อาชีพที่เกี่ยวข้อง: ${matchedMajor.careers.join(", ")}`,
+          size: "sm",
+          wrap: true
+        }
+      ]
+    },
+    footer: {
+      type: "box",
+      layout: "horizontal",
+      contents: [
+        {
+          type: "button",
+          style: "primary",
+          action: {
+            type: "message",
+            label: "เริ่มใหม่",
+            text: "เริ่มใหม่"
           }
-
-          if (matchedMajor) {
-            const bubble = {
-              type: "bubble",
-              header: {
-                type: "box",
-                layout: "vertical",
-                contents: [
-                  {
-                    type: "text",
-                    text: `📚 คณะ${matchedFaculty.name}`,
-                    weight: "bold",
-                    size: "lg",
-                    wrap: true
-                  },
-                  {
-                    type: "text",
-                    text: `📘 สาขา${matchedMajor.name}`,
-                    weight: "bold",
-                    size: "md",
-                    wrap: true,
-                    margin: "sm"
-                  }
-                ]
-              },
-              body: {
-                type: "box",
-                layout: "vertical",
-                spacing: "sm",
-                contents: [
-              {
-                type: "text",
-                text: "📊 เกรดขั้นต่ำ",
-                size: "sm",
-                weight: "bold",
-                wrap: true,
-                margin: "md"   // เว้นช่องว่าง 1 บรรทัด
-              },
-              {
-                type: "text",
-                text: matchedMajor.grade ? matchedMajor.grade : "ไม่ระบุ",                
-                size: "sm",
-                wrap: true, 
-                margin: "xs"  // เว้นช่องว่างเล็กน้อยด้านบน
-              },
-                     {
-                        type: "text",
-                        text: "🧠 ทักษะความสามารถ",
-                        size: "sm",
-                        weight: "bold",
-                        color: "#000000",
-                        wrap: true,
-                        margin: "md"  // เว้นบรรทัดบนพอเหมาะ
-                     },
-                     {
-                        type: "text",
-                        text: matchedMajor.ability.join(", "),
-                        size: "sm",
-                        wrap: true,
-                        margin: "xs"  // เว้นช่องว่างเล็กน้อยด้านบนระหว่างหัวข้อกับรายละเอียด
-                     },
-                     {
-                        type: "text",
-                        text: "👥 รับจำนวน",
-                        weight: "bold",
-                        size: "sm",
-                        margin: "md"
-                      },
-                      {
-                        type: "text",
-                        text: matchedMajor.quota ? `${matchedMajor.quota} คน` : "ไม่ระบุ",
-                        size: "sm",
-                        wrap: true,
-                        margin: "xs"
-                      },
-
-                     {
-                        type: "text",
-                        text: "📌 คุณสมบัติ",
-                        weight: "bold",
-                        size: "sm",
-                        margin: "md"
-                      },
-                      {
-                        type: "text",
-                        text: matchedMajor.condition,
-                        size: "sm",
-                        wrap: true,
-                        margin: "xs"
-                      },
-                     {
-                        type: "text",
-                        text: matchedMajor.ability.join(", "),
-                        size: "sm",
-                        wrap: true,
-                        margin: "xs"  // เว้นบรรทัดเล็กน้อยจากหัวข้อ
-                     },                 
-                     {
-                        type: "text",
-                        text: "✅ เหตุผลที่เหมาะสม",
-                        size: "sm",
-                        weight: "bold",
-                        color: "#000000",
-                        wrap: true,
-                        margin: "md"  // เว้นบรรทัดบน
-                     },
-                     {
-                        type: "text",
-                        text: matchedMajor.reason,
-                        size: "sm",
-                        wrap: true,
-                        margin: "xs"  // เว้นบรรทัดเล็กน้อยใต้หัวข้อ
-                      },
-                      {
-                        type: "text",
-                        text: `💼 อาชีพที่เกี่ยวข้อง`,
-                        weight: "bold",
-                        margin: "md",
-                        size: "sm"
-                      },
-                      ...(matchedMajor.careers && matchedMajor.careers.length > 0 ? 
-                        matchedMajor.careers.map(career => ({
-                          type: "text",
-                          text: `• ${career}`,
-                          size: "sm",
-                          margin: "xs",
-                          wrap: true
-                        }))
-                        : [{
-                          type: "text",
-                          text: "ไม่ระบุ",
-                          size: "sm",
-                          margin: "xs",
-                          wrap: true
-                        }]
-                      )
-                    ]
-                  },
-              footer: {
-                type: "box",
-                layout: "horizontal",
-                contents: [
-                  {
-                    type: "button",
-                    style: "primary",
-                    action: {
-                      type: "message",
-                      label: "เริ่มใหม่",
-                      text: "เริ่มใหม่"
-                    }
-                  }
-                ]
-              }
-            };
+        }
+      ]
+    }
+  };
 
             await lineClient.replyMessage(event.replyToken, {
               type: "flex",
