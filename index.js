@@ -360,6 +360,74 @@ app.post('/linewebhook',
             return;
           }
 
+
+  // STEP 1: เริ่มจากคำว่า "ค้นหาข้อมูล"
+  if (userMessage === 'ค้นหาข้อมูล') {
+    await lineClient.replyMessage(event.replyToken, {
+      type: 'text',
+      text: 'กรุณาเลือกคณะที่สนใจ:',
+      quickReply: {
+        items: faculties.map(faculty => ({
+          type: 'action',
+          action: {
+            type: 'message',
+            label: faculty.name,
+            text: faculty.name
+          }
+        }))
+      }
+    });
+    return;
+  }
+
+  // STEP 2: เลือกคณะ
+  const selectedFaculty = faculties.find(f => f.name === userMessage);
+  if (selectedFaculty) {
+    await lineClient.replyMessage(event.replyToken, {
+      type: 'text',
+      text: `กรุณาเลือกสาขาใน "${selectedFaculty.name}":`,
+      quickReply: {
+        items: selectedFaculty.majors.map(major => ({
+          type: 'action',
+          action: {
+            type: 'message',
+            label: major.name,
+            text: major.name
+          }
+        }))
+      }
+    });
+    return;
+  }
+
+  // STEP 3: เลือกสาขา
+  let matchedMajor, matchedFaculty;
+  for (const faculty of faculties) {
+    const found = faculty.majors.find(m => m.name === userMessage);
+    if (found) {
+      matchedMajor = found;
+      matchedFaculty = faculty;
+      break;
+    }
+  }
+
+  if (matchedMajor) {
+    const detail = `📘 สาขา: ${matchedMajor.name}
+📚 คณะ: ${matchedFaculty.name}
+📊 เกรดขั้นต่ำ: ${matchedMajor.grade}
+📌 เงื่อนไข: ${matchedMajor.condition}
+🧠 ความสามารถที่ควรมี: ${matchedMajor.ability.join(', ')}
+✅ เหตุผลที่เหมาะสม: ${matchedMajor.reason}
+🎯 อาชีพที่เกี่ยวข้อง: ${matchedMajor.careers.join(', ')}`;
+
+    await lineClient.replyMessage(event.replyToken, {
+      type: 'text',
+      text: detail
+    });
+    return;
+  }
+
+          
           // ตรวจสอบ Intent จาก Dialogflow
           const dialogflowResult = await detectIntentText(sessionId, userMessage);
           const replyText = dialogflowResult.fulfillmentText || '❗ ขออภัยค่ะ  \nฉันไม่เข้าใจข้อความของคุณในครั้งนี้  \nกรุณาลองพิมพ์ใหม่อีกครั้งนะคะ 😊';
