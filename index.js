@@ -198,12 +198,6 @@ app.post("/webhook", async (req, res) => {
     if (typeof grade !== "number" || grade < 0 || grade > 4) {
       return res.json({
         fulfillmentText: "📊 กรุณาระบุเกรดเฉลี่ยของคุณ\nโดยต้องอยู่ในช่วง 0.0 - 4.0 นะคะ 😊",
-        outputContexts: [
-          {
-            name: `${sessionId}/contexts/awaiting-grade`,
-            lifespanCount: 1
-          }
-        ]
       });
     }
     session.grade = grade;
