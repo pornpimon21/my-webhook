@@ -194,10 +194,11 @@ app.post("/webhook", async (req, res) => {
   }
 
 if (intent === "get grade") {
-  let grade = parseFloat(params.grade); // แปลงเป็น float ก่อน
+  const grade = Number(params.grade);  // แปลงเป็นตัวเลขก่อน
+
   if (isNaN(grade) || grade < 0 || grade > 4) {
     return res.json({
-      fulfillmentText: "📊 กรุณาระบุเกรดเฉลี่ยของคุณ\nโดยต้องอยู่ในช่วง 0.0 - 4.0 นะคะ 😊",
+      fulfillmentText: "กรุณาใส่เกรดเฉลี่ยให้ถูกต้อง (0.0 - 4.0)",
       outputContexts: [
         {
           name: `${sessionId}/contexts/awaiting-grade`,
@@ -205,21 +206,15 @@ if (intent === "get grade") {
         }
       ]
     });
+  }    
+  
+    session.grade = grade;
+    await saveSession(session);
+    return res.json({
+      fulfillmentText: `🙏 ขอบคุณค่ะ คุณได้เกรด ${grade}  \nกรุณาระบุความสามารถหรือความถนัดของคุณ  \n(เช่น เลข, วิทยาศาสตร์, คอมพิวเตอร์) 🚀`
+    });
   }
 
-  // ถ้าผ่าน
-  session.grade = grade;
-  await saveSession(session);
-  return res.json({
-    fulfillmentText: `🙏 ขอบคุณค่ะ คุณได้เกรด ${grade}\nกรุณาระบุความสามารถหรือความถนัดของคุณ\n(เช่น เลข, วิทยาศาสตร์, คอมพิวเตอร์) 🚀`,
-    outputContexts: [
-      {
-        name: `${sessionId}/contexts/awaiting-ability`,
-        lifespanCount: 3
-      }
-    ]
-  });
-}
 if (intent === "get skills") {
   let abilities = params.ability;
   if (typeof abilities === "string") {
