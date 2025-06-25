@@ -361,89 +361,116 @@ app.post('/linewebhook',
           }
 
 
-          // STEP 1: คำสั่ง "ค้นหาข้อมูล" -> แสดง Flex Message เลือกคณะ
-          if (userMessage === 'ค้นหาข้อมูล') {
+// STEP 1: คำสั่ง "ค้นหาข้อมูล" -> แสดง Flex Message เลือกคณะ
+if (userMessage === 'ค้นหาข้อมูล') {
 
-         await lineClient.replyMessage(event.replyToken, {
-         type: 'text',
-         text: '🙏 สวัสดีค่ะ!\nกรุณาเลือกคณะที่สนใจของคุณด้านล่างนี้ค่ะ 😊\n➡️ เพื่อดูรายละเอียดและสาขาต่าง ๆ'
-         });
+  await lineClient.replyMessage(event.replyToken, {
+    type: 'text',
+    text: '🙏 สวัสดีค่ะ!\nกรุณาเลือกคณะที่สนใจของคุณด้านล่างนี้ค่ะ 😊\n➡️ เพื่อดูรายละเอียดและสาขาต่าง ๆ'
+  });
 
-            // สร้าง bubbles สำหรับคณะ (ปุ่มสีสลับฟ้า/ชมพู)
-const facultyBubbles = faculties.map((faculty, index) => ({
-  type: "bubble",
-  size: "micro",
-  footer: {
-    type: "box",
-    layout: "vertical",
-    contents: [
-      {
-        type: "button",
-        style: "primary",
-        color: (index % 2 === 0) ? "#1E90FF" : "#FF69B4", 
-        action: {
-          type: "message",
-          label: faculty.name,
-          text: faculty.name
+  // สร้าง bubbles สำหรับคณะ (ปุ่มสีสลับฟ้า/ชมพู)
+  const facultyBubbles = faculties.map((faculty, index) => ({
+    type: "bubble",
+    size: "micro",
+    body: {
+      type: "box",
+      layout: "vertical",
+      contents: [
+        {
+          type: "text",
+          text: faculty.name,
+          weight: "bold",
+          size: "sm",
+          align: "center",
+          wrap: true
         }
-      }
-    ]
-  }
-}));
-
-            await lineClient.replyMessage(event.replyToken, {
-              type: "flex",
-              altText: "กรุณาเลือกคณะที่สนใจ",
-              contents: {
-                type: "carousel",
-                contents: facultyBubbles
-              }
-            });
-            return;
+      ]
+    },
+    footer: {
+      type: "box",
+      layout: "vertical",
+      contents: [
+        {
+          type: "button",
+          style: "primary",
+          color: index % 2 === 0 ? "#1E90FF" : "#FF69B4",
+          action: {
+            type: "message",
+            label: faculty.name,
+            text: faculty.name
           }
+        }
+      ]
+    }
+  }));
 
-          // STEP 2: เลือกคณะ -> แสดง Flex Message เลือกสาขา (ปุ่มสีสลับส้ม/เหลือง)
-          const selectedFaculty = faculties.find(f => f.name === userMessage);
-          if (selectedFaculty) {
+  await lineClient.replyMessage(event.replyToken, {
+    type: "flex",
+    altText: "กรุณาเลือกคณะที่สนใจ",
+    contents: {
+      type: "carousel",
+      contents: facultyBubbles
+    }
+  });
+  return;
+}
 
-         // ส่งข้อความก่อน
-         await lineClient.replyMessage(event.replyToken, {
-         type: 'text',
-         text: `🎓 กรุณาเลือกสาขาที่สนใจในคณะ\n"${selectedFaculty.name}" ด้านล่างนี้ค่ะ 😊`
-         });
+// STEP 2: เลือกคณะ -> แสดง Flex Message เลือกสาขา (ปุ่มสีสลับส้ม/เหลือง)
+const selectedFaculty = faculties.find(f => f.name === userMessage);
+if (selectedFaculty) {
 
-            const majorBubbles = selectedFaculty.majors.map((major, index) => ({
-              type: "bubble",
-              size: "micro",
-              footer: {
-                type: "box",
-                layout: "vertical",
-                contents: [
-                  {
-                    type: "button",
-                    style: "primary",
-                    color: (index % 2 === 0) ? "#FFA500" : "#FFFF00", // สลับสีปุ่ม
-                    action: {
-                      type: "message",
-                      label: major.name,
-                      text: major.name
-                    }
-                  }
-                ]
-              }
-            }));
+  // ส่งข้อความก่อน
+  await lineClient.replyMessage(event.replyToken, {
+    type: 'text',
+    text: `🎓 กรุณาเลือกสาขาที่สนใจในคณะ\n"${selectedFaculty.name}" ด้านล่างนี้ค่ะ 😊`
+  });
 
-            await lineClient.replyMessage(event.replyToken, {
-              type: "flex",
-              altText: `กรุณาเลือกสาขาใน "${selectedFaculty.name}"`,
-              contents: {
-                type: "carousel",
-                contents: majorBubbles
-              }
-            });
-            return;
+  const majorBubbles = selectedFaculty.majors.map((major, index) => ({
+    type: "bubble",
+    size: "micro",
+    body: {
+      type: "box",
+      layout: "vertical",
+      contents: [
+        {
+          type: "text",
+          text: major.name,
+          weight: "bold",
+          size: "sm",
+          align: "center",
+          wrap: true
+        }
+      ]
+    },
+    footer: {
+      type: "box",
+      layout: "vertical",
+      contents: [
+        {
+          type: "button",
+          style: "primary",
+          color: index % 2 === 0 ? "#FFA500" : "#FFFF00",
+          action: {
+            type: "message",
+            label: major.name,
+            text: major.name
           }
+        }
+      ]
+    }
+  }));
 
+  await lineClient.replyMessage(event.replyToken, {
+    type: "flex",
+    altText: `กรุณาเลือกสาขาใน "${selectedFaculty.name}"`,
+    contents: {
+      type: "carousel",
+      contents: majorBubbles
+    }
+  });
+  return;
+}
           // STEP 3: เลือกสาขา -> แสดงข้อมูลสาขาแบบ Flex Message
           let matchedMajor, matchedFaculty;
           for (const faculty of faculties) {
