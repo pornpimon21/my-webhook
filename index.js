@@ -406,11 +406,11 @@ app.post('/linewebhook',
                         margin: "sm"
                       },
                       {
-                        type: "text",
-                        text: `🏫 สาขา : ${rec.major}`,
-                        size: "sm",
-                        margin: "sm",
-                        color : "#000000"
+                      type: "text",
+                      text: `🏫 สาขา${rec.major}`,
+                      weight: "bold",
+                      size: "sm",
+                      wrap: true
                       }
                     ]
                   },
@@ -424,7 +424,8 @@ app.post('/linewebhook',
                         text: "📊 เกรดขั้นต่ำที่กำหนด",
                         size: "sm",
                         weight: "bold",
-                        wrap: true
+                        wrap: true,
+                        margin: "md"
                      },
                      {
                         type: "text",
@@ -438,7 +439,8 @@ app.post('/linewebhook',
                         text: "🛠️ ทักษะความสามารถ",
                         size: "sm",
                         weight: "bold",
-                        wrap: true
+                        wrap: true,
+                        margin: "md"
                       },
                       {
                         type: "text",
@@ -452,7 +454,8 @@ app.post('/linewebhook',
                         text: "✅ ความสามารถของคุณที่ตรงกับสาขานี้",
                         size: "sm",
                         weight: "bold",
-                        wrap: true
+                        wrap: true,
+                        margin: "md"
                       },
                       {
                         type: "text",
@@ -466,7 +469,8 @@ app.post('/linewebhook',
                         text: "👥 รับจำนวน",
                         size: "sm",
                         weight: "bold",
-                        wrap: true
+                        wrap: true,
+                        margin: "md"
                       },
                       {
                         type: "text",
@@ -480,7 +484,8 @@ app.post('/linewebhook',
                         text: "📄 คุณสมบัติ",
                         size: "sm",
                         weight: "bold",
-                        wrap: true
+                        wrap: true,
+                        margin: "md"
                       },
                       {
                         type: "text",
@@ -494,7 +499,8 @@ app.post('/linewebhook',
                         text: "💡 เหตุผลที่เหมาะสม",
                         size: "sm",
                         weight: "bold",
-                        wrap: true
+                        wrap: true,
+                        margin: "md"
                       },
                       {
                         type: "text",
