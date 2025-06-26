@@ -487,19 +487,7 @@ for (const faculty of faculties) {
   }
 }
 
-function safeText(text) {
-  if (typeof text === 'string' && text.trim() !== '') return text;
-  if (typeof text === 'number') return text.toString();
-  return 'ไม่ระบุ';
-}
-
-function safeArray(arr) {
-  if (Array.isArray(arr) && arr.length > 0) return arr;
-  return ['ไม่ระบุ'];
-}
-
 if (matchedMajor) {
-  // ใช้ safeText กับข้อมูลเกรดขั้นต่ำที่เป็น number หรือ string
   const gradeText = safeText(matchedMajor?.grade);
   const conditionText = safeText(matchedMajor?.condition);
   const abilityText = safeArray(matchedMajor?.ability).join(", ");
@@ -575,7 +563,7 @@ if (matchedMajor) {
     altText: `ข้อมูลสาขา ${safeText(matchedMajor?.name)}`.slice(0, 400),
     contents: bubble
   });
-return;  
+  return;  
 }
 
           // ตรวจสอบ Intent จาก Dialogflow
