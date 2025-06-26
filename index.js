@@ -511,27 +511,47 @@ if (matchedMajor) {
         }
       ]
     },
-    body: {
-      type: "box",
-      layout: "vertical",
-      spacing: "sm",
-      contents: [
-        {
-          type: "text",
-          text: "📊 เกรดขั้นต่ำ",
-          size: "sm",
-          weight: "bold",
-          wrap: true,
-          margin: "md"
-        },
-        {
-          type: "text",
-          text: matchedMajor.grade ? matchedMajor.grade : "ไม่ระบุ",          size: "sm",
-          wrap: true,
-          margin: "xs"
-        },
-      ]
+body: {
+  type: "box",
+  layout: "vertical",
+  spacing: "sm", // อันนี้ช่วยระดับหนึ่ง แต่แนะนำใช้ margin เพิ่มด้วย
+  contents: [
+    {
+      type: "text",
+      text: `📊 เกรดขั้นต่ำ: ${matchedMajor.grade}`,
+      size: "sm",
+      wrap: true
     },
+    {
+      type: "text",
+      text: `📌 เงื่อนไข: ${matchedMajor.condition}`,
+      size: "sm",
+      wrap: true,
+      margin: "md" // 👈 เพิ่มตรงนี้
+    },
+    {
+      type: "text",
+      text: `🧠 ความสามารถที่ควรมี: ${matchedMajor.ability.join(", ")}`,
+      size: "sm",
+      wrap: true,
+      margin: "md"
+    },
+    {
+      type: "text",
+      text: `✅ เหตุผลที่เหมาะสม: ${matchedMajor.reason}`,
+      size: "sm",
+      wrap: true,
+      margin: "md"
+    },
+    {
+      type: "text",
+      text: `🎯 อาชีพที่เกี่ยวข้อง: ${matchedMajor.careers.join(", ")}`,
+      size: "sm",
+      wrap: true,
+      margin: "md"
+    }
+  ]
+},
     footer: {
       type: "box",
       layout: "horizontal",
