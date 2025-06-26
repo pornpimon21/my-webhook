@@ -496,7 +496,7 @@ if (matchedMajor) {
       contents: [
         {
           type: "text",
-          text: `📚 คณะ${matchedFaculty.name}`,  // เพิ่มเว้นวรรคและเครื่องหมาย
+          text: `📚 ${matchedFaculty.name}`,  // เพิ่มเว้นวรรคและเครื่องหมาย
           weight: "bold",
           size: "lg",
           wrap: true
@@ -514,42 +514,88 @@ if (matchedMajor) {
 body: {
   type: "box",
   layout: "vertical",
-  spacing: "sm", // อันนี้ช่วยระดับหนึ่ง แต่แนะนำใช้ margin เพิ่มด้วย
+  spacing: "sm",
   contents: [
     {
       type: "text",
-      text: `📊 เกรดขั้นต่ำ: ${matchedMajor.grade}`,
+      text: "📊 เกรดขั้นต่ำ",
       size: "sm",
-      wrap: true
+      weight: "bold"
     },
     {
       type: "text",
-      text: `📌 เงื่อนไข: ${matchedMajor.condition}`,
+      text: matchedMajor.grade || "ไม่ระบุ",
       size: "sm",
       wrap: true,
-      margin: "md" // 👈 เพิ่มตรงนี้
+      margin: "xs"
     },
     {
       type: "text",
-      text: `🧠 ความสามารถที่ควรมี: ${matchedMajor.ability.join(", ")}`,
+      text: "📌 เงื่อนไข",
       size: "sm",
-      wrap: true,
+      weight: "bold",
       margin: "md"
     },
     {
       type: "text",
-      text: `✅ เหตุผลที่เหมาะสม: ${matchedMajor.reason}`,
+      text: matchedMajor.condition || "ไม่ระบุ",
       size: "sm",
       wrap: true,
+      margin: "xs"
+    },
+    {
+      type: "text",
+      text: "🧠 ความสามารถที่ควรมี",
+      size: "sm",
+      weight: "bold",
       margin: "md"
     },
     {
       type: "text",
-      text: `🎯 อาชีพที่เกี่ยวข้อง: ${matchedMajor.careers.join(", ")}`,
+      text: Array.isArray(matchedMajor.ability) && matchedMajor.ability.length > 0
+        ? matchedMajor.ability.join(", ")
+        : "ไม่ระบุ",
       size: "sm",
       wrap: true,
+      margin: "xs"
+    },
+    {
+      type: "text",
+      text: "✅ เหตุผลที่เหมาะสม",
+      size: "sm",
+      weight: "bold",
       margin: "md"
-    }
+    },
+    {
+      type: "text",
+      text: matchedMajor.reason || "ไม่ระบุ",
+      size: "sm",
+      wrap: true,
+      margin: "xs"
+    },
+    {
+      type: "text",
+      text: "🎯 อาชีพที่เกี่ยวข้อง",
+      size: "sm",
+      weight: "bold",
+      margin: "md"
+    },
+    ...(Array.isArray(matchedMajor.careers) && matchedMajor.careers.length > 0
+      ? matchedMajor.careers.map(career => ({
+          type: "text",
+          text: `• ${career}`,
+          size: "sm",
+          wrap: true,
+          margin: "xs"
+        }))
+      : [{
+          type: "text",
+          text: "ไม่ระบุ",
+          size: "sm",
+          wrap: true,
+          margin: "xs"
+        }]
+    )
   ]
 },
     footer: {
