@@ -356,27 +356,40 @@ app.post('/linewebhook',
           const sessionId = event.source.userId || uuid.v4();  // LINE user ID ใช้แทน session
 
 if (event.message.text === 'เริ่มใหม่') {
-  // ดึง session เดิม
-  const session = await getSession(sessionId);
-
-  // เตรียมข้อความถามเกรด พร้อมชื่อเดิมถ้ามี
-  const nameText = session && session.name ? `คุณ${session.name}` : '';
-  const askGradeText = `สวัสดีค่ะ ${nameText} กรุณากรอกเกรดเฉลี่ยของคุณค่ะ`;
-
-  // แก้ตรงนี้: เคลียร์เฉพาะบางข้อมูล ไม่ลบชื่อ
+  // เคลียร์ข้อมูลบางส่วน
   await updateSession(sessionId, {
     grade: null,
     abilitiesInputText: null,
     recommendations: [],
   });
 
-  // ส่งข้อความถามเกรด
+  // ดึง session เพื่อเช็คชื่อ (ถ้ามี)
+  const session = await getSession(sessionId);
+  const nameText = session.name ? `คุณ${session.name}` : '';
+
+  // ส่งข้อความถามเกรดเฉลี่ยใหม่ทันที
   await lineClient.replyMessage(event.replyToken, {
     type: 'text',
-    text: askGradeText
+    text: `สวัสดีค่ะ ${nameText} กรุณากรอกเกรดเฉลี่ยของคุณค่ะ`
   });
 
-  return;  // หยุด flow ที่เหลือ
+  return; // หยุด flow ที่เหลือ
+}
+
+// ถ้า user พิมพ์เกรด (เช็คว่าเป็นตัวเลข)
+if (!isNaN(event.message.text)) {
+  const grade = Number(event.message.text);
+
+  // อัปเดตเกรดใน session
+  await updateSession(sessionId, { grade });
+
+  // ต่อ flow ถามความสามารถ หรือ process อื่น ๆ
+  await lineClient.replyMessage(event.replyToken, {
+    type: 'text',
+    text: 'กรุณากรอกความสามารถหรือความถนัดของคุณค่ะ'
+  });
+
+  return;
 }
 
 
