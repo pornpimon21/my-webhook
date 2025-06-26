@@ -494,6 +494,14 @@ const safeText = (text) =>
 const safeArray = (arr) =>
   Array.isArray(arr) && arr.length > 0 ? arr : ['ไม่ระบุ'];
 
+// ตัวอย่างปรับข้อมูลก่อนสร้าง bubble
+const gradeText = safeText(matchedMajor?.grade);
+const conditionText = safeText(matchedMajor?.condition);
+const abilityText = safeArray(matchedMajor?.ability).join(", ");
+const reasonText = safeText(matchedMajor?.reason);
+const careersArray = safeArray(matchedMajor?.careers);
+
+// สร้าง bubble ใหม่ด้วยข้อมูลที่ปลอดภัย
 const bubble = {
   type: "bubble",
   header: {
@@ -520,61 +528,16 @@ const bubble = {
     layout: "vertical",
     spacing: "sm",
     contents: [
-      {
-        type: "text",
-        text: "📊 เกรดขั้นต่ำ",
-        size: "sm",
-        weight: "bold"
-      },
-      {
-        type: "text",
-        text: safeText(matchedMajor?.grade),
-        size: "sm",
-        wrap: true
-      },
-      {
-        type: "text",
-        text: "📌 เงื่อนไข",
-        size: "sm",
-        weight: "bold"
-      },
-      {
-        type: "text",
-        text: safeText(matchedMajor?.condition),
-        size: "sm",
-        wrap: true
-      },
-      {
-        type: "text",
-        text: "🧠 ความสามารถที่ควรมี",
-        size: "sm",
-        weight: "bold"
-      },
-      {
-        type: "text",
-        text: safeArray(matchedMajor?.ability).join(", "),
-        size: "sm",
-        wrap: true
-      },
-      {
-        type: "text",
-        text: "✅ เหตุผลที่เหมาะสม",
-        size: "sm",
-        weight: "bold"
-      },
-      {
-        type: "text",
-        text: safeText(matchedMajor?.reason),
-        size: "sm",
-        wrap: true
-      },
-      {
-        type: "text",
-        text: "🎯 อาชีพที่เกี่ยวข้อง",
-        size: "sm",
-        weight: "bold"
-      },
-      ...safeArray(matchedMajor?.careers).map(career => ({
+      { type: "text", text: "📊 เกรดขั้นต่ำ", size: "sm", weight: "bold" },
+      { type: "text", text: gradeText, size: "sm", wrap: true },
+      { type: "text", text: "📌 เงื่อนไข", size: "sm", weight: "bold" },
+      { type: "text", text: conditionText, size: "sm", wrap: true },
+      { type: "text", text: "🧠 ความสามารถที่ควรมี", size: "sm", weight: "bold" },
+      { type: "text", text: abilityText, size: "sm", wrap: true },
+      { type: "text", text: "✅ เหตุผลที่เหมาะสม", size: "sm", weight: "bold" },
+      { type: "text", text: reasonText, size: "sm", wrap: true },
+      { type: "text", text: "🎯 อาชีพที่เกี่ยวข้อง", size: "sm", weight: "bold" },
+      ...careersArray.map(career => ({
         type: "text",
         text: `• ${career}`,
         size: "sm",
