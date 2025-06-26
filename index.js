@@ -463,7 +463,7 @@ if (selectedFaculty) {
   await lineClient.replyMessage(event.replyToken, [
     {
       type: 'text',
-      text: `🎓 กรุณาเลือกสาขาที่สนใจในคณะ\n"${selectedFaculty.name}" ด้านล่างนี้ค่ะ 😊`
+      text: `🎓 กรุณาเลือกสาขาที่สนใจใน\n"${selectedFaculty.name}" ด้านล่างนี้ค่ะ 😊`
     },
     {
       type: "flex",
@@ -526,105 +526,10 @@ if (matchedMajor) {
         },
         {
           type: "text",
-          text: matchedMajor.grade ? matchedMajor.grade : "ไม่ระบุ",
-          size: "sm",
+          text: matchedMajor.grade ? matchedMajor.grade : "ไม่ระบุ",          size: "sm",
           wrap: true,
           margin: "xs"
         },
-        {
-          type: "text",
-          text: "🧠 ทักษะความสามารถ",
-          size: "sm",
-          weight: "bold",
-          color: "#000000",
-          wrap: true,
-          margin: "md"
-        },
-        {
-          type: "text",
-          text: Array.isArray(matchedMajor.ability) && matchedMajor.ability.length > 0
-            ? matchedMajor.ability.join(", ")
-            : "ไม่ระบุ",
-          size: "sm",
-          wrap: true,
-          margin: "xs"
-        },
-        {
-          type: "text",
-          text: "👥 รับจำนวน",
-          weight: "bold",
-          size: "sm",
-          margin: "md"
-        },
-        {
-          type: "text",
-          text: matchedMajor.quota ? `${matchedMajor.quota} คน` : "ไม่ระบุ",
-          size: "sm",
-          wrap: true,
-          margin: "xs"
-        },
-        {
-          type: "text",
-          text: "📌 คุณสมบัติ",
-          weight: "bold",
-          size: "sm",
-          margin: "md"
-        },
-        {
-          type: "text",
-          text: matchedMajor.condition ? matchedMajor.condition : "ไม่ระบุ",
-          size: "sm",
-          wrap: true,
-          margin: "xs"
-        },
-        {
-          type: "text",
-          text: Array.isArray(matchedMajor.ability) && matchedMajor.ability.length > 0
-            ? matchedMajor.ability.join(", ")
-            : "ไม่ระบุ",
-          size: "sm",
-          wrap: true,
-          margin: "xs"
-        },
-        {
-          type: "text",
-          text: "✅ เหตุผลที่เหมาะสม",
-          size: "sm",
-          weight: "bold",
-          color: "#000000",
-          wrap: true,
-          margin: "md"
-        },
-        {
-          type: "text",
-          text: matchedMajor.reason ? matchedMajor.reason : "ไม่ระบุ",
-          size: "sm",
-          wrap: true,
-          margin: "xs"
-        },
-        {
-          type: "text",
-          text: `💼 อาชีพที่เกี่ยวข้อง`,
-          weight: "bold",
-          margin: "md",
-          size: "sm"
-        },
-        ...(Array.isArray(matchedMajor.careers) && matchedMajor.careers.length > 0
-          ? matchedMajor.careers.map(career => ({
-              type: "text",
-              text: `• ${career}`,
-              size: "sm",
-              margin: "xs",
-              wrap: true
-            }))
-          : [{
-              type: "text",
-              text: "ไม่ระบุ",
-              size: "sm",
-              margin: "xs",
-              wrap: true
-            }]
-        )
       ]
     },
     footer: {
