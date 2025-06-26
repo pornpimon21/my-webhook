@@ -350,68 +350,152 @@ app.post('/linewebhook',
           const userMessage = event.message.text;
           const sessionId = event.source.userId || uuid.v4();  // LINE user ID ใช้แทน session
 
-          // ถ้าผู้ใช้พิมพ์ "แนะนำคณะ" ให้ส่งข้อความต้อนรับ Dialogflow
-          if (userMessage === 'แนะนำคณะ') {
-            const dialogflowResult = await detectIntentText(sessionId, 'เริ่มต้น');
-            await lineClient.replyMessage(event.replyToken, {
-              type: 'text',
-              text: dialogflowResult.fulfillmentText
-            });
-            return;
-          }
+// ฟังก์ชันช่วยตรวจสอบข้อความ ให้รองรับทั้ง string และ number
+const safeText = (text) => {
+  if (typeof text === 'string' && text.trim() !== '') return text;
+  if (typeof text === 'number') return text.toString();
+  return 'ไม่ระบุ';
+};
 
+const safeArray = (arr) =>
+  Array.isArray(arr) && arr.length > 0 ? arr : ['ไม่ระบุ'];
 
-  // STEP 1: เริ่มจากคำว่า "ค้นหาข้อมูล"
-  if (userMessage === 'ค้นหาข้อมูล') {
-    await lineClient.replyMessage(event.replyToken, {
-      type: 'text',
-      text: 'กรุณาเลือกคณะที่สนใจ:',
-      quickReply: {
-        items: faculties.map(faculty => ({
-          type: 'action',
+// STEP 1: คำสั่ง "ค้นหาข้อมูล" -> แสดง Flex Message เลือกคณะ
+if (userMessage === 'ค้นหาข้อมูล') {
+  // สร้าง bubbles สำหรับคณะ (ปุ่มสีสลับฟ้า/ชมพู)
+  const facultyBubbles = faculties.map((faculty, index) => ({
+    type: "bubble",
+    size: "micro",
+    body: {
+      type: "box",
+      layout: "vertical",
+      contents: [
+        {
+          type: "text",
+          text: faculty.name,
+          weight: "bold",
+          size: "sm",
+          align: "center",
+          wrap: true
+        }
+      ],
+      paddingAll: "10px"
+    },
+    footer: {
+      type: "box",
+      layout: "vertical",
+      contents: [
+        {
+          type: "button",
+          style: "primary",
+          color: index % 2 === 0 ? "#1E90FF" : "#FF69B4",
           action: {
-            type: 'message',
+            type: "message",
             label: faculty.name,
             text: faculty.name
           }
-        }))
-      }
-    });
-    return;
-  }
+        }
+      ],
+      paddingAll: "10px",
+      spacing: "sm"
+    }
+  }));
 
-  // STEP 2: เลือกคณะ
-  const selectedFaculty = faculties.find(f => f.name === userMessage);
-  if (selectedFaculty) {
-    await lineClient.replyMessage(event.replyToken, {
+  await lineClient.replyMessage(event.replyToken, [
+    {
       type: 'text',
-      text: `กรุณาเลือกสาขาใน "${selectedFaculty.name}":`,
-      quickReply: {
-        items: selectedFaculty.majors.map(major => ({
-          type: 'action',
+      text: '🙏 สวัสดีค่ะ!\nกรุณาเลือกคณะที่สนใจของคุณด้านล่างนี้ค่ะ 😊\n➡️ เพื่อดูรายละเอียดและสาขาต่าง ๆ'
+    },
+    {
+      type: "flex",
+      altText: "กรุณาเลือกคณะที่สนใจ",
+      contents: {
+        type: "carousel",
+        contents: facultyBubbles
+      }
+    }
+  ]);
+  return;
+}
+
+// STEP 2: เลือกคณะ -> แสดง Flex Message เลือกสาขา
+const selectedFaculty = faculties.find(f => f.name === userMessage);
+if (selectedFaculty) {
+  const majorBubbles = selectedFaculty.majors.map((major, index) => ({
+    type: "bubble",
+    size: "micro",
+    body: {
+      type: "box",
+      layout: "vertical",
+      contents: [
+        {
+          type: "text",
+          text: major.name,
+          weight: "bold",
+          size: "sm",
+          align: "center",
+          wrap: true
+        }
+      ],
+      paddingAll: "10px"
+    },
+    footer: {
+      type: "box",
+      layout: "vertical",
+      contents: [
+        {
+          type: "button",
+          style: "primary",
+          color: index % 2 === 0 ? "#FFA500" : "#FFFF00",
           action: {
-            type: 'message',
+            type: "message",
             label: major.name,
             text: major.name
           }
-        }))
-      }
-    });
-    return;
-  }
-
-  // STEP 3: เลือกสาขา
-  let matchedMajor, matchedFaculty;
-  for (const faculty of faculties) {
-    const found = faculty.majors.find(m => m.name === userMessage);
-    if (found) {
-      matchedMajor = found;
-      matchedFaculty = faculty;
-      break;
+        }
+      ],
+      paddingAll: "10px",
+      spacing: "sm"
     }
+  }));
+
+  await lineClient.replyMessage(event.replyToken, [
+    {
+      type: 'text',
+      text: `🎓 กรุณาเลือกสาขาที่สนใจใน\n"${selectedFaculty.name}" ด้านล่างนี้ค่ะ 😊`
+    },
+    {
+      type: "flex",
+      altText: `กรุณาเลือกสาขาใน "${selectedFaculty.name}"`,
+      contents: {
+        type: "carousel",
+        contents: majorBubbles
+      }
+    }
+  ]);
+  return;
+}
+
+// STEP 3: เลือกสาขา
+let matchedMajor, matchedFaculty;
+for (const faculty of faculties) {
+  const found = faculty.majors.find(m => m.name === userMessage);
+  if (found) {
+    matchedMajor = found;
+    matchedFaculty = faculty;
+    break;
   }
+}
 
 if (matchedMajor) {
+  // ใช้ safeText กับข้อมูลเกรดขั้นต่ำที่เป็น number หรือ string
+  const gradeText = safeText(matchedMajor?.grade);
+  const conditionText = safeText(matchedMajor?.condition);
+  const abilityText = safeArray(matchedMajor?.ability).join(", ");
+  const reasonText = safeText(matchedMajor?.reason);
+  const careersArray = safeArray(matchedMajor?.careers);
+
+  // สร้าง bubble ใหม่ด้วยข้อมูลที่ปลอดภัย
   const bubble = {
     type: "bubble",
     header: {
@@ -420,17 +504,16 @@ if (matchedMajor) {
       contents: [
         {
           type: "text",
-          text: `📚 คณะ${matchedFaculty.name}`,  // แสดงคณะก่อน
+          text: `📚 คณะ${safeText(matchedFaculty?.name)}`,
           weight: "bold",
           size: "lg",
           wrap: true
         },
         {
           type: "text",
-          text: `📘 สาขา${matchedMajor.name}`,   // แสดงสาขาหลัง
+          text: `📘 สาขา${safeText(matchedMajor?.name)}`,
           size: "md",
-          wrap: true,
-          margin: "sm"
+          wrap: true
         }
       ]
     },
@@ -439,36 +522,21 @@ if (matchedMajor) {
       layout: "vertical",
       spacing: "sm",
       contents: [
-        {
+        { type: "text", text: "📊 เกรดขั้นต่ำ", size: "sm", weight: "bold" },
+        { type: "text", text: gradeText, size: "sm", wrap: true },
+        { type: "text", text: "📌 เงื่อนไข", size: "sm", weight: "bold" },
+        { type: "text", text: conditionText, size: "sm", wrap: true },
+        { type: "text", text: "🧠 ความสามารถที่ควรมี", size: "sm", weight: "bold" },
+        { type: "text", text: abilityText, size: "sm", wrap: true },
+        { type: "text", text: "✅ เหตุผลที่เหมาะสม", size: "sm", weight: "bold" },
+        { type: "text", text: reasonText, size: "sm", wrap: true },
+        { type: "text", text: "🎯 อาชีพที่เกี่ยวข้อง", size: "sm", weight: "bold" },
+        ...careersArray.map(career => ({
           type: "text",
-          text: `📊 เกรดขั้นต่ำ: ${matchedMajor.grade}`,
+          text: `• ${career}`,
           size: "sm",
           wrap: true
-        },
-        {
-          type: "text",
-          text: `📌 เงื่อนไข: ${matchedMajor.condition}`,
-          size: "sm",
-          wrap: true
-        },
-        {
-          type: "text",
-          text: `🧠 ความสามารถที่ควรมี: ${matchedMajor.ability.join(", ")}`,
-          size: "sm",
-          wrap: true
-        },
-        {
-          type: "text",
-          text: `✅ เหตุผลที่เหมาะสม: ${matchedMajor.reason}`,
-          size: "sm",
-          wrap: true
-        },
-        {
-          type: "text",
-          text: `🎯 อาชีพที่เกี่ยวข้อง: ${matchedMajor.careers.join(", ")}`,
-          size: "sm",
-          wrap: true
-        }
+        }))
       ]
     },
     footer: {
@@ -488,12 +556,13 @@ if (matchedMajor) {
     }
   };
 
+  console.log("✅ Bubble Payload:\n", JSON.stringify(bubble, null, 2));
+
   await lineClient.replyMessage(event.replyToken, {
     type: "flex",
-    altText: `ข้อมูลคณะและสาขา ${matchedFaculty.name} - ${matchedMajor.name}`,
+    altText: `ข้อมูลสาขา ${safeText(matchedMajor?.name)}`.slice(0, 400),
     contents: bubble
   });
-  return;
 }
           
           // ตรวจสอบ Intent จาก Dialogflow
