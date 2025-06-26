@@ -490,6 +490,26 @@ if (selectedFaculty) {
 if (matchedMajor) {
 const bubble = {
   type: "bubble",
+  header: {
+    type: "box",
+    layout: "vertical",
+    contents: [
+      {
+        type: "text",
+        text: `📚 คณะ${matchedFaculty.name}`,
+        weight: "bold",
+        size: "lg",
+        wrap: true
+      },
+      {
+        type: "text",
+        text: `📘 สาขา${matchedMajor.name}`,
+        size: "md",
+        wrap: true,
+        margin: "sm"
+      }
+    ]
+  },
   body: {
     type: "box",
     layout: "vertical",
@@ -531,9 +551,7 @@ const bubble = {
       },
       {
         type: "text",
-        text: Array.isArray(matchedMajor.ability)
-          ? matchedMajor.ability.join(", ")
-          : "ไม่ระบุ",
+        text: Array.isArray(matchedMajor.ability) ? matchedMajor.ability.join(", ") : "ไม่ระบุ",
         size: "sm",
         wrap: true,
         margin: "xs"
@@ -594,13 +612,15 @@ const bubble = {
   }
 };
 
-await lineClient.replyMessage(event.replyToken, {
-  type: "flex",
-  altText: `ข้อมูลสาขา ${matchedMajor.name}`,
-  contents: bubble
-});
-  return;
-}
+try {
+  await lineClient.replyMessage(event.replyToken, {
+    type: "flex",
+    altText: `ข้อมูลสาขา ${matchedMajor.name}`,
+    contents: bubble
+  });
+} catch (error) {
+  console.error("❌ LINE Flex Error:", JSON.stringify(error.response?.data, null, 2));
+}}
           
           // ตรวจสอบ Intent จาก Dialogflow
           const dialogflowResult = await detectIntentText(sessionId, userMessage);
