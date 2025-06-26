@@ -491,7 +491,7 @@ if (matchedMajor) {
   const gradeText = safeText(matchedMajor?.grade);
   const conditionText = safeText(matchedMajor?.condition);
   const abilityText = safeArray(matchedMajor?.ability).join(", ");
-  const reasonText = safeText(matchedMajor?.reason);
+  const quotaText = safeText(matchedMajor?.quota);
   const careersArray = safeArray(matchedMajor?.careers);
 
   const careersContents = careersArray.map(career => ({
@@ -509,7 +509,7 @@ if (matchedMajor) {
       contents: [
         {
           type: "text",
-          text: `📚 คณะ${safeText(matchedFaculty?.name)}`,
+          text: `📚 ${safeText(matchedFaculty?.name)}`,
           weight: "bold",
           size: "lg",
           wrap: true
@@ -517,6 +517,7 @@ if (matchedMajor) {
         {
           type: "text",
           text: `📘 สาขา${safeText(matchedMajor?.name)}`,
+          weight: "bold",
           size: "md",
           wrap: true
         }
@@ -527,17 +528,26 @@ if (matchedMajor) {
       layout: "vertical",
       spacing: "sm",
       contents: [
-        { type: "text", text: "📊 เกรดขั้นต่ำ", size: "sm", weight: "bold" },
-        { type: "text", text: gradeText, size: "sm", wrap: true },
-        { type: "text", text: "📌 เงื่อนไข", size: "sm", weight: "bold" },
-        { type: "text", text: conditionText, size: "sm", wrap: true },
-        { type: "text", text: "🧠 ความสามารถที่ควรมี", size: "sm", weight: "bold" },
-        { type: "text", text: abilityText, size: "sm", wrap: true },
-        { type: "text", text: "✅ เหตุผลที่เหมาะสม", size: "sm", weight: "bold" },
-        { type: "text", text: reasonText, size: "sm", wrap: true },
-        { type: "text", text: "🎯 อาชีพที่เกี่ยวข้อง", size: "sm", weight: "bold" },
-        ...careersContents
-      ]
+     // เกรดขั้นต่ำ
+    { type: "text", text: "📊 เกรดขั้นต่ำ", size: "sm", weight: "bold", margin: "md" },
+    { type: "text", text: gradeText, size: "sm", wrap: true },
+
+    // ทักษะความสามารถ
+    { type: "text", text: "🧠 ความสามารถที่ควรมี", size: "sm", weight: "bold", margin: "md" },
+    { type: "text", text: abilityText, size: "sm", wrap: true },
+
+    // จำนวนที่รับ
+    { type: "text", text: "🧠 รับจำนวน", size: "sm", weight: "bold", margin: "md" },
+    { type: "text", text: quotaText, size: "sm", wrap: true },
+
+    // คุณสมบัติ
+    { type: "text", text: "📌 เงื่อนไข", size: "sm", weight: "bold", margin: "md" },
+    { type: "text", text: conditionText, size: "sm", wrap: true },
+
+    // อาชีพ
+    { type: "text", text: "🎯 อาชีพที่เกี่ยวข้อง", size: "sm", weight: "bold", margin: "md" },
+    ...careersContents
+  ] 
     },
     footer: {
       type: "box",
