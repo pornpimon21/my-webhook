@@ -498,14 +498,14 @@ if (matchedMajor) {
       contents: [
         {
           type: "text",
-          text: `📚 คณะ${matchedFaculty.name}`,
+          text: `📚 คณะ${matchedFaculty.name || "ไม่ระบุ"}`,
           weight: "bold",
           size: "lg",
           wrap: true
         },
         {
           type: "text",
-          text: `📘 สาขา${matchedMajor.name}`,
+          text: `📘 สาขา${matchedMajor.name || "ไม่ระบุ"}`,
           size: "md",
           wrap: true,
           margin: "sm"
@@ -528,74 +528,64 @@ if (matchedMajor) {
           type: "text",
           text: matchedMajor.grade || "ไม่ระบุ",
           size: "sm",
-          wrap: true,
-          margin: "xs"
+          wrap: true
         },
         {
           type: "text",
           text: "📌 เงื่อนไข",
           size: "sm",
-          weight: "bold",
-          margin: "md"
+          weight: "bold"
         },
         {
           type: "text",
           text: matchedMajor.condition || "ไม่ระบุ",
           size: "sm",
-          wrap: true,
-          margin: "xs"
+          wrap: true
         },
         {
           type: "text",
           text: "🧠 ความสามารถที่ควรมี",
           size: "sm",
-          weight: "bold",
-          margin: "md"
+          weight: "bold"
         },
         {
           type: "text",
           text: Array.isArray(matchedMajor.ability)
             ? matchedMajor.ability.join(", ")
-            : "ไม่ระบุ",
+            : (matchedMajor.ability || "ไม่ระบุ"),
           size: "sm",
-          wrap: true,
-          margin: "xs"
+          wrap: true
         },
         {
           type: "text",
           text: "✅ เหตุผลที่เหมาะสม",
           size: "sm",
-          weight: "bold",
-          margin: "md"
+          weight: "bold"
         },
         {
           type: "text",
           text: matchedMajor.reason || "ไม่ระบุ",
           size: "sm",
-          wrap: true,
-          margin: "xs"
+          wrap: true
         },
         {
           type: "text",
           text: "🎯 อาชีพที่เกี่ยวข้อง",
           size: "sm",
-          weight: "bold",
-          margin: "md"
+          weight: "bold"
         },
         ...(Array.isArray(matchedMajor.careers)
           ? matchedMajor.careers.map(c => ({
               type: "text",
               text: `• ${c}`,
               size: "sm",
-              wrap: true,
-              margin: "xs"
+              wrap: true
             }))
           : [{
               type: "text",
               text: "ไม่ระบุ",
               size: "sm",
-              wrap: true,
-              margin: "xs"
+              wrap: true
             }]
         )
       ]
@@ -603,7 +593,6 @@ if (matchedMajor) {
     footer: {
       type: "box",
       layout: "horizontal",
-      paddingAll: "10px",
       contents: [
         {
           type: "button",
@@ -618,8 +607,8 @@ if (matchedMajor) {
     }
   };
 
-  // 🛠 DEBUG LOG (optional)
-  console.log("📦 Flex Bubble ส่ง:", JSON.stringify(bubble, null, 2));
+  // 🧪 ตรวจสอบก่อนส่ง
+  console.log("👉 Flex Payload:", JSON.stringify(bubble, null, 2));
 
   try {
     await lineClient.replyMessage(event.replyToken, {
@@ -629,7 +618,7 @@ if (matchedMajor) {
     });
   } catch (error) {
     console.error("❌ LINE Flex Error Full:", error);
-    console.error("❌ LINE Flex Error Response:", JSON.stringify(error.response?.data, null, 2));
+    console.error("❌ LINE Flex Error Response:", JSON.stringify(error.response?.data || {}, null, 2));
   }
 }
           
