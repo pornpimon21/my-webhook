@@ -488,13 +488,30 @@ for (const faculty of faculties) {
 }
 
 if (matchedMajor) {
+  const careersContent = Array.isArray(matchedMajor.careers) && matchedMajor.careers.length > 0
+    ? matchedMajor.careers.map(c => ({
+        type: "text",
+        text: `• ${c}`,
+        size: "sm",
+        wrap: true,
+        margin: "xs"
+      }))
+    : [{
+        type: "text",
+        text: "ไม่ระบุ",
+        size: "sm",
+        wrap: true,
+        margin: "xs"
+      }];
+
   const bubble = {
     type: "bubble",
+    size: "mega", // เพิ่มให้เต็มหน้าจอ (ปลอดภัยใน Flex)
     header: {
       type: "box",
       layout: "vertical",
-      paddingAll: "10px",
-      spacing: "sm",
+      paddingAll: "12px",
+      spacing: "xs",
       contents: [
         {
           type: "text",
@@ -515,88 +532,107 @@ if (matchedMajor) {
     body: {
       type: "box",
       layout: "vertical",
-      spacing: "sm",
-      paddingAll: "10px",
+      spacing: "md",
+      paddingAll: "12px",
       contents: [
         {
-          type: "text",
-          text: "📊 เกรดขั้นต่ำ",
-          size: "sm",
-          weight: "bold"
-        },
-        {
-          type: "text",
-          text: matchedMajor.grade || "ไม่ระบุ",
-          size: "sm",
-          wrap: true
-        },
-        {
-          type: "text",
-          text: "📌 เงื่อนไข",
-          size: "sm",
-          weight: "bold"
-        },
-        {
-          type: "text",
-          text: matchedMajor.condition || "ไม่ระบุ",
-          size: "sm",
-          wrap: true
-        },
-        {
-          type: "text",
-          text: "🧠 ความสามารถที่ควรมี",
-          size: "sm",
-          weight: "bold"
-        },
-        {
-          type: "text",
-          text: Array.isArray(matchedMajor.ability)
-            ? matchedMajor.ability.join(", ")
-            : (matchedMajor.ability || "ไม่ระบุ"),
-          size: "sm",
-          wrap: true
-        },
-        {
-          type: "text",
-          text: "✅ เหตุผลที่เหมาะสม",
-          size: "sm",
-          weight: "bold"
-        },
-        {
-          type: "text",
-          text: matchedMajor.reason || "ไม่ระบุ",
-          size: "sm",
-          wrap: true
-        },
-        {
-          type: "text",
-          text: "🎯 อาชีพที่เกี่ยวข้อง",
-          size: "sm",
-          weight: "bold"
-        },
-        ...(Array.isArray(matchedMajor.careers)
-          ? matchedMajor.careers.map(c => ({
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
               type: "text",
-              text: `• ${c}`,
+              text: "📊 เกรดขั้นต่ำ",
+              size: "sm",
+              weight: "bold"
+            },
+            {
+              type: "text",
+              text: matchedMajor.grade || "ไม่ระบุ",
               size: "sm",
               wrap: true
-            }))
-          : [{
+            }
+          ]
+        },
+        {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
               type: "text",
-              text: "ไม่ระบุ",
+              text: "📌 เงื่อนไข",
+              size: "sm",
+              weight: "bold"
+            },
+            {
+              type: "text",
+              text: matchedMajor.condition || "ไม่ระบุ",
               size: "sm",
               wrap: true
-            }]
-        )
+            }
+          ]
+        },
+        {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "text",
+              text: "🧠 ความสามารถที่ควรมี",
+              size: "sm",
+              weight: "bold"
+            },
+            {
+              type: "text",
+              text: Array.isArray(matchedMajor.ability)
+                ? matchedMajor.ability.join(", ")
+                : (matchedMajor.ability || "ไม่ระบุ"),
+              size: "sm",
+              wrap: true
+            }
+          ]
+        },
+        {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "text",
+              text: "✅ เหตุผลที่เหมาะสม",
+              size: "sm",
+              weight: "bold"
+            },
+            {
+              type: "text",
+              text: matchedMajor.reason || "ไม่ระบุ",
+              size: "sm",
+              wrap: true
+            }
+          ]
+        },
+        {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "text",
+              text: "🎯 อาชีพที่เกี่ยวข้อง",
+              size: "sm",
+              weight: "bold"
+            },
+            ...careersContent
+          ]
+        }
       ]
     },
     footer: {
       type: "box",
       layout: "horizontal",
+      spacing: "md",
       contents: [
         {
           type: "button",
           style: "primary",
+          color: "#1E90FF",
           action: {
             type: "message",
             label: "เริ่มใหม่",
@@ -607,7 +643,7 @@ if (matchedMajor) {
     }
   };
 
-  // 🧪 ตรวจสอบก่อนส่ง
+  // 🔍 ตรวจสอบก่อนส่ง
   console.log("👉 Flex Payload:", JSON.stringify(bubble, null, 2));
 
   try {
