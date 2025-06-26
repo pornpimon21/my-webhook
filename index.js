@@ -487,6 +487,17 @@ for (const faculty of faculties) {
   }
 }
 
+function safeText(text) {
+  if (typeof text === 'string' && text.trim() !== '') return text;
+  if (typeof text === 'number') return text.toString();
+  return 'ไม่ระบุ';
+}
+
+function safeArray(arr) {
+  if (Array.isArray(arr) && arr.length > 0) return arr;
+  return ['ไม่ระบุ'];
+}
+
 if (matchedMajor) {
   // ใช้ safeText กับข้อมูลเกรดขั้นต่ำที่เป็น number หรือ string
   const gradeText = safeText(matchedMajor?.grade);
@@ -495,7 +506,13 @@ if (matchedMajor) {
   const reasonText = safeText(matchedMajor?.reason);
   const careersArray = safeArray(matchedMajor?.careers);
 
-  // สร้าง bubble ใหม่ด้วยข้อมูลที่ปลอดภัย
+  const careersContents = careersArray.map(career => ({
+    type: "text",
+    text: `• ${career}`,
+    size: "sm",
+    wrap: true
+  }));
+
   const bubble = {
     type: "bubble",
     header: {
@@ -531,12 +548,7 @@ if (matchedMajor) {
         { type: "text", text: "✅ เหตุผลที่เหมาะสม", size: "sm", weight: "bold" },
         { type: "text", text: reasonText, size: "sm", wrap: true },
         { type: "text", text: "🎯 อาชีพที่เกี่ยวข้อง", size: "sm", weight: "bold" },
-        ...careersArray.map(career => ({
-          type: "text",
-          text: `• ${career}`,
-          size: "sm",
-          wrap: true
-        }))
+        ...careersContents
       ]
     },
     footer: {
@@ -556,15 +568,16 @@ if (matchedMajor) {
     }
   };
 
-  console.log("✅ Bubble Payload:\n", JSON.stringify(bubble, null, 2));
+  console.log("✅ Bubble Payload:", JSON.stringify(bubble, null, 2));
 
   await lineClient.replyMessage(event.replyToken, {
     type: "flex",
     altText: `ข้อมูลสาขา ${safeText(matchedMajor?.name)}`.slice(0, 400),
     contents: bubble
   });
+return;  
 }
-          
+
           // ตรวจสอบ Intent จาก Dialogflow
           const dialogflowResult = await detectIntentText(sessionId, userMessage);
           const replyText = dialogflowResult.fulfillmentText || '❗ ขออภัยค่ะ  \nฉันไม่เข้าใจข้อความของคุณในครั้งนี้  \nกรุณาลองพิมพ์ใหม่อีกครั้งนะคะ 😊';
