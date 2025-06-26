@@ -350,16 +350,15 @@ app.post('/linewebhook',
           const userMessage = event.message.text;
           const sessionId = event.source.userId || uuid.v4();  // LINE user ID ใช้แทน session
 
-          // ถ้าผู้ใช้พิมพ์ "แนะนำคณะ" ให้ส่งข้อความต้อนรับ Dialogflow
-          if (userMessage === 'แนะนำคณะ') {
-            const dialogflowResult = await detectIntentText(sessionId, 'เริ่มต้น');
-            await lineClient.replyMessage(event.replyToken, {
-              type: 'text',
-              text: dialogflowResult.fulfillmentText
-            });
-            return;
-          }
+// ฟังก์ชันช่วยตรวจสอบข้อความ ให้รองรับทั้ง string และ number
+const safeText = (text) => {
+  if (typeof text === 'string' && text.trim() !== '') return text;
+  if (typeof text === 'number') return text.toString();
+  return 'ไม่ระบุ';
+};
 
+const safeArray = (arr) =>
+  Array.isArray(arr) && arr.length > 0 ? arr : ['ไม่ระบุ'];
 
 // STEP 1: คำสั่ง "ค้นหาข้อมูล" -> แสดง Flex Message เลือกคณะ
 if (userMessage === 'ค้นหาข้อมูล') {
@@ -476,6 +475,7 @@ if (selectedFaculty) {
   ]);
   return;
 }
+
 // STEP 3: เลือกสาขา
 let matchedMajor, matchedFaculty;
 for (const faculty of faculties) {
@@ -488,88 +488,82 @@ for (const faculty of faculties) {
 }
 
 if (matchedMajor) {
-const safeText = (text) =>
-  typeof text === 'string' && text.trim() !== '' ? text : 'ไม่ระบุ';
+  // ใช้ safeText กับข้อมูลเกรดขั้นต่ำที่เป็น number หรือ string
+  const gradeText = safeText(matchedMajor?.grade);
+  const conditionText = safeText(matchedMajor?.condition);
+  const abilityText = safeArray(matchedMajor?.ability).join(", ");
+  const reasonText = safeText(matchedMajor?.reason);
+  const careersArray = safeArray(matchedMajor?.careers);
 
-const safeArray = (arr) =>
-  Array.isArray(arr) && arr.length > 0 ? arr : ['ไม่ระบุ'];
-
-// ตัวอย่างปรับข้อมูลก่อนสร้าง bubble
-const gradeText = safeText(matchedMajor?.grade);
-const conditionText = safeText(matchedMajor?.condition);
-const abilityText = safeArray(matchedMajor?.ability).join(", ");
-const reasonText = safeText(matchedMajor?.reason);
-const careersArray = safeArray(matchedMajor?.careers);
-
-// สร้าง bubble ใหม่ด้วยข้อมูลที่ปลอดภัย
-const bubble = {
-  type: "bubble",
-  header: {
-    type: "box",
-    layout: "vertical",
-    contents: [
-      {
-        type: "text",
-        text: `📚 คณะ${safeText(matchedFaculty?.name)}`,
-        weight: "bold",
-        size: "lg",
-        wrap: true
-      },
-      {
-        type: "text",
-        text: `📘 สาขา${safeText(matchedMajor?.name)}`,
-        size: "md",
-        wrap: true
-      }
-    ]
-  },
-  body: {
-    type: "box",
-    layout: "vertical",
-    spacing: "sm",
-    contents: [
-      { type: "text", text: "📊 เกรดขั้นต่ำ", size: "sm", weight: "bold" },
-      { type: "text", text: gradeText, size: "sm", wrap: true },
-      { type: "text", text: "📌 เงื่อนไข", size: "sm", weight: "bold" },
-      { type: "text", text: conditionText, size: "sm", wrap: true },
-      { type: "text", text: "🧠 ความสามารถที่ควรมี", size: "sm", weight: "bold" },
-      { type: "text", text: abilityText, size: "sm", wrap: true },
-      { type: "text", text: "✅ เหตุผลที่เหมาะสม", size: "sm", weight: "bold" },
-      { type: "text", text: reasonText, size: "sm", wrap: true },
-      { type: "text", text: "🎯 อาชีพที่เกี่ยวข้อง", size: "sm", weight: "bold" },
-      ...careersArray.map(career => ({
-        type: "text",
-        text: `• ${career}`,
-        size: "sm",
-        wrap: true
-      }))
-    ]
-  },
-  footer: {
-    type: "box",
-    layout: "horizontal",
-    contents: [
-      {
-        type: "button",
-        style: "primary",
-        action: {
-          type: "message",
-          label: "เริ่มใหม่",
-          text: "เริ่มใหม่"
+  // สร้าง bubble ใหม่ด้วยข้อมูลที่ปลอดภัย
+  const bubble = {
+    type: "bubble",
+    header: {
+      type: "box",
+      layout: "vertical",
+      contents: [
+        {
+          type: "text",
+          text: `📚 คณะ${safeText(matchedFaculty?.name)}`,
+          weight: "bold",
+          size: "lg",
+          wrap: true
+        },
+        {
+          type: "text",
+          text: `📘 สาขา${safeText(matchedMajor?.name)}`,
+          size: "md",
+          wrap: true
         }
-      }
-    ]
-  }
-};
+      ]
+    },
+    body: {
+      type: "box",
+      layout: "vertical",
+      spacing: "sm",
+      contents: [
+        { type: "text", text: "📊 เกรดขั้นต่ำ", size: "sm", weight: "bold" },
+        { type: "text", text: gradeText, size: "sm", wrap: true },
+        { type: "text", text: "📌 เงื่อนไข", size: "sm", weight: "bold" },
+        { type: "text", text: conditionText, size: "sm", wrap: true },
+        { type: "text", text: "🧠 ความสามารถที่ควรมี", size: "sm", weight: "bold" },
+        { type: "text", text: abilityText, size: "sm", wrap: true },
+        { type: "text", text: "✅ เหตุผลที่เหมาะสม", size: "sm", weight: "bold" },
+        { type: "text", text: reasonText, size: "sm", wrap: true },
+        { type: "text", text: "🎯 อาชีพที่เกี่ยวข้อง", size: "sm", weight: "bold" },
+        ...careersArray.map(career => ({
+          type: "text",
+          text: `• ${career}`,
+          size: "sm",
+          wrap: true
+        }))
+      ]
+    },
+    footer: {
+      type: "box",
+      layout: "horizontal",
+      contents: [
+        {
+          type: "button",
+          style: "primary",
+          action: {
+            type: "message",
+            label: "เริ่มใหม่",
+            text: "เริ่มใหม่"
+          }
+        }
+      ]
+    }
+  };
 
-console.log("✅ Bubble Payload:\n", JSON.stringify(bubble, null, 2));
+  console.log("✅ Bubble Payload:\n", JSON.stringify(bubble, null, 2));
 
-await lineClient.replyMessage(event.replyToken, {
-  type: "flex",
-  altText: `ข้อมูลสาขา ${safeText(matchedMajor?.name)}`.slice(0, 400),
-  contents: bubble
-});
-} 
+  await lineClient.replyMessage(event.replyToken, {
+    type: "flex",
+    altText: `ข้อมูลสาขา ${safeText(matchedMajor?.name)}`.slice(0, 400),
+    contents: bubble
+  });
+}
           
           // ตรวจสอบ Intent จาก Dialogflow
           const dialogflowResult = await detectIntentText(sessionId, userMessage);
