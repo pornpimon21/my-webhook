@@ -155,6 +155,11 @@ async function saveSession(session) {
   await session.save();
 }
 
+// ✅ เพิ่มฟังก์ชันอัปเดต session
+async function updateSession(sessionId, data) {
+  return Session.updateOne({ sessionId }, { $set: data }, { upsert: true });
+}
+
 // Webhook Endpoint
 app.use('/webhook', express.json());
 app.post("/webhook", async (req, res) => {
@@ -351,24 +356,28 @@ app.post('/linewebhook',
           const sessionId = event.source.userId || uuid.v4();  // LINE user ID ใช้แทน session
 
 if (event.message.text === 'เริ่มใหม่') {
-    // ดึง session เดิม
-    const session = await getSession(sessionId);
+  // ดึง session เดิม
+  const session = await getSession(sessionId);
 
-    // เตรียมข้อความถามเกรด พร้อมชื่อเดิมถ้ามี
-    const nameText = session && session.name ? `คุณ${session.name}` : '';
-    const askGradeText = `สวัสดีค่ะ ${nameText} กรุณากรอกเกรดเฉลี่ยของคุณค่ะ`;
+  // เตรียมข้อความถามเกรด พร้อมชื่อเดิมถ้ามี
+  const nameText = session && session.name ? `คุณ${session.name}` : '';
+  const askGradeText = `สวัสดีค่ะ ${nameText} กรุณากรอกเกรดเฉลี่ยของคุณค่ะ`;
 
-    // เคลียร์ข้อมูลเก่าใน session (ถ้าต้องการ)
-    await clearSessionData(sessionId);
+  // แก้ตรงนี้: เคลียร์เฉพาะบางข้อมูล ไม่ลบชื่อ
+  await updateSession(sessionId, {
+    grade: null,
+    abilitiesInputText: null,
+    recommendations: [],
+  });
 
-    // ส่งข้อความถามเกรด
-    await lineClient.replyMessage(event.replyToken, {
-      type: 'text',
-      text: askGradeText
-    });
+  // ส่งข้อความถามเกรด
+  await lineClient.replyMessage(event.replyToken, {
+    type: 'text',
+    text: askGradeText
+  });
 
-    return;  // หยุด flow ที่เหลือ
-  }
+  return;  // หยุด flow ที่เหลือ
+}
 
 
 // STEP 0: เริ่มใหม่
