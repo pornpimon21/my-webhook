@@ -350,6 +350,67 @@ app.post('/linewebhook',
           const userMessage = event.message.text;
           const sessionId = event.source.userId || uuid.v4();  // LINE user ID ใช้แทน session
 
+
+
+// STEP 0: เริ่มใหม่
+if (userMessage === 'เริ่มใหม่') {
+  const facultyBubbles = faculties.map((faculty, index) => ({
+    type: "bubble",
+    size: "micro",
+    body: {
+      type: "box",
+      layout: "vertical",
+      contents: [
+        {
+          type: "text",
+          text: faculty.name,
+          weight: "bold",
+          size: "sm",
+          align: "center",
+          wrap: true
+        }
+      ],
+      paddingAll: "10px"
+    },
+    footer: {
+      type: "box",
+      layout: "vertical",
+      contents: [
+        {
+          type: "button",
+          style: "primary",
+          color: index % 2 === 0 ? "#1E90FF" : "#FF69B4",
+          action: {
+            type: "message",
+            label: faculty.name,
+            text: faculty.name
+          }
+        }
+      ],
+      paddingAll: "10px",
+      spacing: "sm"
+    }
+  }));
+
+  await lineClient.replyMessage(event.replyToken, [
+    {
+      type: 'text',
+      text: '🔄 เริ่มต้นใหม่แล้วค่ะ กรุณาเลือกคณะที่สนใจอีกครั้งด้านล่างนี้ค่ะ'
+    },
+    {
+      type: "flex",
+      altText: "กรุณาเลือกคณะที่สนใจ",
+      contents: {
+        type: "carousel",
+        contents: facultyBubbles
+      }
+    }
+  ]);
+  return;
+}
+
+
+
 // ฟังก์ชันช่วยตรวจสอบข้อความ ให้รองรับทั้ง string และ number
 const safeText = (text) => {
   if (typeof text === 'string' && text.trim() !== '') return text;
