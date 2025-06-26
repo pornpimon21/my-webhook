@@ -488,175 +488,125 @@ for (const faculty of faculties) {
 }
 
 if (matchedMajor) {
-  const careersContent = Array.isArray(matchedMajor.careers) && matchedMajor.careers.length > 0
-    ? matchedMajor.careers.map(c => ({
+const safeText = (text) =>
+  typeof text === 'string' && text.trim() !== '' ? text : 'ไม่ระบุ';
+
+const safeArray = (arr) =>
+  Array.isArray(arr) && arr.length > 0 ? arr : ['ไม่ระบุ'];
+
+const bubble = {
+  type: "bubble",
+  header: {
+    type: "box",
+    layout: "vertical",
+    contents: [
+      {
         type: "text",
-        text: `• ${c}`,
+        text: `📚 คณะ${safeText(matchedFaculty?.name)}`,
+        weight: "bold",
+        size: "lg",
+        wrap: true
+      },
+      {
+        type: "text",
+        text: `📘 สาขา${safeText(matchedMajor?.name)}`,
+        size: "md",
+        wrap: true
+      }
+    ]
+  },
+  body: {
+    type: "box",
+    layout: "vertical",
+    spacing: "sm",
+    contents: [
+      {
+        type: "text",
+        text: "📊 เกรดขั้นต่ำ",
         size: "sm",
-        wrap: true,
-        margin: "xs"
+        weight: "bold"
+      },
+      {
+        type: "text",
+        text: safeText(matchedMajor?.grade),
+        size: "sm",
+        wrap: true
+      },
+      {
+        type: "text",
+        text: "📌 เงื่อนไข",
+        size: "sm",
+        weight: "bold"
+      },
+      {
+        type: "text",
+        text: safeText(matchedMajor?.condition),
+        size: "sm",
+        wrap: true
+      },
+      {
+        type: "text",
+        text: "🧠 ความสามารถที่ควรมี",
+        size: "sm",
+        weight: "bold"
+      },
+      {
+        type: "text",
+        text: safeArray(matchedMajor?.ability).join(", "),
+        size: "sm",
+        wrap: true
+      },
+      {
+        type: "text",
+        text: "✅ เหตุผลที่เหมาะสม",
+        size: "sm",
+        weight: "bold"
+      },
+      {
+        type: "text",
+        text: safeText(matchedMajor?.reason),
+        size: "sm",
+        wrap: true
+      },
+      {
+        type: "text",
+        text: "🎯 อาชีพที่เกี่ยวข้อง",
+        size: "sm",
+        weight: "bold"
+      },
+      ...safeArray(matchedMajor?.careers).map(career => ({
+        type: "text",
+        text: `• ${career}`,
+        size: "sm",
+        wrap: true
       }))
-    : [{
-        type: "text",
-        text: "ไม่ระบุ",
-        size: "sm",
-        wrap: true,
-        margin: "xs"
-      }];
-
-  const bubble = {
-    type: "bubble",
-    size: "mega", // เพิ่มให้เต็มหน้าจอ (ปลอดภัยใน Flex)
-    header: {
-      type: "box",
-      layout: "vertical",
-      paddingAll: "12px",
-      spacing: "xs",
-      contents: [
-        {
-          type: "text",
-          text: `📚 คณะ${matchedFaculty.name || "ไม่ระบุ"}`,
-          weight: "bold",
-          size: "lg",
-          wrap: true
-        },
-        {
-          type: "text",
-          text: `📘 สาขา${matchedMajor.name || "ไม่ระบุ"}`,
-          size: "md",
-          wrap: true,
-          margin: "sm"
+    ]
+  },
+  footer: {
+    type: "box",
+    layout: "horizontal",
+    contents: [
+      {
+        type: "button",
+        style: "primary",
+        action: {
+          type: "message",
+          label: "เริ่มใหม่",
+          text: "เริ่มใหม่"
         }
-      ]
-    },
-    body: {
-      type: "box",
-      layout: "vertical",
-      spacing: "md",
-      paddingAll: "12px",
-      contents: [
-        {
-          type: "box",
-          layout: "vertical",
-          contents: [
-            {
-              type: "text",
-              text: "📊 เกรดขั้นต่ำ",
-              size: "sm",
-              weight: "bold"
-            },
-            {
-              type: "text",
-              text: matchedMajor.grade || "ไม่ระบุ",
-              size: "sm",
-              wrap: true
-            }
-          ]
-        },
-        {
-          type: "box",
-          layout: "vertical",
-          contents: [
-            {
-              type: "text",
-              text: "📌 เงื่อนไข",
-              size: "sm",
-              weight: "bold"
-            },
-            {
-              type: "text",
-              text: matchedMajor.condition || "ไม่ระบุ",
-              size: "sm",
-              wrap: true
-            }
-          ]
-        },
-        {
-          type: "box",
-          layout: "vertical",
-          contents: [
-            {
-              type: "text",
-              text: "🧠 ความสามารถที่ควรมี",
-              size: "sm",
-              weight: "bold"
-            },
-            {
-              type: "text",
-              text: Array.isArray(matchedMajor.ability)
-                ? matchedMajor.ability.join(", ")
-                : (matchedMajor.ability || "ไม่ระบุ"),
-              size: "sm",
-              wrap: true
-            }
-          ]
-        },
-        {
-          type: "box",
-          layout: "vertical",
-          contents: [
-            {
-              type: "text",
-              text: "✅ เหตุผลที่เหมาะสม",
-              size: "sm",
-              weight: "bold"
-            },
-            {
-              type: "text",
-              text: matchedMajor.reason || "ไม่ระบุ",
-              size: "sm",
-              wrap: true
-            }
-          ]
-        },
-        {
-          type: "box",
-          layout: "vertical",
-          contents: [
-            {
-              type: "text",
-              text: "🎯 อาชีพที่เกี่ยวข้อง",
-              size: "sm",
-              weight: "bold"
-            },
-            ...careersContent
-          ]
-        }
-      ]
-    },
-    footer: {
-      type: "box",
-      layout: "horizontal",
-      spacing: "md",
-      contents: [
-        {
-          type: "button",
-          style: "primary",
-          color: "#1E90FF",
-          action: {
-            type: "message",
-            label: "เริ่มใหม่",
-            text: "เริ่มใหม่"
-          }
-        }
-      ]
-    }
-  };
-
-  // 🔍 ตรวจสอบก่อนส่ง
-  console.log("👉 Flex Payload:", JSON.stringify(bubble, null, 2));
-
-  try {
-    await lineClient.replyMessage(event.replyToken, {
-      type: "flex",
-      altText: `ข้อมูลสาขา ${matchedMajor.name}`.slice(0, 400),
-      contents: bubble
-    });
-  } catch (error) {
-    console.error("❌ LINE Flex Error Full:", error);
-    console.error("❌ LINE Flex Error Response:", JSON.stringify(error.response?.data || {}, null, 2));
+      }
+    ]
   }
-}
+};
+
+console.log("✅ Bubble Payload:\n", JSON.stringify(bubble, null, 2));
+
+await lineClient.replyMessage(event.replyToken, {
+  type: "flex",
+  altText: `ข้อมูลสาขา ${safeText(matchedMajor?.name)}`.slice(0, 400),
+  contents: bubble
+});
+} 
           
           // ตรวจสอบ Intent จาก Dialogflow
           const dialogflowResult = await detectIntentText(sessionId, userMessage);
