@@ -701,45 +701,42 @@ if (matchedMajor) {
           const dialogflowResult = await detectIntentText(sessionId, userMessage);
           const replyText = dialogflowResult.fulfillmentText || '❗ ขออภัยค่ะ  \nฉันไม่เข้าใจข้อความของคุณในครั้งนี้  \nกรุณาลองพิมพ์ใหม่อีกครั้งนะคะ 😊';
 
-if (dialogflowResult.intent && dialogflowResult.intent.displayName === 'get name') {
-  // สมมติชื่อ user อยู่ใน parameter ของ Dialogflow
-  const userName = dialogflowResult.parameters.name || 'คุณ';
+if (intent === "get name") {
+  const name = params.name || "คุณ";
 
-  await lineClient.replyMessage(event.replyToken, {
-    type: 'text',
-    text: `ขอบคุณค่ะ คุณ${userName} 😊 กรุณาเลือกระดับการศึกษาของคุณด้านล่างนี้ค่ะ`,
-    quickReply: {
-      items: [
-        {
-          type: 'action',
-          action: {
-            type: 'message',
-            label: 'มัธยมปลาย',
-            text: 'มัธยมปลาย',
-          },
+  const sessionId = req.body.session || req.body.userId;
+
+  // ดึง session จาก MongoDB
+  let session = await SessionModel.findOne({ sessionId });
+  if (!session) {
+    session = new SessionModel({ sessionId });
+  }
+
+  session.name = name;
+  await session.save(); // บันทึก session
+
+  return res.json({
+    fulfillmentText: `✨ สวัสดีค่ะ คุณ${name}\nกรุณาระบุระดับการศึกษาของคุณค่ะ`,
+    payload: {
+      line: {
+        type: "text",
+        text: "กรุณาระบุระดับการศึกษาของคุณค่ะ",
+        quickReply: {
+          items: [
+            {
+              type: "action",
+              action: { type: "message", label: "มัธยมปลาย", text: "มัธยมปลาย" },
+            },
+            {
+              type: "action",
+              action: { type: "message", label: "ปวส", text: "ปวส" },
+            },
+          ],
         },
-        {
-          type: 'action',
-          action: {
-            type: 'message',
-            label: 'ปริญญาตรี',
-            text: 'ปริญญาตรี',
-          },
-        },
-        {
-          type: 'action',
-          action: {
-            type: 'message',
-            label: 'ปริญญาโท',
-            text: 'ปริญญาโท',
-          },
-        },
-      ],
+      },
     },
   });
-  return;  // หยุดการส่งข้อความอื่น
 }
-
           // <--- ตรงนี้คือจุดที่ให้ใส่โค้ดแสดง carousel --->
           if (dialogflowResult.intent && dialogflowResult.intent.displayName === 'get skills') {
             // ดึงข้อมูล session จาก MongoDB
