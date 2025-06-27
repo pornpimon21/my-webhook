@@ -65,10 +65,7 @@ const faculties = [
         grade : 2.75,
         ability : ['ภาษาไทย', 'สอน', 'ครู', 'รักเด็ก', 'เข้าใจในการสอน', 'การเขียน', 'สื่อสาร', 'วรรณกรรม', 'การอ่าน', 'จับใจความ', 'ไวยากรณ์', 'เรียบเรียง'],
         quota : 60,
-        condition: {
-            level: ["มัธยมศึกษาตอนปลายหรือเทียบเท่า"],        // ระดับที่อนุญาต
-            message: "มัธยมศึกษาตอนปลายหรือเทียบเท่าทุกแผนการเรียน เกรดวิชาภาษาไทยไม่ต่ำกว่า 3.0"  // ข้อความที่จะแสดง
-          },        
+        condition : "มัธยมศึกษาตอนปลายหรือเทียบเท่าทุกแผนการเรียน เกรดวิชาภาษาไทยไม่ต่ำกว่า 3.0",
         reason : 'คุณมีความสามารถด้านภาษาไทย และรักในการสื่อสารผ่านภาษา เหมาะกับการถ่ายทอดความรู้ทางภาษาให้ผู้อื่น',
         careers: ["ครูสอนภาษาไทย","นักเขียน","บรรณาธิการ"]
       },
@@ -77,11 +74,7 @@ const faculties = [
         grade : 2.50, 
         ability : ['วิทยาศาสตร์', 'เคมี', 'ฟิสิกส์', 'ชีววิทยา', 'แล็บ'], 
         quota : 60, 
-        condition: {
-          level: ["มัธยมศึกษาตอนปลายหรือเทียบเท่า"],        // ระดับที่อนุญาต
-          track: ["วิทย์-คณิต", "ศิลป์-คำนวณ"],
-          message: "มัธยมศึกษาตอนปลายหรือเทียบเท่าสาขาทางวิทย์-คณิต, หรือสาขาที่เกี่ยวข้องกับวิทยาศาสตร์"
-        },        
+        condition : "มัธยมศึกษาตอนปลายหรือเทียบเท่าสาขาทางวิทย์-คณิต, หรือสาขาที่เกี่ยวข้องกับวิทยาศาสตร์",
         reason : 'คุณมีความสามารถด้านวิทยาศาสตร์ ',
         careers: ["นักวิชาการ","นักเคมี","นักฟิสิกส์"]
       }    
@@ -119,56 +112,30 @@ function findClosestAbility(userInput, thresholdRatio = 0.5) {
   return minDist <= threshold ? closest : null;
 }
 
-// ฟังก์ชันเช็คเงื่อนไขระดับและสายการเรียน
-function isConditionMatched(condition, userLevel, userTrack) {
-  if (!condition) return true;  // ไม่มีเงื่อนไข = ผ่านหมด
-
-  const levelOk = !condition.level || condition.level.includes(userLevel);
-
-  let trackOk = true;
-  if (condition.track && condition.track.length > 0) {
-    if (userLevel === "ปวส.") {
-      // ปวส. ไม่มีสาย เลยไม่เช็คสาย
-      trackOk = true;
-    } else {
-      trackOk = userTrack && condition.track.includes(userTrack);
-    }
-  }
-
-  return levelOk && trackOk;
-}
-
-// ฟังก์ชันดึงข้อความเงื่อนไข
-function getConditionMessage(condition) {
-  return condition && condition.message ? condition.message : "ไม่ระบุเงื่อนไขเฉพาะ";
-}
-
 // ฟังก์ชันจับคู่สาขา
-function findMatchingMajors(grade, abilities, userLevel, userTrack) {
+function findMatchingMajors(grade, abilities) {
   let results = [];
 
   faculties.forEach(faculty => {
     faculty.majors.forEach(major => {
       const matchGrade = (major.grade === null || grade >= major.grade);
-      const matchCondition = isConditionMatched(major.condition, userLevel, userTrack);
 
       const matchedAbilities = major.ability.filter(majorAbility => {
         return abilities.some(userAbility => {
-          // เปรียบเทียบคำความสามารถใกล้เคียง (ถ้าต้องการใช้ Levenshtein)
-          // แต่ถ้าไม่ใช้ ก็เปรียบเทียบตรงๆ ได้ เช่น:
-          return userAbility.toLowerCase() === majorAbility.toLowerCase();
+          const dist = levenshtein.get(userAbility, majorAbility);
+          const threshold = Math.ceil(Math.min(userAbility.length, majorAbility.length) / 2);
+          return dist <= threshold;
         });
       });
 
       const matchScore = matchedAbilities.length;
 
-      if (matchGrade && matchScore > 0 && matchCondition) {
+      if (matchGrade && matchScore > 0) {
         results.push({
           faculty: faculty.name,
           major: major.name,
           score: matchScore,
-          matchedAbilities,
-          conditionMessage: getConditionMessage(major.condition),  // ข้อความเงื่อนไข
+          matchedAbilities
         });
       }
     });
@@ -193,51 +160,6 @@ async function updateSession(sessionId, data) {
   return Session.updateOne({ sessionId }, { $set: data }, { upsert: true });
 }
 
-
-
-// ---------- 🔧 ใส่ไว้ด้านบน ก่อน Webhook ----------
-
-function getLevelSelectionTemplate() {
-  return {
-    type: "text",
-    text: "กรุณาระบุระดับการศึกษาของคุณค่ะ",
-    quickReply: {
-      items: [
-        {
-          type: "action",
-          action: { type: "message", label: "มัธยมปลาย", text: "มัธยมปลาย" },
-        },
-        {
-          type: "action",
-          action: { type: "message", label: "ปวส", text: "ปวส" },
-        },
-      ],
-    },
-  };
-}
-
-function getTrackSelectionTemplate() {
-  return {
-    type: "text",
-    text: "กรุณาเลือกรูปแบบการเรียนของคุณค่ะ",
-    quickReply: {
-      items: [
-        {
-          type: "action",
-          action: { type: "message", label: "วิทย์-คณิต", text: "วิทย์-คณิต" },
-        },
-        {
-          type: "action",
-          action: { type: "message", label: "ศิลป์-คำนวณ", text: "ศิลป์-คำนวณ" },
-        },
-      ],
-    },
-  };
-}
-
-// ---------- Webhook เริ่มที่นี่ ----------
-
-
 // Webhook Endpoint
 app.use('/webhook', express.json());
 app.post("/webhook", async (req, res) => {
@@ -261,10 +183,9 @@ app.post("/webhook", async (req, res) => {
    const session = await getSession(sessionId);
    session.sessionId = sessionId;  // เซ็ตที่นี่แค่ครั้งเดียว  
 
-
- if (intent === "welcome") {
+  if (intent === "welcome") {
     return res.json({
-      fulfillmentText: "🌟 สวัสดีค่ะ!\nยินดีต้อนรับสู่ระบบแนะนำคณะและสาขา 🎓\n\nกรุณาพิมพ์ชื่อของคุณก่อนนะคะ 😊"
+      fulfillmentText: "🌟 สวัสดีค่ะ!\nยินดีต้อนรับสู่ระบบแนะนำคณะและสาขา 🎓\n\nเราพร้อมช่วยคุณค้นหาคณะที่เหมาะสมที่สุด\nเพื่อเริ่มต้น กรุณาพิมพ์ \"ชื่อของคุณ\" เข้ามาก่อนนะคะ 😊"
     });
   }
 
@@ -273,39 +194,11 @@ app.post("/webhook", async (req, res) => {
     session.name = name;
     await saveSession(session);
     return res.json({
-      fulfillmentText: `✨ สวัสดีค่ะ คุณ${name}\nกรุณาระบุระดับการศึกษาของคุณค่ะ`,
-      payload: { line: getLevelSelectionTemplate() } // ส่งปุ่มเลือกระดับการศึกษา
+      fulfillmentText: `✨ สวัสดีค่ะ คุณ${name}\n\nกรุณากรอกเกรดเฉลี่ย (GPAX) ของคุณ\nตัวอย่าง : 3.25 หรือ 3.50\n\n🔔 โปรดระบุค่าไม่เกิน 4.00 เพื่อความถูกต้องนะคะ`
     });
   }
 
-  if (intent === "get level") {
-    // ส่งปุ่มเลือกระดับการศึกษา
-    return res.json({ payload: { line: getLevelSelectionTemplate() } });
-  }
-
-  if (intent === "set level") {
-    const level = params.level;
-    session.level = level;
-    await saveSession(session);
-
-    if (level === "มัธยมศึกษาตอนปลายหรือเทียบเท่า") {
-      // ส่งปุ่มเลือกสายการเรียน
-      return res.json({ payload: { line: getTrackSelectionTemplate() } });
-    } else {
-      return res.json({
-        fulfillmentText: "📌 ขอบคุณค่ะ ระดับการศึกษาถูกบันทึกเรียบร้อยแล้ว\nกรุณาพิมพ์เกรดเฉลี่ย (GPAX) ของคุณค่ะ"
-      });
-    }
-  }
-
-  if (intent === "set track") {
-    const track = params.track;
-    session.track = track;
-    await saveSession(session);
-    return res.json({
-      fulfillmentText: "📌 ขอบคุณค่ะ สายการเรียนถูกบันทึกเรียบร้อยแล้ว\nกรุณาพิมพ์เกรดเฉลี่ย (GPAX) ของคุณค่ะ"
-    });
-  }  if (intent === "get grade") {
+  if (intent === "get grade") {
     const grade = params.grade;
     if (typeof grade !== "number" || grade < 0 || grade > 4) {
       return res.json({
@@ -361,7 +254,7 @@ if (intent === "get skills") {
       });
     }
 
-    const results = findMatchingMajors(grade, validAbilities, session.level, session.track);
+    const results = findMatchingMajors(grade, validAbilities);
 
     if (results.length === 0) {
       return res.json({
@@ -746,52 +639,6 @@ if (matchedMajor) {
           const dialogflowResult = await detectIntentText(sessionId, userMessage);
           const replyText = dialogflowResult.fulfillmentText || '❗ ขออภัยค่ะ  \nฉันไม่เข้าใจข้อความของคุณในครั้งนี้  \nกรุณาลองพิมพ์ใหม่อีกครั้งนะคะ 😊';
 
-// ✅ ประกาศ intent และ params จาก dialogflowResult
-const intent = dialogflowResult.intent?.displayName || "";
-const params = dialogflowResult.parameters || {}
-
-if (intent === "get name") {
-  const name = params.name || "คุณ";
-  const sessionId = sessionFull.split("/").pop();
-
-  let session = await SessionModel.findOne({ sessionId });
-  if (!session) {
-    session = new SessionModel({ sessionId });
-  }
-
-  session.name = name;
-  await session.save();
-
-  return res.json({
-    fulfillmentText: `✨ สวัสดีค่ะ คุณ${name}\nกรุณาระบุระดับการศึกษาของคุณค่ะ`,
-    payload: {
-      line: {
-        type: "text",
-        text: "กรุณาระบุระดับการศึกษาของคุณค่ะ",
-        quickReply: {
-          items: [
-            {
-              type: "action",
-              action: {
-                type: "message",
-                label: "มัธยมปลาย",
-                text: "มัธยมปลาย",
-              },
-            },
-            {
-              type: "action",
-              action: {
-                type: "message",
-                label: "ปวส",
-                text: "ปวส",
-              },
-            },
-          ],
-        },
-      },
-    },
-  });
-}
           // <--- ตรงนี้คือจุดที่ให้ใส่โค้ดแสดง carousel --->
           if (dialogflowResult.intent && dialogflowResult.intent.displayName === 'get skills') {
             // ดึงข้อมูล session จาก MongoDB
