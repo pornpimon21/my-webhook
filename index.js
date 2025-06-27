@@ -746,6 +746,10 @@ if (matchedMajor) {
           const dialogflowResult = await detectIntentText(sessionId, userMessage);
           const replyText = dialogflowResult.fulfillmentText || '❗ ขออภัยค่ะ  \nฉันไม่เข้าใจข้อความของคุณในครั้งนี้  \nกรุณาลองพิมพ์ใหม่อีกครั้งนะคะ 😊';
 
+// ✅ ประกาศ intent และ params จาก dialogflowResult
+const intent = dialogflowResult.intent?.displayName || "";
+const params = dialogflowResult.parameters || {}
+
 if (intent === "get name") {
   const name = params.name || "คุณ";
   const sessionId = sessionFull.split("/").pop();
