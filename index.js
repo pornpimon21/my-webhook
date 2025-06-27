@@ -504,7 +504,7 @@ if (selectedFaculty) {
           {
             type: "button",
             style: "primary",
-            color: index % 2 === 0 ? "#FFA500" : "#FACC15",
+            color: index % 2 === 0 ? "#FFA500" : "#FFD700",
             action: {
               type: "message",
               label: emoji,
