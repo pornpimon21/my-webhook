@@ -402,7 +402,16 @@ if (userMessage === 'ค้นหาข้อมูล') {
     body: {
       type: "box",
       layout: "vertical",
-      contents: [], // << ไม่มีข้อความชื่อคณะใน body
+      contents: [
+      {
+        type: "text",
+        text: faculty.name,   // แสดงชื่อเต็มตรงนี้
+        weight: "bold",
+        size: "sm",
+        wrap: true,
+        align: "center"
+      }
+    ],      
       paddingAll: "10px",
       spacing: "sm"
     },
@@ -416,7 +425,7 @@ if (userMessage === 'ค้นหาข้อมูล') {
           color: index % 2 === 0 ? "#1E90FF" : "#FF69B4",
           action: {
             type: "message",
-            label: faculty.name,
+            label: `เลือก 🎯`,
             text: faculty.name
           }
         }
@@ -443,38 +452,71 @@ if (userMessage === 'ค้นหาข้อมูล') {
   return;
 }
 
+const majorEmojiMap = {
+  "คอมพิวเตอร์": "💻",
+  "วิศวกรรม": "⚙️",
+  "การแพทย์": "🏥",
+  "บริหารธุรกิจ": "💼",
+  "ศิลปกรรมศาสตร์": "🎨",
+  "การศึกษา": "📚",
+  "สังคมศาสตร์": "🌍",
+  "ภาษาไทย": "🗣️",
+  "วิทยาศาสตร์ทัวไป": "🔬",
+  "กฎหมาย": "⚖️",
+};
+
 // STEP 2: เลือกคณะ -> แสดง Flex Message เลือกสาขา
 const selectedFaculty = faculties.find(f => f.name === userMessage);
 if (selectedFaculty) {
-  const majorBubbles = selectedFaculty.majors.map((major, index) => ({
-    type: "bubble",
-    size: "micro",
-    body: {
-      type: "box",
-      layout: "vertical",
-      contents: [], // << ไม่มีข้อความชื่อคณะใน body
-      paddingAll: "10px",
-      spacing: "sm"
-    },
-    footer: {
-      type: "box",
-      layout: "vertical",
-      contents: [
-        {
-          type: "button",
-          style: "primary",
-          color: index % 2 === 0 ? "#FFA500" : "#6B21A8",
-          action: {
-            type: "message",
-            label: major.name,
-            text: major.name
-          }
-        }
-      ],
-      paddingAll: "10px",
-      spacing: "sm"
+  const majorBubbles = selectedFaculty.majors.map((major, index) => {
+    // หา emoji ตามชื่อสาขา (ตรวจสอบว่า major.name มีคำใดใน map หรือไม่)
+    let emoji = "";
+    for (const key in majorEmojiMap) {
+      if (major.name.includes(key)) {
+        emoji = majorEmojiMap[key];
+        break;  // หยุดที่ตัวแรกที่เจอ
+      }
     }
-  }));
+
+    return {
+      type: "bubble",
+      size: "micro",
+      body: {
+        type: "box",
+        layout: "vertical",
+        contents: [
+          {
+            type: "text",
+            text: emoji ? `${emoji} ${major.name}` : major.name,   // แสดงชื่อสาขาพร้อม emoji
+            weight: "bold",
+            size: "sm",
+            wrap: true,
+            align: "center"
+          }
+        ],
+        paddingAll: "10px",
+        spacing: "sm"
+      },
+      footer: {
+        type: "box",
+        layout: "vertical",
+        contents: [
+          {
+            type: "button",
+            style: "primary",
+            color: index % 2 === 0 ? "#FFA500" : "#6B21A8",
+            action: {
+              type: "message",
+              label: `เลือก 🎯`,
+              text: major.name
+            }
+          }
+        ],
+        paddingAll: "10px",
+        spacing: "sm"
+      }
+    };
+  });
 
   await lineClient.replyMessage(event.replyToken, [
     {
@@ -637,7 +679,6 @@ if (matchedMajor) {
                       text: `🏫 สาขา${rec.major}`,
                       weight: "bold",
                       size: "sm",
-                      margin: "none",
                       wrap: true
                       }
                     ]
@@ -646,7 +687,6 @@ if (matchedMajor) {
                     type: "box",
                     layout: "vertical",
                     spacing: "sm",
-                    margin: "none",
                     contents: [
                      {
                         type: "text",
