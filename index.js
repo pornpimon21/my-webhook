@@ -193,6 +193,51 @@ async function updateSession(sessionId, data) {
   return Session.updateOne({ sessionId }, { $set: data }, { upsert: true });
 }
 
+
+
+// ---------- 🔧 ใส่ไว้ด้านบน ก่อน Webhook ----------
+
+function getLevelSelectionTemplate() {
+  return {
+    type: "text",
+    text: "กรุณาระบุระดับการศึกษาของคุณค่ะ",
+    quickReply: {
+      items: [
+        {
+          type: "action",
+          action: { type: "message", label: "มัธยมปลาย", text: "มัธยมปลาย" },
+        },
+        {
+          type: "action",
+          action: { type: "message", label: "ปวส", text: "ปวส" },
+        },
+      ],
+    },
+  };
+}
+
+function getTrackSelectionTemplate() {
+  return {
+    type: "text",
+    text: "กรุณาเลือกรูปแบบการเรียนของคุณค่ะ",
+    quickReply: {
+      items: [
+        {
+          type: "action",
+          action: { type: "message", label: "วิทย์-คณิต", text: "วิทย์-คณิต" },
+        },
+        {
+          type: "action",
+          action: { type: "message", label: "ศิลป์-คำนวณ", text: "ศิลป์-คำนวณ" },
+        },
+      ],
+    },
+  };
+}
+
+// ---------- Webhook เริ่มที่นี่ ----------
+
+
 // Webhook Endpoint
 app.use('/webhook', express.json());
 app.post("/webhook", async (req, res) => {
@@ -703,17 +748,15 @@ if (matchedMajor) {
 
 if (intent === "get name") {
   const name = params.name || "คุณ";
+  const sessionId = sessionFull.split("/").pop();
 
-  const sessionId = req.body.session || req.body.userId;
-
-  // ดึง session จาก MongoDB
   let session = await SessionModel.findOne({ sessionId });
   if (!session) {
     session = new SessionModel({ sessionId });
   }
 
   session.name = name;
-  await session.save(); // บันทึก session
+  await session.save();
 
   return res.json({
     fulfillmentText: `✨ สวัสดีค่ะ คุณ${name}\nกรุณาระบุระดับการศึกษาของคุณค่ะ`,
@@ -725,11 +768,19 @@ if (intent === "get name") {
           items: [
             {
               type: "action",
-              action: { type: "message", label: "มัธยมปลาย", text: "มัธยมปลาย" },
+              action: {
+                type: "message",
+                label: "มัธยมปลาย",
+                text: "มัธยมปลาย",
+              },
             },
             {
               type: "action",
-              action: { type: "message", label: "ปวส", text: "ปวส" },
+              action: {
+                type: "message",
+                label: "ปวส",
+                text: "ปวส",
+              },
             },
           ],
         },
