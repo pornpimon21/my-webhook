@@ -193,43 +193,6 @@ async function updateSession(sessionId, data) {
   return Session.updateOne({ sessionId }, { $set: data }, { upsert: true });
 }
 
-
-
-// ปุ่มเลือกระดับการศึกษา (LINE Buttons Template)
-function getLevelSelectionTemplate() {
-  return {
-    "type": "template",
-    "altText": "กรุณาเลือกระดับการศึกษา",
-    "template": {
-      "type": "buttons",
-      "text": "ระดับการศึกษาของคุณคืออะไร?",
-      "actions": [
-        { "type": "message", "label": "มัธยมศึกษาตอนปลายหรือเทียบเท่า", "text": "มัธยมศึกษาตอนปลายหรือเทียบเท่า" },
-        { "type": "message", "label": "ปวส.", "text": "ปวส." },
-        { "type": "message", "label": "อื่น ๆ", "text": "อื่น ๆ" }
-      ]
-    }
-  };
-}
-
-// ปุ่มเลือกสายการเรียน (เฉพาะ ม.ปลาย)
-function getTrackSelectionTemplate() {
-  return {
-    "type": "template",
-    "altText": "กรุณาเลือกสายการเรียน",
-    "template": {
-      "type": "buttons",
-      "text": "สายการเรียนของคุณคืออะไร?",
-      "actions": [
-        { "type": "message", "label": "วิทย์-คณิต", "text": "วิทย์-คณิต" },
-        { "type": "message", "label": "ศิลป์-คำนวณ", "text": "ศิลป์-คำนวณ" },
-        { "type": "message", "label": "ศิลป์-ภาษา", "text": "ศิลป์-ภาษา" }
-      ]
-    }
-  };
-}
-
-
 // Webhook Endpoint
 app.use('/webhook', express.json());
 app.post("/webhook", async (req, res) => {
@@ -737,6 +700,45 @@ if (matchedMajor) {
           // ตรวจสอบ Intent จาก Dialogflow
           const dialogflowResult = await detectIntentText(sessionId, userMessage);
           const replyText = dialogflowResult.fulfillmentText || '❗ ขออภัยค่ะ  \nฉันไม่เข้าใจข้อความของคุณในครั้งนี้  \nกรุณาลองพิมพ์ใหม่อีกครั้งนะคะ 😊';
+
+if (dialogflowResult.intent && dialogflowResult.intent.displayName === 'get name') {
+  // สมมติชื่อ user อยู่ใน parameter ของ Dialogflow
+  const userName = dialogflowResult.parameters.name || 'คุณ';
+
+  await lineClient.replyMessage(event.replyToken, {
+    type: 'text',
+    text: `ขอบคุณค่ะ คุณ${userName} 😊 กรุณาเลือกระดับการศึกษาของคุณด้านล่างนี้ค่ะ`,
+    quickReply: {
+      items: [
+        {
+          type: 'action',
+          action: {
+            type: 'message',
+            label: 'มัธยมปลาย',
+            text: 'มัธยมปลาย',
+          },
+        },
+        {
+          type: 'action',
+          action: {
+            type: 'message',
+            label: 'ปริญญาตรี',
+            text: 'ปริญญาตรี',
+          },
+        },
+        {
+          type: 'action',
+          action: {
+            type: 'message',
+            label: 'ปริญญาโท',
+            text: 'ปริญญาโท',
+          },
+        },
+      ],
+    },
+  });
+  return;  // หยุดการส่งข้อความอื่น
+}
 
           // <--- ตรงนี้คือจุดที่ให้ใส่โค้ดแสดง carousel --->
           if (dialogflowResult.intent && dialogflowResult.intent.displayName === 'get skills') {
