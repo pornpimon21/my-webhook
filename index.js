@@ -296,7 +296,7 @@ results.forEach((r, i) => {
   const conditionText = majorInfo.condition ? `📄 คุณสมบัติ : ${majorInfo.condition}\n` : "";
   const reasonText = majorInfo.reason ? `💡 เหตุผลที่เหมาะสม : ${majorInfo.reason}\n` : "";
 
-  ทำข้อความอาชีพให้อ่านง่าย (ถ้ามี)
+  //ทำข้อความอาชีพให้อ่านง่าย (ถ้ามี)
   let careersText = "";
   if (majorInfo.careers && majorInfo.careers.length > 0) {
     careersText = "💼 อาชีพที่เกี่ยวข้อง\n";
