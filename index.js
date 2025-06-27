@@ -487,7 +487,7 @@ if (selectedFaculty) {
         contents: [
           {
             type: "text",
-            text: emoji ? `${emoji} ${major.name}` : major.name,   // แสดงชื่อสาขาพร้อม emoji
+            text: major.name,  // แสดงชื่อเต็มของสาขา            
             weight: "bold",
             size: "sm",
             wrap: true,
@@ -504,7 +504,7 @@ if (selectedFaculty) {
           {
             type: "button",
             style: "primary",
-            color: index % 2 === 0 ? "#FFA500" : "#6B21A8",
+            color: index % 2 === 0 ? "#FFA500" : "#FACC15",
             action: {
               type: "message",
               label: emoji,
