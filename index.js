@@ -275,6 +275,9 @@ if (intent === "get skills") {
 
   const grade = session.grade;
   const name = session.name;
+  const educationLevel = session.educationLevel;
+  const track = session.track; // ✅ เพิ่มบรรทัดนี้
+
 
   if (!grade) {
     return res.json({
