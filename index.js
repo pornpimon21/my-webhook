@@ -211,38 +211,109 @@ app.post("/webhook", async (req, res) => {
   }
 
   if (intent === "get name") {
-    const name = params.name || "คุณ";
-    session.name = name;
-    await saveSession(session);
-    return res.json({
-      fulfillmentText: `✨ สวัสดีค่ะ คุณ${name}\n\nกรุณาเลือกระดับการศึกษาของคุณด้วยค่ะ`
-    });
-  }
-
+  const name = params.name || "คุณ";
+  session.name = name;
+  await saveSession(session);
+  
+  return res.json({
+    fulfillmentMessages: [
+      {
+        payload: {
+          line: {
+            type: "text",
+            text: `✨ สวัสดีค่ะ คุณ${name}\n\nกรุณาเลือกระดับการศึกษาของคุณค่ะ 👇`,
+            quickReply: {
+              items: [
+                {
+                  type: "action",
+                  action: {
+                    type: "message",
+                    label: "มัธยมศึกษาตอนปลาย",
+                    text: "มัธยมศึกษาตอนปลาย"
+                  }
+                },
+                {
+                  type: "action",
+                  action: {
+                    type: "message",
+                    label: "ปวช.",
+                    text: "ปวช."
+                  }
+                },
+                {
+                  type: "action",
+                  action: {
+                    type: "message",
+                    label: "ปวส.",
+                    text: "ปวส."
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    ]
+  });
+}
 
 if (intent === "education") {
-  const educationLevel = params.educationLevel;  // เช่น 'มัธยมศึกษาตอนปลาย', 'ปวช.', 'ปวส.'
+  const educationLevel = params.educationLevel;
   session.educationLevel = educationLevel;
   await saveSession(session);
 
   if (educationLevel === "มัธยมศึกษาตอนปลาย") {
+    // แสดงปุ่มเลือกสายการเรียน
     return res.json({
       fulfillmentMessages: [
         {
-          quickReplies: {
-            title: "กรุณาเลือกสายการเรียนของคุณ เช่น",
-            quickReplies: [
-              "วิทย์-คณิต",
-              "ศิลป์-คำนวณ",
-              "ศิลป์-ภาษา",
-              "อื่นๆ"
-            ]
+          payload: {
+            line: {
+              type: "text",
+              text: "📘 กรุณาเลือกสายการเรียนของคุณค่ะ 👇",
+              quickReply: {
+                items: [
+                  {
+                    type: "action",
+                    action: {
+                      type: "message",
+                      label: "วิทย์-คณิต",
+                      text: "วิทย์-คณิต"
+                    }
+                  },
+                  {
+                    type: "action",
+                    action: {
+                      type: "message",
+                      label: "ศิลป์-คำนวณ",
+                      text: "ศิลป์-คำนวณ"
+                    }
+                  },
+                  {
+                    type: "action",
+                    action: {
+                      type: "message",
+                      label: "ศิลป์-ภาษา",
+                      text: "ศิลป์-ภาษา"
+                    }
+                  },
+                  {
+                    type: "action",
+                    action: {
+                      type: "message",
+                      label: "อื่นๆ",
+                      text: "อื่นๆ"
+                    }
+                  }
+                ]
+              }
+            }
           }
         }
       ]
     });
   } else {
-    // กรณีอื่น เช่น ปวช, ปวส ไม่ต้องถามสาย
+    // ถ้าไม่ใช่ ม.ปลาย ให้ถามเกรดเลย
     return res.json({
       fulfillmentText: "กรุณากรอกเกรดเฉลี่ย (GPAX) ของคุณได้เลยค่ะ"
     });
@@ -250,15 +321,23 @@ if (intent === "education") {
 }
 
 if (intent === "track") {
-  const track = params.track;  // เช่น 'วิทย์-คณิต'
+  const track = params.track;
   session.track = track;
   await saveSession(session);
 
   return res.json({
-    fulfillmentText: "กรุณากรอกเกรดเฉลี่ย (GPAX) ของคุณค่ะ"
+    fulfillmentMessages: [
+      {
+        payload: {
+          line: {
+            type: "text",
+            text: `✅ คุณเลือกสาย: ${track}\nกรุณากรอกเกรดเฉลี่ย (GPAX) ของคุณค่ะ 🎓`
+          }
+        }
+      }
+    ]
   });
 }
-
 
   if (intent === "get grade") {
     const grade = params.grade;
