@@ -226,7 +226,21 @@ if (intent === "welcome") {
 }
 
 if (intent === "get name" && hasContext(contexts, "ask_name")) {
-  const name = params.name || "คุณ";
+  let name = params.name || "คุณ";
+
+  // เช็คว่า name เป็นตัวเลขหรือเปล่า (เช่น user พิมพ์ 3)
+  if (/^\d+(\.\d+)?$/.test(name)) {
+    return res.json({
+      fulfillmentText: "❗ กรุณากรอกชื่อของคุณเป็นตัวอักษรนะคะ 😊",
+      outputContexts: [
+        {
+          name: `${sessionFull}/contexts/ask_name`,
+          lifespanCount: 2
+        }
+      ]
+    });
+  }
+
   session.name = name;
   await saveSession(session);
 
