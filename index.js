@@ -65,6 +65,8 @@ const faculties = [
         grade : 2.75,
         ability : ['ภาษาไทย', 'สอน', 'ครู', 'รักเด็ก', 'เข้าใจในการสอน', 'การเขียน', 'สื่อสาร', 'วรรณกรรม', 'การอ่าน', 'จับใจความ', 'ไวยากรณ์', 'เรียบเรียง'],
         quota : 60,
+        requiredEducation: ['มัธยมศึกษาตอนปลาย', 'ปวช.', 'กศน.'],
+        requiredProgram: ['วิทย์-คณิต', 'ศิลป์-คำนวณ', 'ศิลป์-ภาษา', 'อื่นๆ'], // รับทุกแผน
         condition : "มัธยมศึกษาตอนปลายหรือเทียบเท่าทุกแผนการเรียน เกรดวิชาภาษาไทยไม่ต่ำกว่า 3.0",
         reason : 'คุณมีความสามารถด้านภาษาไทย และรักในการสื่อสารผ่านภาษา เหมาะกับการถ่ายทอดความรู้ทางภาษาให้ผู้อื่น',
         careers: ["ครูสอนภาษาไทย","นักเขียน","บรรณาธิการ"]
@@ -74,6 +76,8 @@ const faculties = [
         grade : 2.50, 
         ability : ['วิทยาศาสตร์', 'เคมี', 'ฟิสิกส์', 'ชีววิทยา', 'แล็บ'], 
         quota : 60, 
+        requiredEducation: ['มัธยมศึกษาตอนปลาย', 'ปวช.', 'กศน.'],
+        requiredProgram: ['วิทย์-คณิต'], // รับเฉพาะวิทย์-คณิต
         condition : "มัธยมศึกษาตอนปลายหรือเทียบเท่าสาขาทางวิทย์-คณิต, หรือสาขาที่เกี่ยวข้องกับวิทยาศาสตร์",
         reason : 'คุณมีความสามารถด้านวิทยาศาสตร์ ',
         careers: ["นักวิชาการ","นักเคมี","นักฟิสิกส์"]
@@ -113,31 +117,49 @@ function findClosestAbility(userInput, thresholdRatio = 0.5) {
 }
 
 // ฟังก์ชันจับคู่สาขา
-function findMatchingMajors(grade, abilities) {
-  let results = [];
+function findMatchingMajors(grade, abilities, educationLevel, track) {
+  const results = [];
 
   faculties.forEach(faculty => {
     faculty.majors.forEach(major => {
-      const matchGrade = (major.grade === null || grade >= major.grade);
 
-      const matchedAbilities = major.ability.filter(majorAbility => {
-        return abilities.some(userAbility => {
-          const dist = levenshtein.get(userAbility, majorAbility);
-          const threshold = Math.ceil(Math.min(userAbility.length, majorAbility.length) / 2);
-          return dist <= threshold;
-        });
-      });
+    // เช็คเงื่อนไขการศึกษาและสายก่อนเลย
+  if (
+  !major.requiredEducation.includes(educationLevel) ||
+  (educationLevel === "มัธยมศึกษาตอนปลาย" &&
+   !major.requiredProgram.includes(track))
+  ) 
+  {
+  return; // ข้ามสาขานี้ (เหมือน continue ใน forEach)
+  }
 
-      const matchScore = matchedAbilities.length;
+      // 1. เกรดไม่ถึง
+      if (major.grade && grade < major.grade) return;
 
-      if (matchGrade && matchScore > 0) {
-        results.push({
-          faculty: faculty.name,
-          major: major.name,
-          score: matchScore,
-          matchedAbilities
-        });
+      // 2. ตรวจสอบระดับการศึกษา
+      if (major.requiredEducation && !major.requiredEducation.includes(educationLevel)) return;
+
+      // 3. ตรวจสอบสายการเรียน (ถ้ามี)
+      if (educationLevel === "มัธยมศึกษาตอนปลาย" && major.requiredProgram) {
+        if (!major.requiredProgram.includes(track)) return;
       }
+
+      // 4. จับคู่ความสามารถ
+      const matchedAbilities = major.ability.filter(a => abilities.includes(a));
+      if (matchedAbilities.length === 0) return;
+
+      results.push({
+        faculty: faculty.name,
+        major: major.name,
+        matchedAbilities,
+        score: matchedAbilities.length,
+        condition: major.condition || "",
+        reason: major.reason || "",
+        grade: major.grade,
+        ability: major.ability,
+        quota: major.quota,
+        careers: major.careers || []
+      });
     });
   });
 
@@ -145,6 +167,7 @@ function findMatchingMajors(grade, abilities) {
 
   return results.sort((a, b) => b.score - a.score).slice(0, 5);
 }
+
 // MongoDB Session Helper
 async function getSession(sessionId) {
   let session = await Session.findOne({ sessionId });
@@ -194,9 +217,47 @@ app.post("/webhook", async (req, res) => {
     session.name = name;
     await saveSession(session);
     return res.json({
-      fulfillmentText: `✨ สวัสดีค่ะ คุณ${name}\n\nกรุณากรอกเกรดเฉลี่ย (GPAX) ของคุณ\nตัวอย่าง : 3.25 หรือ 3.50\n\n🔔 โปรดระบุค่าไม่เกิน 4.00 เพื่อความถูกต้องนะคะ`
+      fulfillmentText: `✨ สวัสดีค่ะ คุณ${name}\n\nกรุณาเลือกระดับการศึกษาค่ะ`
     });
   }
+
+
+if (intent === "education") {
+  const educationLevel = params.educationLevel;
+  session.educationLevel = educationLevel;
+  await saveSession(session);
+
+  const noTrackNeeded = ["ปวส", "ปวช", "กศน", "เทียบเท่า"];
+  if (educationLevel === "มัธยมศึกษาตอนปลาย") {
+    return res.json({
+      fulfillmentText: `📚 คุณเลือกระดับการศึกษา "${educationLevel}" แล้ว\nกรุณาเลือกสายการเรียนของคุณต่อไป เช่น วิทย์-คณิต, ศิลป์-คำนวณ หรือศิลป์-ภาษา ค่ะ`
+    });
+  } else if (noTrackNeeded.includes(educationLevel)) {
+    return res.json({
+      fulfillmentText: `📚 คุณเลือก "${educationLevel}" เรียบร้อยแล้วค่ะ\nกรุณาระบุเกรดเฉลี่ย (GPAX) ของคุณต่อเลยค่ะ 😊`
+    });
+  } else {
+    return res.json({
+      fulfillmentText: `⚠️ ขอโทษค่ะ ระบบไม่รู้จักระดับการศึกษา "${educationLevel}" กรุณาระบุใหม่อีกครั้งนะคะ`
+    });
+  }
+}
+
+if (intent === "track") {
+  const track = params.track;
+  if (!track) {
+    return res.json({
+      fulfillmentText: "⚠️ กรุณาระบุสายการเรียนของคุณ เช่น วิทย์-คณิต, ศิลป์-คำนวณ หรือศิลป์-ภาษา ค่ะ"
+    });
+  }
+
+  session.track = track;
+  await saveSession(session);
+
+  return res.json({
+    fulfillmentText: `✅ รับทราบค่ะ คุณเรียนสาย "${track}"\nกรุณาระบุเกรดเฉลี่ย (GPAX) ของคุณต่อเลยค่ะ 😊`
+  });
+}
 
   if (intent === "get grade") {
     const grade = params.grade;
