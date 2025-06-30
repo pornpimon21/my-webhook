@@ -217,7 +217,7 @@ app.post("/webhook", async (req, res) => {
     session.name = name;
     await saveSession(session);
     return res.json({
-      fulfillmentText: `✨ สวัสดีค่ะ คุณ${name}\n\nกรุณาเลือกระดับการศึกษาค่ะ`
+      fulfillmentText: `✨ สวัสดีค่ะ คุณ${name}\n\nกรุณาเลือกระดับการศึกษาของคุณด้วยค่ะ`
     });
   }
 
