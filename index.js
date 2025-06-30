@@ -304,7 +304,7 @@ if (intent === "get skills") {
       });
     }
 
-    const results = findMatchingMajors(grade, validAbilities, session.educationLevel, session.track);
+    const results = findMatchingMajors(grade, validAbilities, educationLevel, track);
 
     if (results.length === 0) {
       return res.json({
