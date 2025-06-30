@@ -123,30 +123,28 @@ function findMatchingMajors(grade, abilities, educationLevel, track) {
   faculties.forEach(faculty => {
     faculty.majors.forEach(major => {
 
-    // เช็คเงื่อนไขการศึกษาและสายก่อนเลย
-  if (
-  !major.requiredEducation.includes(educationLevel) ||
-  (educationLevel === "มัธยมศึกษาตอนปลาย" &&
-   !major.requiredProgram.includes(track))
-  ) 
-  {
-  return; // ข้ามสาขานี้ (เหมือน continue ใน forEach)
-  }
-
-      // 1. เกรดไม่ถึง
-      if (major.grade && grade < major.grade) return;
-
-      // 2. ตรวจสอบระดับการศึกษา
-      if (major.requiredEducation && !major.requiredEducation.includes(educationLevel)) return;
-
-      // 3. ตรวจสอบสายการเรียน (ถ้ามี)
-      if (educationLevel === "มัธยมศึกษาตอนปลาย" && major.requiredProgram) {
-        if (!major.requiredProgram.includes(track)) return;
+      // เช็คเงื่อนไขระดับการศึกษา
+      if (!major.requiredEducation.includes(educationLevel)) {
+        return;
       }
 
-      // 4. จับคู่ความสามารถ
+      // ถ้าระดับการศึกษาเป็น ม.ปลาย ให้เช็คสาย
+      if (educationLevel === "มัธยมศึกษาตอนปลาย") {
+        if (!major.requiredProgram.includes(track)) {
+          return;
+        }
+      }
+
+      // เช็คเกรดขั้นต่ำ
+      if (major.grade && grade < major.grade) {
+        return;
+      }
+
+      // เช็คความสามารถที่ตรงกัน
       const matchedAbilities = major.ability.filter(a => abilities.includes(a));
-      if (matchedAbilities.length === 0) return;
+      if (matchedAbilities.length === 0) {
+        return;
+      }
 
       results.push({
         faculty: faculty.name,
@@ -223,41 +221,32 @@ app.post("/webhook", async (req, res) => {
 
 
 if (intent === "education") {
-  const educationLevel = params.educationLevel;
+  const educationLevel = params.educationLevel;  // เช่น 'มัธยมศึกษาตอนปลาย', 'ปวช.', 'ปวส.'
   session.educationLevel = educationLevel;
   await saveSession(session);
 
-  const noTrackNeeded = ["ปวส", "ปวช", "กศน", "เทียบเท่า"];
   if (educationLevel === "มัธยมศึกษาตอนปลาย") {
     return res.json({
-      fulfillmentText: `📚 คุณเลือกระดับการศึกษา "${educationLevel}" แล้ว\nกรุณาเลือกสายการเรียนของคุณต่อไป เช่น วิทย์-คณิต, ศิลป์-คำนวณ หรือศิลป์-ภาษา ค่ะ`
-    });
-  } else if (noTrackNeeded.includes(educationLevel)) {
-    return res.json({
-      fulfillmentText: `📚 คุณเลือก "${educationLevel}" เรียบร้อยแล้วค่ะ\nกรุณาระบุเกรดเฉลี่ย (GPAX) ของคุณต่อเลยค่ะ 😊`
+      fulfillmentText: "กรุณาเลือกสายการเรียนของคุณ เช่น วิทย์-คณิต, ศิลป์-คำนวณ, ศิลป์-ภาษา, หรืออื่นๆ"
     });
   } else {
+    // กรณีอื่น เช่น ปวช, ปวส ไม่ต้องถามสาย
     return res.json({
-      fulfillmentText: `⚠️ ขอโทษค่ะ ระบบไม่รู้จักระดับการศึกษา "${educationLevel}" กรุณาระบุใหม่อีกครั้งนะคะ`
+      fulfillmentText: "กรุณากรอกเกรดเฉลี่ย (GPAX) ของคุณได้เลยค่ะ"
     });
   }
 }
 
 if (intent === "track") {
-  const track = params.track;
-  if (!track) {
-    return res.json({
-      fulfillmentText: "⚠️ กรุณาระบุสายการเรียนของคุณ เช่น วิทย์-คณิต, ศิลป์-คำนวณ หรือศิลป์-ภาษา ค่ะ"
-    });
-  }
-
+  const track = params.educationTrack;  // เช่น 'วิทย์-คณิต'
   session.track = track;
   await saveSession(session);
 
   return res.json({
-    fulfillmentText: `✅ รับทราบค่ะ คุณเรียนสาย "${track}"\nกรุณาระบุเกรดเฉลี่ย (GPAX) ของคุณต่อเลยค่ะ 😊`
+    fulfillmentText: "กรุณากรอกเกรดเฉลี่ย (GPAX) ของคุณค่ะ"
   });
 }
+
 
   if (intent === "get grade") {
     const grade = params.grade;
@@ -315,7 +304,7 @@ if (intent === "get skills") {
       });
     }
 
-    const results = findMatchingMajors(grade, validAbilities);
+    const results = findMatchingMajors(grade, validAbilities, session.educationLevel, session.track);
 
     if (results.length === 0) {
       return res.json({
@@ -367,6 +356,8 @@ reply += `\n✨ ขอให้โชคดีกับการเลือก�
 session.sessionId = sessionId;
 session.name = name;
 session.grade = grade;
+session.educationLevel = educationLevel; // ✅ เพิ่มระดับการศึกษา
+session.track = track;                   // ✅ เพิ่มสายการเรียน (ถ้ามี)
 session.abilitiesInputText = abilities.join(", ");
 
 // แล้วค่อย map results
