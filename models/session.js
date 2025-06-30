@@ -4,6 +4,8 @@ const sessionSchema = new mongoose.Schema({
   sessionId: String,
   name: String,
   grade: Number,
+  educationLevel: String, // ✅ เพิ่มระดับการศึกษา
+  track: String,          // ✅ เพิ่มสายการเรียน (เช่น วิทย์-คณิต)
   abilitiesInputText: String,
   recommendations: [
     {
