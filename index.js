@@ -221,16 +221,47 @@ app.post("/webhook", async (req, res) => {
 
 
 if (intent === "education") {
-  const educationLevel = params.educationLevel;  // เช่น 'มัธยมศึกษาตอนปลาย', 'ปวช.', 'ปวส.'
+  const educationLevel = params.educationLevel;
   session.educationLevel = educationLevel;
   await saveSession(session);
 
-  if (educationLevel === "มัธยมศึกษาตอนปลาย") {
+  // สร้างปุ่มระดับการศึกษา (ถ้ายังไม่มีค่า)
+  if (!educationLevel) {
     return res.json({
-      fulfillmentText: "กรุณาเลือกสายการเรียนของคุณ เช่น วิทย์-คณิต, ศิลป์-คำนวณ, ศิลป์-ภาษา, หรืออื่นๆ"
+      fulfillmentMessages: [
+        {
+          quickReplies: {
+            title: "กรุณาเลือกระดับการศึกษาของคุณค่ะ",
+            quickReplies: [
+              "มัธยมศึกษาตอนปลาย",
+              "ปวช.",
+              "ปวส."
+            ]
+          }
+        }
+      ]
+    });
+  }
+
+  if (educationLevel === "มัธยมศึกษาตอนปลาย") {
+    // ถ้าเลือก ม.ปลาย ให้เลือกสายการเรียนด้วยปุ่ม
+    return res.json({
+      fulfillmentMessages: [
+        {
+          quickReplies: {
+            title: "กรุณาเลือกสายการเรียนของคุณค่ะ",
+            quickReplies: [
+              "วิทย์-คณิต",
+              "ศิลป์-คำนวณ",
+              "ศิลป์-ภาษา",
+              "อื่นๆ"
+            ]
+          }
+        }
+      ]
     });
   } else {
-    // กรณีอื่น เช่น ปวช, ปวส ไม่ต้องถามสาย
+    // ถ้าไม่ใช่ ม.ปลาย ให้กรอกเกรดเฉลี่ยเองเลย (ข้อความธรรมดา)
     return res.json({
       fulfillmentText: "กรุณากรอกเกรดเฉลี่ย (GPAX) ของคุณได้เลยค่ะ"
     });
@@ -238,10 +269,11 @@ if (intent === "education") {
 }
 
 if (intent === "track") {
-  const track = params.educationTrack;  // เช่น 'วิทย์-คณิต'
+  const track = params.educationTrack;
   session.track = track;
   await saveSession(session);
 
+  // หลังจากเลือกสายแล้ว ให้กรอกเกรดเฉลี่ยเอง
   return res.json({
     fulfillmentText: "กรุณากรอกเกรดเฉลี่ย (GPAX) ของคุณค่ะ"
   });
