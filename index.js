@@ -198,7 +198,7 @@ app.post("/webhook", async (req, res) => {
   }
 
 if (intent === "get name") {
-  const userName = params.name || "คุณ"; // 👈 แก้ตรงนี้
+  const userName = params.name || "คุณ"; // ← ดึงค่าจาก Dialogflow หรือ fallback เป็น "คุณ"
   session.name = userName;
   await saveSession(session);
   return res.json({
@@ -350,7 +350,7 @@ reply += `\n✨ ขอให้โชคดีกับการเลือก�
     
 // เก็บข้อมูลผู้ใช้ใน session
 session.sessionId = sessionId;
-session.name = userName;
+session.name = name;
 session.educationLevel = educationLevel; // เพิ่มระดับการศึกษาที่เลือก (ต้องดึงจาก params)
 session.program = program;               // เพิ่มสายการเรียนที่เลือก (ถ้ามี)
 session.grade = grade;
