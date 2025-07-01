@@ -116,41 +116,37 @@ function findClosestAbility(userInput, thresholdRatio = 0.5) {
   return minDist <= threshold ? closest : null;
 }
 
-// ฟังก์ชันจับคู่สาขา
-  function findMatchingMajors(grade, abilities, educationLevel, program) {
-  // faculties คือ array ข้อมูลคณะ-สาขาแบบที่คุณให้มา
+function findMatchingMajors(grade, abilities, educationLevel, program) {
   let results = [];
 
   faculties.forEach(faculty => {
     faculty.majors.forEach(major => {
-      // เช็คเกรดขั้นต่ำ
       if (grade < major.grade) return;
 
-      // เช็คระดับการศึกษา
       if (!major.requiredEducation.includes(educationLevel)) return;
 
-      // เช็คสายการเรียน (ถ้ามีในข้อมูล)
-      // ถ้าข้อมูล requiredProgram เป็น array ว่าง หรือ มี 'อื่นๆ' ก็ถือว่าอนุญาต
       const programAccepted = major.requiredProgram.includes(program) || major.requiredProgram.includes('อื่นๆ');
       if (!programAccepted) return;
 
-   const matchedAbilities = major.ability.filter(majorAbility => {
+      const matchedAbilities = major.ability.filter(majorAbility => {
         return abilities.some(userAbility => {
           const dist = levenshtein.get(userAbility, majorAbility);
           const threshold = Math.ceil(Math.min(userAbility.length, majorAbility.length) / 2);
           return dist <= threshold;
         });
       });
-      
-      // ถ้าผ่านทุกเงื่อนไข ให้เก็บผล
+
+      if (matchedAbilities.length === 0) return;
+
       results.push({
         faculty: faculty.name,
         major: major.name,
         matchedAbilities,
-        condition: major.condition,  // เก็บ condition ไว้แสดงต่อ
+        condition: major.condition,
       });
     });
   });
+
   console.log('Matching majors:', results);  // เพิ่มตรงนี้ดูผลลัพธ์
 
   return results.sort((a, b) => b.score - a.score).slice(0, 5);
