@@ -197,8 +197,9 @@ if (intent === "get name") {
   session.name = name;
   await saveSession(session);
 
-  // ส่งปุ่มเลือกระดับการศึกษาแบบ Flex Message ไปเลย
   const levels = ["มัธยมปลาย", "ปวช", "ปวส", "กศน"];
+
+  // สร้าง bubbles สำหรับแต่ละระดับการศึกษา
   const levelBubbles = levels.map((level, index) => ({
     type: "bubble",
     size: "micro",
@@ -211,8 +212,8 @@ if (intent === "get name") {
           text: level,
           weight: "bold",
           size: "sm",
-          wrap: true,
-          align: "center"
+          align: "center",
+          wrap: true
         }
       ],
       paddingAll: "10px",
@@ -238,6 +239,7 @@ if (intent === "get name") {
     }
   }));
 
+  // ส่งข้อความทักทายและ Flex Message carousel รวมปุ่มระดับการศึกษา
   return res.json({
     fulfillmentMessages: [
       {
