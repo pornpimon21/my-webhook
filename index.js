@@ -198,7 +198,7 @@ app.post("/webhook", async (req, res) => {
   }
 
 if (intent === "get name") {
-  const userName = params.userName || "คุณ";
+  const userName = params.name || "คุณ"; // 👈 แก้ตรงนี้
   session.name = userName;
   await saveSession(session);
   return res.json({
