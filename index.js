@@ -282,6 +282,8 @@ if (intent === "get skills") {
 
   const grade = session.grade;
   const name = session.name;
+  const educationLevel = session.educationLevel;
+  const program = session.track || session.program || "";
 
   if (!grade) {
     return res.json({
