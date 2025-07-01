@@ -192,74 +192,14 @@ app.post("/webhook", async (req, res) => {
     });
   }
 
-if (intent === "get name") {
-  const name = params.name || "คุณ";
-  session.name = name;
-  await saveSession(sessionId, session);  // <-- เพิ่ม sessionId ด้วย
-
-  const levels = ["มัธยมปลาย", "ปวช", "ปวส", "กศน"];
-
-  const levelBubbles = levels.map((level, index) => ({
-    type: "bubble",
-    size: "micro",
-    body: {
-      type: "box",
-      layout: "vertical",
-      contents: [
-        {
-          type: "text",
-          text: level,
-          weight: "bold",
-          size: "sm",
-          wrap: true,
-          align: "center"
-        }
-      ],
-      paddingAll: "10px",
-      spacing: "sm"
-    },
-    footer: {
-      type: "box",
-      layout: "vertical",
-      contents: [
-        {
-          type: "button",
-          style: "primary",
-          color: index % 2 === 0 ? "#1E90FF" : "#FF69B4",
-          action: {
-            type: "message",
-            label: "เลือก 🎯",
-            text: level
-          }
-        }
-      ],
-      paddingAll: "10px",
-      spacing: "sm"
-    }
-  }));
-
-  return res.json({
-    fulfillmentMessages: [
-      {
-        text: {
-          text: [`✨ สวัสดีค่ะ คุณ${name}\nกรุณาเลือกระดับการศึกษาของคุณค่ะ`]
-        }
-      },
-      {
-        payload: {
-          line: {
-            type: "flex",
-            altText: "เลือกระดับการศึกษา",
-            contents: {
-              type: "carousel",
-              contents: levelBubbles
-            }
-          }
-        }
-      }
-    ]
-  });
-}
+  if (intent === "get name") {
+    const name = params.name || "คุณ";
+    session.name = name;
+    await saveSession(session);
+    return res.json({
+    fulfillmentText: `✨ สวัสดีค่ะ คุณ${name}\n\nกรุณาเลือกระดับการศึกษาของคุณ\n(มัธยมปลาย, ปวช, ปวส, กศน)`
+    });
+  }
 
 if (intent === "educationLevel") {
   const educationLevel = (params.educationLevel || "").toLowerCase();
@@ -317,7 +257,8 @@ if (intent === "get skills") {
   const grade = session.grade;
   const name = session.name;
   const educationLevel = session.educationLevel;
-    
+
+  
   if (!grade) {
     return res.json({
       fulfillmentText: "❗ กรุณาใส่เกรดเฉลี่ยก่อนค่ะ"
