@@ -65,7 +65,7 @@ const faculties = [
         grade : 2.75,
         ability : ['ภาษาไทย', 'สอน', 'ครู', 'รักเด็ก', 'เข้าใจในการสอน', 'การเขียน', 'สื่อสาร', 'วรรณกรรม', 'การอ่าน', 'จับใจความ', 'ไวยากรณ์', 'เรียบเรียง'],
         quota : 60,
-        requiredEducation: ['มัธยมศึกษาตอนปลาย', 'ปวช.', 'กศน.'],
+        requiredEducation: ['มัธยมปลาย', 'ปวช.', 'กศน.'],
         requiredProgram: ['วิทย์-คณิต', 'ศิลป์-คำนวณ', 'ศิลป์-ภาษา', 'อื่นๆ'], // รับทุกแผน
         condition : "มัธยมศึกษาตอนปลายหรือเทียบเท่าทุกแผนการเรียน เกรดวิชาภาษาไทยไม่ต่ำกว่า 3.0",
         reason : 'คุณมีความสามารถด้านภาษาไทย และรักในการสื่อสารผ่านภาษา เหมาะกับการถ่ายทอดความรู้ทางภาษาให้ผู้อื่น',
@@ -76,7 +76,7 @@ const faculties = [
         grade : 2.50, 
         ability : ['วิทยาศาสตร์', 'เคมี', 'ฟิสิกส์', 'ชีววิทยา', 'แล็บ'], 
         quota : 60, 
-        requiredEducation: ['มัธยมศึกษาตอนปลาย', 'ปวช.', 'กศน.'],
+        requiredEducation: ['มัธยมปลาย', 'ปวช.', 'กศน.'],
         requiredProgram: ['วิทย์-คณิต'], // รับเฉพาะวิทย์-คณิต
         condition : "มัธยมศึกษาตอนปลายหรือเทียบเท่าสาขาทางวิทย์-คณิต, หรือสาขาที่เกี่ยวข้องกับวิทยาศาสตร์",
         reason : 'คุณมีความสามารถด้านวิทยาศาสตร์ ',
@@ -116,37 +116,35 @@ function findClosestAbility(userInput, thresholdRatio = 0.5) {
   return minDist <= threshold ? closest : null;
 }
 
-//จับคู่คณะและสาขา
-function findMatchingMajors(grade, abilities, educationLevel, track) {
+// ฟังก์ชันจับคู่สาขา
+  function findMatchingMajors(grade, abilities, educationLevel, program) {
+  // faculties คือ array ข้อมูลคณะ-สาขาแบบที่คุณให้มา
   let results = [];
 
   faculties.forEach(faculty => {
     faculty.majors.forEach(major => {
-      // เช็คเงื่อนไขระดับการศึกษาและสายที่ตรงกัน
-      const educationMatch = major.requiredEducation.includes(educationLevel);
-      const trackMatch = major.requiredProgram.includes(track);
-      const gradeMatch = (major.grade === null || grade >= major.grade);
+      // เช็คเกรดขั้นต่ำ
+      if (grade < major.grade) return;
 
-      if (!educationMatch || !trackMatch || !gradeMatch) return;
+      // เช็คระดับการศึกษา
+      if (!major.requiredEducation.includes(educationLevel)) return;
 
-      const matchedAbilities = major.ability.filter(majorAbility => {
-        return abilities.some(userAbility => {
-          const dist = levenshtein.get(userAbility, majorAbility);
-          const threshold = Math.ceil(Math.min(userAbility.length, majorAbility.length) / 2);
-          return dist <= threshold;
-        });
+      // เช็คสายการเรียน (ถ้ามีในข้อมูล)
+      // ถ้าข้อมูล requiredProgram เป็น array ว่าง หรือ มี 'อื่นๆ' ก็ถือว่าอนุญาต
+      const programAccepted = major.requiredProgram.includes(program) || major.requiredProgram.includes('อื่นๆ');
+      if (!programAccepted) return;
+
+      // เช็คความสามารถ (abilities) ว่าตรงกับ major.ability อย่างน้อย 1 ตัว
+      const matchedAbilities = abilities.filter(a => major.ability.includes(a));
+      if (matchedAbilities.length === 0) return;
+
+      // ถ้าผ่านทุกเงื่อนไข ให้เก็บผล
+      results.push({
+        faculty: faculty.name,
+        major: major.name,
+        matchedAbilities,
+        condition: major.condition,  // เก็บ condition ไว้แสดงต่อ
       });
-
-      const matchScore = matchedAbilities.length;
-
-      if (matchScore > 0) {
-        results.push({
-          faculty: faculty.name,
-          major: major.name,
-          score: matchScore,
-          matchedAbilities
-        });
-      }
     });
   });
 
@@ -184,7 +182,8 @@ app.post("/webhook", async (req, res) => {
     } catch (err) {
       console.error("❌ EventLog error:", err.message);
     }
-  }  const intent = req.body.queryResult?.intent?.displayName || "";
+  }  
+   const intent = req.body.queryResult?.intent?.displayName || "";
    const params = req.body.queryResult?.parameters || {};
    const sessionFull = req.body.session || "default-session";
 
@@ -192,147 +191,125 @@ app.post("/webhook", async (req, res) => {
    const session = await getSession(sessionId);
    session.sessionId = sessionId;  // เซ็ตที่นี่แค่ครั้งเดียว  
 
-  if (intent === "welcome") {
+ if (intent === "welcome") {
     return res.json({
       fulfillmentText: "🌟 สวัสดีค่ะ!\nยินดีต้อนรับสู่ระบบแนะนำคณะและสาขา 🎓\n\nเราพร้อมช่วยคุณค้นหาคณะที่เหมาะสมที่สุด\nเพื่อเริ่มต้น กรุณาพิมพ์ \"ชื่อของคุณ\" เข้ามาก่อนนะคะ 😊"
     });
   }
 
-if (intent === "get name") {
-  const name = params.name || "คุณ";
-  session.name = name;
-  await saveSession(session);
-
-  return res.json({
-    fulfillmentMessages: [
-      {
-        text: { text: [`สวัสดีค่ะ คุณ${name} กรุณาเลือกระดับการศึกษาของคุณค่ะ`] }
-      },
-      {
-        platform: "LINE",
-        quickReplies: {
-          items: [
-            { type: "action", action: { type: "message", label: "มัธยมศึกษาตอนปลาย", text: "มัธยมศึกษาตอนปลาย" } },
-            { type: "action", action: { type: "message", label: "ปวช.", text: "ปวช." } },
-            { type: "action", action: { type: "message", label: "กศน.", text: "กศน." } },
-            { type: "action", action: { type: "message", label: "อื่นๆ", text: "อื่นๆ" } },
-          ]
-        }
-      }
-    ]
-  });
-}
-
-if (intent === "educationLevel") {
-  const educationLevel = params.educationLevel;
-  session.educationLevel = educationLevel;
-  await saveSession(session);
-
-  if (educationLevel === "มัธยมศึกษาตอนปลาย") {
-    return res.json({
-      fulfillmentMessages: [
-        {
-          text: { text: ["กรุณาเลือกสายการเรียนของคุณค่ะ"] }
-        },
-        {
-          platform: "LINE",
-          quickReplies: {
-            items: [
-              { type: "action", action: { type: "message", label: "วิทย์-คณิต", text: "วิทย์-คณิต" } },
-              { type: "action", action: { type: "message", label: "ศิลป์-คำนวณ", text: "ศิลป์-คำนวณ" } },
-              { type: "action", action: { type: "message", label: "ศิลป์-ภาษา", text: "ศิลป์-ภาษา" } },
-              { type: "action", action: { type: "message", label: "อื่นๆ", text: "อื่นๆ" } },
-            ]
-          }
-        }
-      ]
-    });
-  } else {
-    session.track = "อื่นๆ"; // ข้ามสายการเรียน
+  if (intent === "get name") {
+    const name = params.name || "คุณ";
+    session.name = name;
     await saveSession(session);
     return res.json({
-      fulfillmentText: `คุณเลือกระดับการศึกษา ${educationLevel} ค่ะ\nกรุณากรอกเกรดเฉลี่ย (GPAX) ของคุณต่อไปค่ะ`
+      fulfillmentText: `✨ สวัสดีค่ะ คุณ${name}\n\nกรุณาเลือกระดับการศึกษาของคุณ\n(มัธยมปลาย, ปวช, ปวส, กศน)`
     });
   }
-}
 
-if (intent === "track") {
-  const track = params.track;
-  session.track = track;
-  await saveSession(session);
+  if (intent === "educationLevel") {
+    const eduLevel = (params.educationLevel || "").toLowerCase();
+    session.educationLevel = eduLevel;
+    await saveSession(session);
 
-  return res.json({
-    fulfillmentText: `คุณเลือกสายการเรียน ${track} ค่ะ\nกรุณากรอกเกรดเฉลี่ย (GPAX) ของคุณต่อไปค่ะ`
-  });
-}
+    if (eduLevel === "มัธยมปลาย") {
+      return res.json({
+        fulfillmentText: "กรุณาเลือกสายการเรียนของคุณ เช่น วิทย์ คณิต ศิลป์",
+        outputContexts: [{
+          name: `${sessionFull}/contexts/ask_track`,
+          lifespanCount: 2
+        }]
+      });
+    } else if (["ปวช", "ปวส", "กศน"].includes(eduLevel)) {
+      return res.json({
+        fulfillmentText: "กรุณากรอกเกรดเฉลี่ยของคุณค่ะ",
+        outputContexts: [{
+          name: `${sessionFull}/contexts/ask_grad`,
+          lifespanCount: 2
+        }]
+      });
+    } else {
+      return res.json({
+        fulfillmentText: "ขอโทษค่ะ กรุณาเลือกระดับการศึกษาใหม่อีกครั้ง (มัธยมปลาย, ปวช, ปวส, กศน)",
+        outputContexts: [{
+          name: `${sessionFull}/contexts/ask_education`,
+          lifespanCount: 2
+        }]
+      });
+    }
+  }
+
+  if (intent === "track") {
+    const track = params.track || "";
+    session.track = track;
+    await saveSession(session);
+
+    return res.json({
+      fulfillmentText: "กรุณากรอกเกรดเฉลี่ยของคุณค่ะ",
+      outputContexts: [{
+        name: `${sessionFull}/contexts/ask_grad`,
+        lifespanCount: 5
+      }]
+    });
+  }
+
+  // ส่วน get grade และ get skills ใช้โค้ดที่คุณมีได้เลยครับ
+  // เพิ่มเติม ให้เซฟเกรดและความสามารถลง session ด้วย
 
   if (intent === "get grade") {
     const grade = params.grade;
     if (typeof grade !== "number" || grade < 0 || grade > 4) {
       return res.json({
-        fulfillmentText: "📊 กรุณาระบุเกรดเฉลี่ยของคุณ\nโดยต้องอยู่ในช่วง 0.0 - 4.0 นะคะ 😊",
+        fulfillmentText: "📊 กรุณาระบุเกรดเฉลี่ยของคุณโดยต้องอยู่ในช่วง 0.0 - 4.0 นะคะ 😊",
       });
     }
     session.grade = grade;
     await saveSession(session);
     return res.json({
-      fulfillmentText: `🙏 ขอบคุณค่ะ คุณได้เกรด ${grade}  \nกรุณาระบุความสามารถหรือความถนัดของคุณ  \n(เช่น คอมพิวเตอร์ คณิตศาสตร์ การแสดง วาดรูป กีฬา เป็นต้น) 🚀`
+      fulfillmentText: `🙏 ขอบคุณค่ะ คุณได้เกรด ${grade}\nกรุณาระบุความสามารถหรือความถนัดของคุณ เช่น คอมพิวเตอร์ คณิตศาสตร์ การแสดง วาดรูป กีฬา เป็นต้น 🚀`,
+      outputContexts: [{
+        name: `${sessionFull}/contexts/ask_skills`,
+        lifespanCount: 5
+      }]
     });
   }
 
-if (intent === "get skills") {
-  let abilities = params.ability;
-  if (typeof abilities === "string") {
-    abilities = abilities.split(/[,\s]+/).map(a => a.trim());  // 🔁 ใช้ regex แยกทั้งคอมม่าและเว้นวรรค
+  if (intent === "get skills") {
+    let abilities = params.ability;
+    if (typeof abilities === "string") {
+      abilities = abilities.split(/[,\s]+/).map(a => a.trim());
     } else if (Array.isArray(abilities)) {
-    abilities = abilities.flatMap(item => item.split(",").map(a => a.trim()));
-  }
-  
-  abilities = abilities.filter(a => a.length > 0);
-  abilities = [...new Set(abilities)];
+      abilities = abilities.flatMap(item => item.split(",").map(a => a.trim()));
+    }
+    abilities = abilities.filter(a => a.length > 0);
+    abilities = [...new Set(abilities)];
 
-  const grade = session.grade;
-  const name = session.name;
-
-  if (!grade) {
-    return res.json({
-      fulfillmentText: "❗ กรุณาใส่เกรดเฉลี่ยก่อนค่ะ"
-    });
-  }
-
-  if (abilities.length === 0) {
-    return res.json({
-      fulfillmentText: "⚠️🙏 กรุณาระบุความสามารถอย่างน้อย 1 อย่างค่ะ 🙏⚠️"
-    });
-  }
-    let validAbilities = new Set();
-    let invalid = [];
-
-    abilities.forEach(a => {
-      const closest = findClosestAbility(a);
-      if (closest) validAbilities.add(closest);
-      else invalid.push(a);
-    });
-
-    validAbilities = Array.from(validAbilities);
-
-    if (invalid.length > 0) {
+    if (!session.grade) {
       return res.json({
-        fulfillmentText: `⚠️ ขอโทษค่ะ\nคำว่า "${invalid.join(", ")}" เราไม่เข้าใจ\nช่วยกรอกความสามารถใหม่อีกครั้งนะคะ 😊`,
+        fulfillmentText: "❗ กรุณาใส่เกรดเฉลี่ยก่อนค่ะ"
       });
     }
 
-    const results = findMatchingMajors(grade, validAbilities, session.educationLevel, session.track);
-    
+    if (abilities.length === 0) {
+      return res.json({
+        fulfillmentText: "⚠️🙏 กรุณาระบุความสามารถอย่างน้อย 1 อย่างค่ะ 🙏⚠️"
+      });
+    }
+
+    session.ability = abilities;
+    await saveSession(session);
+
+    // สมมติฟังก์ชัน findMatchingMajors() มีการพิจารณา educationLevel + track ด้วย
+    const results = findMatchingMajors(session.grade, abilities, session.educationLevel, session.track);
+
     if (results.length === 0) {
       return res.json({
-        fulfillmentText: `❌ ขออภัยค่ะ คุณ${name}\nเราไม่พบคณะที่เหมาะสมกับคุณในขณะนี้\nกรุณาลองใหม่อีกครั้งนะคะ 🙇‍♀️`
+        fulfillmentText: `❌ ขออภัยค่ะ คุณ${session.name}\nเราไม่พบคณะที่เหมาะสมกับคุณในขณะนี้\nกรุณาลองใหม่อีกครั้งนะคะ 🙇‍♀️`
       });
     }
-
+        
     const abilitiesInputText = abilities.join(", ");
 
-let reply = `🙏 ขอบคุณค่ะคุณ${name || ''} จากข้อมูลที่คุณกรอกมามีดังนี้  \n` +
+let reply = `🙏 ขอบคุณค่ะคุณ${session.name || ''} จากข้อมูลที่คุณกรอกมามีดังนี้  \n` +
   `📘 เกรดเฉลี่ย : ${grade}    \n` +
   `🧠 ความสามารถหรือความถนัดของคุณ : ${abilitiesInputText}  \n\n` +
   `เราขอแนะนำคณะและสาขาที่เหมาะสมกับคุณดังนี้ : \n`;
@@ -370,13 +347,15 @@ results.forEach((r, i) => {
 
 reply += `\n✨ ขอให้โชคดีกับการเลือกคณะนะคะ!`;
     
-// ✅ เก็บข้อมูลผู้ใช้ด้านบนสุดก่อนเลย และ // เก็บค่าผลลัพธ์ทั้งหมดใน session แบบ array (ไม่รวม quota, gradeRequirement, etc.) 5 ลำดับ
+// เก็บข้อมูลผู้ใช้ใน session
 session.sessionId = sessionId;
 session.name = name;
+session.educationLevel = educationLevel; // เพิ่มระดับการศึกษาที่เลือก (ต้องดึงจาก params)
+session.program = program;               // เพิ่มสายการเรียนที่เลือก (ถ้ามี)
 session.grade = grade;
 session.abilitiesInputText = abilities.join(", ");
 
-// แล้วค่อย map results
+// เก็บค่าผลลัพธ์ทั้งหมดใน session แบบ array (ไม่รวม quota, gradeRequirement, etc.) 5 ลำดับ
 session.recommendations = results.map((r, i) => {
   const majorInfo = faculties
     .find(f => f.name === r.faculty)
@@ -386,13 +365,13 @@ session.recommendations = results.map((r, i) => {
     rank: i + 1,
     faculty: r.faculty,
     major: r.major,
-    requiredGrade: majorInfo.grade,
-    abilities: majorInfo.ability,           // ต้องเป็น array เช่น ['วิเคราะห์', 'สื่อสาร']
-    matchedAbilities: r.matchedAbilities,   // ต้องเป็น array เช่น ['วิเคราะห์']
-    quota: majorInfo.quota,
-    condition: majorInfo.condition,
-    reason: majorInfo.reason,
-    careers: majorInfo.careers
+    requiredGrade: majorInfo.grade || null,  // ป้องกัน undefined
+    abilities: majorInfo.ability || [],           // array ทักษะที่เกี่ยวข้อง
+    matchedAbilities: r.matchedAbilities || [],   // array ทักษะที่ตรงกันกับผู้ใช้
+    quota: majorInfo.quota || null,
+    condition: majorInfo.condition || "",
+    reason: majorInfo.reason || "",
+    careers: majorInfo.careers || []
   };
 });
 
