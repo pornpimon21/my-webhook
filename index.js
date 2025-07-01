@@ -134,10 +134,14 @@ function findClosestAbility(userInput, thresholdRatio = 0.5) {
       const programAccepted = major.requiredProgram.includes(program) || major.requiredProgram.includes('อื่นๆ');
       if (!programAccepted) return;
 
-      // เช็คความสามารถ (abilities) ว่าตรงกับ major.ability อย่างน้อย 1 ตัว
-      const matchedAbilities = abilities.filter(a => major.ability.includes(a));
-      if (matchedAbilities.length === 0) return;
-
+   const matchedAbilities = major.ability.filter(majorAbility => {
+        return abilities.some(userAbility => {
+          const dist = levenshtein.get(userAbility, majorAbility);
+          const threshold = Math.ceil(Math.min(userAbility.length, majorAbility.length) / 2);
+          return dist <= threshold;
+        });
+      });
+      
       // ถ้าผ่านทุกเงื่อนไข ให้เก็บผล
       results.push({
         faculty: faculty.name,
