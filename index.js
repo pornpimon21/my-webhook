@@ -195,9 +195,10 @@ app.post("/webhook", async (req, res) => {
 if (intent === "get name") {
   const name = params.name || "คุณ";
   session.name = name;
-  await saveSession(session);
+  await saveSession(sessionId, session);  // <-- เพิ่ม sessionId ด้วย
 
   const levels = ["มัธยมปลาย", "ปวช", "ปวส", "กศน"];
+
   const levelBubbles = levels.map((level, index) => ({
     type: "bubble",
     size: "micro",
@@ -210,10 +211,12 @@ if (intent === "get name") {
           text: level,
           weight: "bold",
           size: "sm",
-          align: "center",
-          wrap: true
+          wrap: true,
+          align: "center"
         }
-      ]
+      ],
+      paddingAll: "10px",
+      spacing: "sm"
     },
     footer: {
       type: "box",
@@ -229,7 +232,9 @@ if (intent === "get name") {
             text: level
           }
         }
-      ]
+      ],
+      paddingAll: "10px",
+      spacing: "sm"
     }
   }));
 
@@ -237,7 +242,7 @@ if (intent === "get name") {
     fulfillmentMessages: [
       {
         text: {
-          text: [`✨ สวัสดีค่ะ คุณ${name}\nกรุณาเลือกระดับการศึกษาของคุณค่ะ 😊`]
+          text: [`✨ สวัสดีค่ะ คุณ${name}\nกรุณาเลือกระดับการศึกษาของคุณค่ะ`]
         }
       },
       {
@@ -251,12 +256,6 @@ if (intent === "get name") {
             }
           }
         }
-      }
-    ],
-    outputContexts: [
-      {
-        name: `${sessionFull}/contexts/ask_education`,
-        lifespanCount: 2
       }
     ]
   });
