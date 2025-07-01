@@ -116,7 +116,8 @@ function findClosestAbility(userInput, thresholdRatio = 0.5) {
   return minDist <= threshold ? closest : null;
 }
 
-function findMatchingMajors(grade, abilities, educationLevel, track) {
+// ฟังก์ชันจับคู่สาขา
+  function findMatchingMajors(grade, abilities, educationLevel, program) {
   // faculties คือ array ข้อมูลคณะ-สาขาแบบที่คุณให้มา
   let results = [];
 
@@ -130,7 +131,7 @@ function findMatchingMajors(grade, abilities, educationLevel, track) {
 
       // เช็คสายการเรียน (ถ้ามีในข้อมูล)
       // ถ้าข้อมูล requiredProgram เป็น array ว่าง หรือ มี 'อื่นๆ' ก็ถือว่าอนุญาต
-      const programAccepted = major.requiredProgram.includes(track) || major.requiredProgram.includes('อื่นๆ');
+      const programAccepted = major.requiredProgram.includes(program) || major.requiredProgram.includes('อื่นๆ');
       if (!programAccepted) return;
 
       // เช็คความสามารถ (abilities) ว่าตรงกับ major.ability อย่างน้อย 1 ตัว
@@ -245,7 +246,7 @@ app.post("/webhook", async (req, res) => {
       fulfillmentText: "กรุณากรอกเกรดเฉลี่ยของคุณค่ะ",
       outputContexts: [{
         name: `${sessionFull}/contexts/ask_grad`,
-        lifespanCount: 5
+        lifespanCount: 2
       }]
     });
   }
@@ -263,7 +264,7 @@ app.post("/webhook", async (req, res) => {
       fulfillmentText: `🙏 ขอบคุณค่ะ คุณได้เกรด ${grade}\nกรุณาระบุความสามารถหรือความถนัดของคุณ เช่น คอมพิวเตอร์ คณิตศาสตร์ การแสดง วาดรูป กีฬา เป็นต้น 🚀`,
       outputContexts: [{
         name: `${sessionFull}/contexts/ask_skills`,
-        lifespanCount: 5
+        lifespanCount: 2
       }]
     });
   }
@@ -310,7 +311,7 @@ if (intent === "get skills") {
       });
     }
 
-    const results = findMatchingMajors(grade, validAbilities, educationLevel, track);
+    const results = findMatchingMajors(grade, validAbilities, session.educationLevel, session.track);
 
     if (results.length === 0) {
       return res.json({
@@ -362,7 +363,7 @@ reply += `\n✨ ขอให้โชคดีกับการเลือก�
 session.sessionId = sessionId;
 session.name = name;
 session.educationLevel = educationLevel; // เพิ่มระดับการศึกษาที่เลือก (ต้องดึงจาก params)
-session.track = track;               // เพิ่มสายการเรียนที่เลือก (ถ้ามี)
+session.program = program;               // เพิ่มสายการเรียนที่เลือก (ถ้ามี)
 session.grade = grade;
 session.abilitiesInputText = abilities.join(", ");
 
