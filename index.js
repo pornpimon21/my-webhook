@@ -317,8 +317,7 @@ if (intent === "get skills") {
   const grade = session.grade;
   const name = session.name;
   const educationLevel = session.educationLevel;
-  await session.save();
-  
+    
   if (!grade) {
     return res.json({
       fulfillmentText: "❗ กรุณาใส่เกรดเฉลี่ยก่อนค่ะ"
