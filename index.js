@@ -192,14 +192,74 @@ app.post("/webhook", async (req, res) => {
     });
   }
 
-  if (intent === "get name") {
-    const name = params.name || "คุณ";
-    session.name = name;
-    await saveSession(session);
-    return res.json({
-    fulfillmentText: `✨ สวัสดีค่ะ คุณ${name}\n\nกรุณาเลือกระดับการศึกษาของคุณ\n(มัธยมปลาย, ปวช, ปวส, กศน)`
-    });
-  }
+if (intent === "get name") {
+  const name = params.name || "คุณ";
+  session.name = name;
+  await saveSession(session);
+
+  // ส่งปุ่มเลือกระดับการศึกษาแบบ Flex Message ไปเลย
+  const levels = ["มัธยมปลาย", "ปวช", "ปวส", "กศน"];
+  const levelBubbles = levels.map((level, index) => ({
+    type: "bubble",
+    size: "micro",
+    body: {
+      type: "box",
+      layout: "vertical",
+      contents: [
+        {
+          type: "text",
+          text: level,
+          weight: "bold",
+          size: "sm",
+          wrap: true,
+          align: "center"
+        }
+      ],
+      paddingAll: "10px",
+      spacing: "sm"
+    },
+    footer: {
+      type: "box",
+      layout: "vertical",
+      contents: [
+        {
+          type: "button",
+          style: "primary",
+          color: index % 2 === 0 ? "#1E90FF" : "#FF69B4",
+          action: {
+            type: "message",
+            label: "เลือก 🎯",
+            text: level
+          }
+        }
+      ],
+      paddingAll: "10px",
+      spacing: "sm"
+    }
+  }));
+
+  return res.json({
+    fulfillmentMessages: [
+      {
+        text: {
+          text: [`✨ สวัสดีค่ะ คุณ${name}\n\nกรุณาเลือกระดับการศึกษาของคุณค่ะ`]
+        }
+      },
+      {
+        payload: {
+          line: {
+            type: "flex",
+            altText: "เลือกระดับการศึกษา",
+            contents: {
+              type: "carousel",
+              contents: levelBubbles
+            }
+          }
+        }
+      }
+    ]
+  });
+}
 
 if (intent === "educationLevel") {
   const educationLevel = (params.educationLevel || "").toLowerCase();
@@ -416,68 +476,6 @@ if (userMessage === 'เริ่มแนะนำใหม่') {
     return;
   }
 }
-
-
-if (userMessage === 'เลือกระดับการศึกษา') {
-  const levels = ["มัธยมปลาย", "ปวช", "ปวส", "กศน"];
-
-  const levelBubbles = levels.map((level, index) => ({
-    type: "bubble",
-    size: "micro",
-    body: {
-      type: "box",
-      layout: "vertical",
-      contents: [
-        {
-          type: "text",
-          text: level,
-          weight: "bold",
-          size: "sm",
-          wrap: true,
-          align: "center"
-        }
-      ],
-      paddingAll: "10px",
-      spacing: "sm"
-    },
-    footer: {
-      type: "box",
-      layout: "vertical",
-      contents: [
-        {
-          type: "button",
-          style: "primary",
-          color: index % 2 === 0 ? "#1E90FF" : "#FF69B4",
-          action: {
-            type: "message",
-            label: "เลือก 🎯",
-            text: level
-          }
-        }
-      ],
-      paddingAll: "10px",
-      spacing: "sm"
-    }
-  }));
-
-  await lineClient.replyMessage(event.replyToken, [
-    {
-      type: 'text',
-      text: '📘 กรุณาเลือกระดับการศึกษาของคุณค่ะ'
-    },
-    {
-      type: "flex",
-      altText: "เลือกระดับการศึกษา",
-      contents: {
-        type: "carousel",
-        contents: levelBubbles
-      }
-    }
-  ]);
-  return;
-}
-
-
 
 // ฟังก์ชันช่วยตรวจสอบข้อความ ให้รองรับทั้ง string และ number
 const safeText = (text) => {
