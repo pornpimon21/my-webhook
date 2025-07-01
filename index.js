@@ -197,14 +197,14 @@ app.post("/webhook", async (req, res) => {
     });
   }
 
-  if (intent === "get name") {
-    const name = params.name || "คุณ";
-    session.name = name;
-    await saveSession(session);
-    return res.json({
-      fulfillmentText: `✨ สวัสดีค่ะ คุณ${name}\n\nกรุณาเลือกระดับการศึกษาของคุณ\n(มัธยมปลาย, ปวช, ปวส, กศน)`
-    });
-  }
+if (intent === "get name") {
+  const userName = params.userName || "คุณ";
+  session.name = userName;
+  await saveSession(session);
+  return res.json({
+    fulfillmentText: `✨ สวัสดีค่ะ คุณ${userName}\n\nกรุณาเลือกระดับการศึกษาของคุณ\n(มัธยมปลาย, ปวช, ปวส, กศน)`
+  });
+}
 
   if (intent === "educationLevel") {
     const eduLevel = (params.educationLevel || "").toLowerCase();
@@ -350,7 +350,7 @@ reply += `\n✨ ขอให้โชคดีกับการเลือก�
     
 // เก็บข้อมูลผู้ใช้ใน session
 session.sessionId = sessionId;
-session.name = name;
+session.name = userName;
 session.educationLevel = educationLevel; // เพิ่มระดับการศึกษาที่เลือก (ต้องดึงจาก params)
 session.program = program;               // เพิ่มสายการเรียนที่เลือก (ถ้ามี)
 session.grade = grade;
