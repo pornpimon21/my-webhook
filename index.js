@@ -205,37 +205,37 @@ app.post("/webhook", async (req, res) => {
     });
   }
 
-  if (intent === "educationLevel") {
-    const eduLevel = (params.educationLevel || "").toLowerCase();
-    session.educationLevel = eduLevel;
-    await saveSession(session);
+if (intent === "educationLevel") {
+  const educationLevel = (params.educationLevel || "").toLowerCase(); // ✅ ประกาศตัวแปรก่อนใช้
+  session.educationLevel = educationLevel;
+  await saveSession(session);
 
-    if (eduLevel === "มัธยมปลาย") {
-      return res.json({
-        fulfillmentText: "กรุณาเลือกสายการเรียนของคุณ เช่น วิทย์ คณิต ศิลป์",
-        outputContexts: [{
-          name: `${sessionFull}/contexts/ask_track`,
-          lifespanCount: 2
-        }]
-      });
-    } else if (["ปวช", "ปวส", "กศน"].includes(eduLevel)) {
-      return res.json({
-        fulfillmentText: "กรุณากรอกเกรดเฉลี่ยของคุณค่ะ",
-        outputContexts: [{
-          name: `${sessionFull}/contexts/ask_grad`,
-          lifespanCount: 2
-        }]
-      });
-    } else {
-      return res.json({
-        fulfillmentText: "ขอโทษค่ะ กรุณาเลือกระดับการศึกษาใหม่อีกครั้ง (มัธยมปลาย, ปวช, ปวส, กศน)",
-        outputContexts: [{
-          name: `${sessionFull}/contexts/ask_education`,
-          lifespanCount: 2
-        }]
-      });
-    }
+  if (educationLevel === "มัธยมปลาย") {
+    return res.json({
+      fulfillmentText: "กรุณาเลือกสายการเรียนของคุณ เช่น วิทย์ คณิต ศิลป์",
+      outputContexts: [{
+        name: `${sessionFull}/contexts/ask_track`,
+        lifespanCount: 2
+      }]
+    });
+  } else if (["ปวช", "ปวส", "กศน"].includes(educationLevel)) {
+    return res.json({
+      fulfillmentText: "กรุณากรอกเกรดเฉลี่ยของคุณค่ะ",
+      outputContexts: [{
+        name: `${sessionFull}/contexts/ask_grad`,
+        lifespanCount: 2
+      }]
+    });
+  } else {
+    return res.json({
+      fulfillmentText: "ขอโทษค่ะ กรุณาเลือกระดับการศึกษาใหม่อีกครั้ง (มัธยมปลาย, ปวช, ปวส, กศน)",
+      outputContexts: [{
+        name: `${sessionFull}/contexts/ask_education`,
+        lifespanCount: 2
+      }]
+    });
   }
+}
 
   if (intent === "track") {
     const track = params.track || "";
