@@ -166,26 +166,32 @@ async function updateSession(sessionId, data) {
 app.use('/webhook', express.json());
 app.post("/webhook", async (req, res) => {
   const body = req.body;
-  const eventId = req.body.originalDetectIntentRequest?.payload?.data?.webhookEventId;
-
+  // 1. ป้องกัน duplicate event
+  const eventId = body.originalDetectIntentRequest?.payload?.data?.webhookEventId;
   if (eventId) {
     try {
       const exists = await EventLog.findOne({ eventId });
-      if (exists) {
-        return res.status(200).send(); // 🛑 เคยประมวลผลแล้ว
-      }
-      await EventLog.create({ eventId }); // ✅ บันทึกไว้ว่าเคยแล้ว
+      if (exists) return res.status(200).send(); // ✅ เคยประมวลผลแล้ว
+      await EventLog.create({ eventId });
     } catch (err) {
       console.error("❌ EventLog error:", err.message);
     }
-  }  
-   const intent = req.body.queryResult?.intent?.displayName || "";
-   const params = req.body.queryResult?.parameters || {};
-   const sessionFull = req.body.session || "default-session";
+  }
 
-   const sessionId = sessionFull.split('/').pop();  // ดึงแค่ userId   
-   const session = await getSession(sessionId);
-   session.sessionId = sessionId;  // เซ็ตที่นี่แค่ครั้งเดียว  
+  // 2. เตรียมข้อมูลพื้นฐาน
+  const intent = body.queryResult?.intent?.displayName || "";
+  const params = body.queryResult?.parameters || {};
+  const sessionFull = body.session || "default-session";
+  const sessionId = sessionFull.split('/').pop(); // ดึง user ID จาก session path
+
+  // 3. ดึง userId และ replyToken จาก LINE
+  const replyToken = body.originalDetectIntentRequest?.payload?.data?.replyToken;
+  const userId = body.originalDetectIntentRequest?.payload?.data?.source?.userId;
+
+  // 4. จัดการ session
+  let session = await getSession(sessionId);
+  if (!session) session = { userId };
+  session.sessionId = sessionId;
 
   if (intent === "welcome") {
     return res.json({
