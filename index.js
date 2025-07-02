@@ -192,33 +192,29 @@ app.post("/webhook", async (req, res) => {
     });
   }
 
-if (intent === "get name") {
-  const name = params.name || "คุณ";
-  session.name = name;
-  await saveSession(session);
+ if (intent === 'get name') {
+    const name = params.name || "คุณ";
+    session.name = name;
+    await saveSession(session);
 
-  return res.json({
-    fulfillmentMessages: [
-      {
-        text: {
-          text: [`✨ สวัสดีค่ะ คุณ${name}\n\nกรุณาเลือกระดับการศึกษาของคุณค่ะ`],
-        },
-      },
-      {
-        platform: "LINE",
-        quickReplies: {
-          items: [
-            { type: "action", action: { type: "message", label: "มัธยมปลาย", text: "มัธยมปลาย" } },
-            { type: "action", action: { type: "message", label: "ปวช", text: "ปวช" } },
-            { type: "action", action: { type: "message", label: "ปวส", text: "ปวส" } },
-            { type: "action", action: { type: "message", label: "กศน", text: "กศน" } },
-          ],
-        },
-      },
-    ],
-  });
-}
-
+    return res.json({
+      fulfillmentMessages: [
+        {
+          platform: "LINE",
+          type: "text",
+          text: `✨ สวัสดีค่ะ คุณ${name}\n\nกรุณาเลือกระดับการศึกษาของคุณค่ะ`,
+          quickReplies: {
+            items: [
+              { type: "action", action: { type: "message", label: "มัธยมปลาย", text: "มัธยมปลาย" } },
+              { type: "action", action: { type: "message", label: "ปวช", text: "ปวช" } },
+              { type: "action", action: { type: "message", label: "ปวส", text: "ปวส" } },
+              { type: "action", action: { type: "message", label: "กศน", text: "กศน" } }
+            ]
+          }
+        }
+      ]
+    });
+  }
 if (intent === "educationLevel") {
   const educationLevel = (params.educationLevel || "").toLowerCase();
   session.educationLevel = educationLevel;
