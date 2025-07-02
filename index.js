@@ -198,55 +198,65 @@ if (intent === "get name") {
     session.name = name;
     await saveSession(session);
 
-    const levels = ["มัธยมปลาย", "ปวช", "ปวส", "กศน"];
-    const levelBubbles = levels.map((level, index) => ({
-      type: "bubble",
-      size: "micro",
-      body: {
-        type: "box",
-        layout: "vertical",
-        contents: [{
-          type: "text",
-          text: level,
-          weight: "bold",
-          size: "sm",
-          align: "center"
-        }],
-        paddingAll: "10px"
-      },
-      footer: {
-        type: "box",
-        layout: "vertical",
-        contents: [{
-          type: "button",
-          style: "primary",
-          color: index % 2 === 0 ? "#1E90FF" : "#FF69B4",
-          action: {
-            type: "message",
-            label: "เลือก 🎯",
-            text: level
-          }
-        }]
-      }
-    }));
+    // 1. ตอบข้อความขอบคุณผ่าน replyMessage (LINE)
+    if (replyToken) {
+      await lineClient.replyMessage(replyToken, {
+        type: "text",
+        text: `🎉 ขอบคุณค่ะ คุณ${name}\nกรุณาเลือกระดับการศึกษาของคุณค่ะ`
+      });
+    }
 
-    // 1. ตอบกลับข้อความ
-    await lineClient.replyMessage(body.originalDetectIntentRequest.payload.data.replyToken, {
-      type: "text",
-      text: `🎉 ขอบคุณค่ะ คุณ${session.name}\nกรุณาเลือกระดับการศึกษาของคุณค่ะ`
-    });
+    // 2. Push ปุ่มแยกระดับการศึกษา (Flex)
+    if (userId) {
+      const levels = ["มัธยมปลาย", "ปวช", "ปวส", "กศน"];
+      const bubbles = levels.map((level, index) => ({
+        type: "bubble",
+        size: "micro",
+        body: {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "text",
+              text: level,
+              weight: "bold",
+              align: "center",
+              wrap: true,
+              size: "sm"
+            }
+          ],
+          paddingAll: "10px"
+        },
+        footer: {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "button",
+              style: "primary",
+              color: index % 2 === 0 ? "#1E90FF" : "#FF69B4",
+              action: {
+                type: "message",
+                label: "เลือก 🎯",
+                text: level
+              }
+            }
+          ]
+        }
+      }));
 
-    // 2. ส่ง Flex ปุ่ม
-    await lineClient.pushMessage(body.originalDetectIntentRequest.payload.data.source.userId, {
-      type: "flex",
-      altText: "เลือกระดับการศึกษา",
-      contents: {
-        type: "carousel",
-        contents: levelBubbles
-      }
-    });
+      await lineClient.pushMessage(userId, {
+        type: "flex",
+        altText: "เลือกระดับการศึกษา",
+        contents: {
+          type: "carousel",
+          contents: bubbles
+        }
+      });
+    }
 
-    return res.sendStatus(200); // จบ flow
+    // ส่ง response กลับ Dialogflow เพื่อปิดการทำงาน
+    return res.sendStatus(200);
   }
 
 if (intent === "educationLevel") {
