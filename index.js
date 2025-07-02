@@ -199,42 +199,35 @@ if (intent === "get name") {
   session.name = name;
   await saveSession(session);
 
-  const levels = ["มัธยมปลาย", "ปวช", "ปวส", "กศน"];
-  const levelBubbles = levels.map((level, index) => ({
-    type: "bubble",
-    size: "micro",
-    body: {
-      type: "box",
-      layout: "vertical",
-      contents: [
-        {
-          type: "text",
-          text: level,
-          weight: "bold",
-          size: "sm",
-          align: "center",
-          wrap: true
+const levels = ["มัธยมปลาย", "ปวช", "ปวส", "กศน"];
+const colors = ["#A5D6A7", "#FFF176", "#CE93D8", "#80DEEA"];
+const labels = {
+  "มัธยมปลาย": "เลือก ม.ปลาย 🎓",
+  "ปวช": "เลือก ปวช 🛠️",
+  "ปวส": "เลือก ปวส 🔧",
+  "กศน": "เลือก กศน 📘"
+};
+
+const levelBubbles = levels.map((level, index) => ({
+  type: "bubble",
+  size: "micro",
+  footer: {
+    type: "box",
+    layout: "vertical",
+    contents: [
+      {
+        type: "button",
+        style: "primary",
+        color: colors[index],
+        action: {
+          type: "message",
+          label: labels[level],
+          text: level
         }
-      ],
-      paddingAll: "10px"
-    },
-    footer: {
-      type: "box",
-      layout: "vertical",
-      contents: [
-        {
-          type: "button",
-          style: "primary",
-          color: index % 2 === 0 ? "#1E90FF" : "#FF69B4",
-          action: {
-            type: "message",
-            label: "เลือก 🎯",
-            text: level
-          }
-        }
-      ]
-    }
-  }));
+      }
+    ]
+  }
+}));
 
 // 1. ส่งข้อความตอบกลับ Dialogflow ก่อน
 res.json({
@@ -253,10 +246,9 @@ setTimeout(() => {
   }).catch((err) => {
     console.error("Push message error:", err);
   });
-}, 500); // ✅ รอ 500 มิลลิวินาที
+}, 300); // ✅ รอ 300 มิลลิวินาที
 
-return;
-}
+return;}
 
 if (intent === "educationLevel") {
   const educationLevel = (params.educationLevel || "").toLowerCase();
