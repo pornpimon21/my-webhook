@@ -236,23 +236,20 @@ if (intent === "get name") {
     }
   }));
 
-  // ส่งข้อความตอบกลับ Dialogflow ก่อน
-  res.json({
-    fulfillmentText: `✨ สวัสดีค่ะ คุณ${name}\nกรุณาเลือกระดับการศึกษาของคุณค่ะ`
-  });
-
-  // ส่ง push message แบบไม่รอ ไม่กระทบ response
-  lineClient.pushMessage(sessionId, {
+await lineClient.replyMessage(event.replyToken, [
+  {
+    type: "text",
+    text: `✨ สวัสดีค่ะ คุณ${name}\nกรุณาเลือกระดับการศึกษาของคุณค่ะ`
+  },
+  {
     type: "flex",
     altText: "เลือกระดับการศึกษา",
     contents: {
       type: "carousel",
       contents: levelBubbles
     }
-  }).catch((err) => {
-    console.error("Push message error:", err);
-  });
-
+  }
+]);
   // return เพื่อจบฟังก์ชัน
   return;
 }
