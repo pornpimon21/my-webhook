@@ -229,30 +229,34 @@ if (intent === "get name") {
           action: {
             type: "message",
             label: "เลือก 🎯",
-            text: level  // เมื่อกดจะส่งข้อความระดับนั้นกลับมา
+            text: level
           }
         }
       ]
     }
   }));
 
- // ตัวอย่าง response ไป Dialogflow ให้แสดงข้อความ
-    res.json({
-      fulfillmentText: `✨ สวัสดีค่ะ คุณ${name}\nกรุณาเลือกระดับการศึกษาของคุณค่ะ`
-    });
+  // ส่งข้อความตอบกลับ Dialogflow ก่อน
+  res.json({
+    fulfillmentText: `✨ สวัสดีค่ะ คุณ${name}\nกรุณาเลือกระดับการศึกษาของคุณค่ะ`
+  });
 
-    // หลังจากส่ง response แล้ว ส่ง push message flex carousel ไป user
-    await lineClient.pushMessage(sessionId, {
-      type: "flex",
-      altText: "เลือกระดับการศึกษา",
-      contents: {
-        type: "carousel",
-        contents: levelBubbles
-      }
-    });
+  // ส่ง push message แบบไม่รอ ไม่กระทบ response
+  lineClient.pushMessage(sessionId, {
+    type: "flex",
+    altText: "เลือกระดับการศึกษา",
+    contents: {
+      type: "carousel",
+      contents: levelBubbles
+    }
+  }).catch((err) => {
+    console.error("Push message error:", err);
+  });
 
-    return;  // จบตรงนี้
-  }
+  // return เพื่อจบฟังก์ชัน
+  return;
+}
+
 if (intent === "educationLevel") {
   const educationLevel = (params.educationLevel || "").toLowerCase();
   session.educationLevel = educationLevel;
