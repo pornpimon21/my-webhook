@@ -165,33 +165,26 @@ async function updateSession(sessionId, data) {
 // Webhook Endpoint
 app.use('/webhook', express.json());
 app.post("/webhook", async (req, res) => {
-  const body = req.body;
-  // 1. ป้องกัน duplicate event
-  const eventId = body.originalDetectIntentRequest?.payload?.data?.webhookEventId;
+  const eventId = req.body.originalDetectIntentRequest?.payload?.data?.webhookEventId;
+
   if (eventId) {
     try {
       const exists = await EventLog.findOne({ eventId });
-      if (exists) return res.status(200).send(); // ✅ เคยประมวลผลแล้ว
-      await EventLog.create({ eventId });
+      if (exists) {
+        return res.status(200).send(); // 🛑 เคยประมวลผลแล้ว
+      }
+      await EventLog.create({ eventId }); // ✅ บันทึกไว้ว่าเคยแล้ว
     } catch (err) {
       console.error("❌ EventLog error:", err.message);
     }
-  }
+  }  
+   const intent = req.body.queryResult?.intent?.displayName || "";
+   const params = req.body.queryResult?.parameters || {};
+   const sessionFull = req.body.session || "default-session";
 
-  // 2. เตรียมข้อมูลพื้นฐาน
-  const intent = body.queryResult?.intent?.displayName || "";
-  const params = body.queryResult?.parameters || {};
-  const sessionFull = body.session || "default-session";
-  const sessionId = sessionFull.split('/').pop(); // ดึง user ID จาก session path
-
-  // 3. ดึง userId และ replyToken จาก LINE
-  const replyToken = body.originalDetectIntentRequest?.payload?.data?.replyToken;
-  const userId = body.originalDetectIntentRequest?.payload?.data?.source?.userId;
-
-  // 4. จัดการ session
-  let session = await getSession(sessionId);
-  if (!session) session = { userId };
-  session.sessionId = sessionId;
+   const sessionId = sessionFull.split('/').pop();  // ดึงแค่ userId   
+   const session = await getSession(sessionId);
+   session.sessionId = sessionId;  // เซ็ตที่นี่แค่ครั้งเดียว  
 
   if (intent === "welcome") {
     return res.json({
@@ -200,70 +193,31 @@ app.post("/webhook", async (req, res) => {
   }
 
 if (intent === "get name") {
-    const name = params.name || "คุณ";
-    session.name = name;
-    await saveSession(session);
+  const name = params.name || "คุณ";
+  session.name = name;
+  await saveSession(session);
 
-    // 1. ตอบข้อความขอบคุณผ่าน replyMessage (LINE)
-    if (replyToken) {
-      await lineClient.replyMessage(replyToken, {
-        type: "text",
-        text: `🎉 ขอบคุณค่ะ คุณ${name}\nกรุณาเลือกระดับการศึกษาของคุณค่ะ`
-      });
-    }
-
-    // 2. Push ปุ่มแยกระดับการศึกษา (Flex)
-    if (userId) {
-      const levels = ["มัธยมปลาย", "ปวช", "ปวส", "กศน"];
-      const bubbles = levels.map((level, index) => ({
-        type: "bubble",
-        size: "micro",
-        body: {
-          type: "box",
-          layout: "vertical",
-          contents: [
-            {
-              type: "text",
-              text: level,
-              weight: "bold",
-              align: "center",
-              wrap: true,
-              size: "sm"
-            }
-          ],
-          paddingAll: "10px"
+  return res.json({
+    fulfillmentMessages: [
+      {
+        text: {
+          text: [`✨ สวัสดีค่ะ คุณ${name}\n\nกรุณาเลือกระดับการศึกษาของคุณค่ะ`],
         },
-        footer: {
-          type: "box",
-          layout: "vertical",
-          contents: [
-            {
-              type: "button",
-              style: "primary",
-              color: index % 2 === 0 ? "#1E90FF" : "#FF69B4",
-              action: {
-                type: "message",
-                label: "เลือก 🎯",
-                text: level
-              }
-            }
-          ]
-        }
-      }));
-
-      await lineClient.pushMessage(userId, {
-        type: "flex",
-        altText: "เลือกระดับการศึกษา",
-        contents: {
-          type: "carousel",
-          contents: bubbles
-        }
-      });
-    }
-
-    // ส่ง response กลับ Dialogflow เพื่อปิดการทำงาน
-    return res.sendStatus(200);
-  }
+      },
+      {
+        platform: "LINE",
+        quickReplies: {
+          items: [
+            { type: "action", action: { type: "message", label: "มัธยมปลาย", text: "มัธยมปลาย" } },
+            { type: "action", action: { type: "message", label: "ปวช", text: "ปวช" } },
+            { type: "action", action: { type: "message", label: "ปวส", text: "ปวส" } },
+            { type: "action", action: { type: "message", label: "กศน", text: "กศน" } },
+          ],
+        },
+      },
+    ],
+  });
+}
 
 if (intent === "educationLevel") {
   const educationLevel = (params.educationLevel || "").toLowerCase();
