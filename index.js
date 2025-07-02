@@ -185,6 +185,8 @@ app.post("/webhook", async (req, res) => {
    const sessionId = sessionFull.split('/').pop();  // ดึงแค่ userId   
    const session = await getSession(sessionId);
    session.sessionId = sessionId;  // เซ็ตที่นี่แค่ครั้งเดียว  
+   if (!session) session = { userId: sessionId };
+
 
   if (intent === "welcome") {
     return res.json({
@@ -234,24 +236,23 @@ if (intent === "get name") {
     }
   }));
 
-  // ตอบ replyMessage ครั้งเดียว: ข้อความ + Flex Message ปุ่มเลือกระดับ
-  await lineClient.replyMessage(event.replyToken, [
-    {
-      type: "text",
-      text: `✨ สวัสดีค่ะ คุณ${name}\nกรุณาเลือกระดับการศึกษาของคุณค่ะ`
-    },
-    {
+ // ตัวอย่าง response ไป Dialogflow ให้แสดงข้อความ
+    res.json({
+      fulfillmentText: `✨ สวัสดีค่ะ คุณ${name}\nกรุณาเลือกระดับการศึกษาของคุณค่ะ`
+    });
+
+    // หลังจากส่ง response แล้ว ส่ง push message flex carousel ไป user
+    await lineClient.pushMessage(sessionId, {
       type: "flex",
       altText: "เลือกระดับการศึกษา",
       contents: {
         type: "carousel",
         contents: levelBubbles
       }
-    }
-  ]);
+    });
 
-  return res.sendStatus(200);
-}
+    return;  // จบตรงนี้
+  }
 if (intent === "educationLevel") {
   const educationLevel = (params.educationLevel || "").toLowerCase();
   session.educationLevel = educationLevel;
