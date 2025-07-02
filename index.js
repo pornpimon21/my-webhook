@@ -165,6 +165,7 @@ async function updateSession(sessionId, data) {
 // Webhook Endpoint
 app.use('/webhook', express.json());
 app.post("/webhook", async (req, res) => {
+  const body = req.body;
   const eventId = req.body.originalDetectIntentRequest?.payload?.data?.webhookEventId;
 
   if (eventId) {
