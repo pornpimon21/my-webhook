@@ -389,6 +389,70 @@ app.post('/linewebhook',
           const userMessage = event.message.text;
           const sessionId = event.source.userId || uuid.v4();  // LINE user ID ใช้แทน session
 
+
+// ✅ ต้องมีตรงนี้ก่อนใช้ session
+let session = await getSession(sessionId);
+if (!session) session = { userId: sessionId };          
+if (!session.name) {
+  session.name = userMessage;
+  await saveSession(session);
+
+  const levels = ["มัธยมปลาย", "ปวช", "ปวส", "กศน"];
+  const levelBubbles = levels.map((level, index) => ({
+    type: "bubble",
+    size: "micro",
+    body: {
+      type: "box",
+      layout: "vertical",
+      contents: [
+        {
+          type: "text",
+          text: level,
+          weight: "bold",
+          size: "sm",
+          align: "center",
+          wrap: true
+        }
+      ],
+      paddingAll: "10px"
+    },
+    footer: {
+      type: "box",
+      layout: "vertical",
+      contents: [
+        {
+          type: "button",
+          style: "primary",
+          color: index % 2 === 0 ? "#1E90FF" : "#FF69B4",
+          action: {
+            type: "message",
+            label: "เลือก 🎯",
+            text: level
+          }
+        }
+      ]
+    }
+  }));
+
+  // 1. ส่งข้อความแนะนำก่อน
+  await lineClient.replyMessage(event.replyToken, {
+    type: "text",
+    text: `🎉 ขอบคุณค่ะ คุณ${session.name}\nกรุณาเลือกระดับการศึกษาของคุณค่ะ`
+  });
+
+  // 2. ใช้ pushMessage ส่ง Flex ปุ่มแยกต่างหาก
+  await lineClient.pushMessage(event.source.userId, {
+    type: "flex",
+    altText: "เลือกระดับการศึกษา",
+    contents: {
+      type: "carousel",
+      contents: levelBubbles
+    }
+  });
+
+  return res.sendStatus(200);
+}
+
 if (userMessage === 'เริ่มแนะนำใหม่') {
   // ดึง session จาก MongoDB แทน
   let session = await Session.findOne({ sessionId: sessionId });
