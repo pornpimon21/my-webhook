@@ -236,22 +236,26 @@ if (intent === "get name") {
     }
   }));
 
-await lineClient.replyMessage(event.replyToken, [
-  {
-    type: "text",
-    text: `✨ สวัสดีค่ะ คุณ${name}\nกรุณาเลือกระดับการศึกษาของคุณค่ะ`
-  },
-  {
+// 1. ส่งข้อความตอบกลับ Dialogflow ก่อน
+res.json({
+  fulfillmentText: `✨ สวัสดีค่ะ คุณ${name}\nกรุณาเลือกระดับการศึกษาของคุณค่ะ`
+});
+
+// 2. หน่วงเวลาเล็กน้อยก่อน push message (เพื่อให้ข้อความขึ้นก่อน)
+setTimeout(() => {
+  lineClient.pushMessage(sessionId, {
     type: "flex",
     altText: "เลือกระดับการศึกษา",
     contents: {
       type: "carousel",
       contents: levelBubbles
     }
-  }
-]);
-  // return เพื่อจบฟังก์ชัน
-  return;
+  }).catch((err) => {
+    console.error("Push message error:", err);
+  });
+}, 500); // ✅ รอ 500 มิลลิวินาที
+
+return;
 }
 
 if (intent === "educationLevel") {
