@@ -240,7 +240,7 @@ fulfillmentText: `👋 สวัสดีค่ะ คุณ${name}\n📘 กร
 
 // 2. หน่วงเวลาเล็กน้อยก่อน push message (เพื่อให้ข้อความขึ้นก่อน)
 setTimeout(() => {
-  lineClient.pushMessage(sessionId, {
+  client.pushMessage(sessionId, {
     type: "flex",
     altText: "เลือกระดับการศึกษา",
     contents: {
@@ -960,7 +960,7 @@ await client.replyMessage(event.replyToken, {
 });
 
 // 2. ใช้ pushMessage เพื่อแสดง bubble carousel (ทั้งหมด)
-await lineClient.pushMessage(event.source.userId, {
+await client.pushMessage(event.source.userId, {
   type: "flex",
   altText: "ผลลัพธ์แนะนำคณะและสาขา",
   contents: {
