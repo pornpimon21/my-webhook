@@ -490,7 +490,7 @@ if (userMessage === 'เริ่มแนะนำใหม่') {
     await session.save();
 
     // ตอบกลับพร้อมข้อมูลเก่า
-    await lineClient.replyMessage(event.replyToken, {
+    await client.replyMessage(event.replyToken, {
       type: 'text',
       text: `🔄 มาเริ่มแนะนำกันใหม่จากข้อมูลเดิมนะคะ!\n\n` +
             `👤 ชื่อ : ${session.name}\n` +
@@ -501,7 +501,7 @@ if (userMessage === 'เริ่มแนะนำใหม่') {
     return;
   } else {
     // ไม่มีข้อมูลพอ ให้เริ่มใหม่
-    await lineClient.replyMessage(event.replyToken, {
+    await client.replyMessage(event.replyToken, {
       type: 'text',
       text: '⚠️ ขอโทษค่ะ ไม่พบข้อมูลเก่าครบถ้วน กรุณากด "แนะนำคณะ" เพื่อเริ่มต้นใหม่นะคะ 💬'
     });
@@ -561,7 +561,7 @@ if (userMessage === 'ค้นหาข้อมูล') {
     }
   }));
 
-  await lineClient.replyMessage(event.replyToken, [
+  await client.replyMessage(event.replyToken, [
     {
       type: 'text',
       text: '🙏 สวัสดีค่ะ!\nกรุณาเลือกคณะที่สนใจของคุณด้านล่างนี้ค่ะ 😊\n➡️ เพื่อดูรายละเอียดและสาขาต่าง ๆ'
@@ -644,7 +644,7 @@ if (selectedFaculty) {
     };
   });
 
-  await lineClient.replyMessage(event.replyToken, [
+  await client.replyMessage(event.replyToken, [
     {
       type: 'text',
       text: `🎓 กรุณาเลือกสาขาที่สนใจใน\n"${selectedFaculty.name}" ด้านล่างนี้ค่ะ 😊`
@@ -753,7 +753,7 @@ if (matchedMajor) {
 
 console.log("✅ Bubble Payload:", JSON.stringify(bubble, null, 2));
 
-await lineClient.replyMessage(event.replyToken, [
+await client.replyMessage(event.replyToken, [
   {
     type: "text",
     text: `🔍 รายละเอียดของคณะที่คุณเลือกมีดังนี้ค่ะ\n\n🏫 ${safeText(matchedFaculty?.name)}\n🎓 สาขาวิชา${safeText(matchedMajor?.name)}`
@@ -954,7 +954,7 @@ await lineClient.replyMessage(event.replyToken, [
               });
 
 // 1. ส่งข้อความแนะนำก่อน
-await lineClient.replyMessage(event.replyToken, {
+await client.replyMessage(event.replyToken, {
   type: 'text',
   text: introText
 });
@@ -971,7 +971,7 @@ await lineClient.pushMessage(event.source.userId, {
   return;  // หยุดโค้ดตรงนี้เพื่อไม่ส่งข้อความอื่นซ้ำ
             } else {
               // กรณี session ไม่มี recommendations
-              await lineClient.replyMessage(event.replyToken, {
+              await client.replyMessage(event.replyToken, {
                 type: "text",
                 text: "❌ ขออภัยค่ะ เราไม่พบคณะที่เหมาะสมกับคุณในขณะนี้\nกรุณากดแนะนำคณะใหม่อีกครั้งนะคะ 🙇‍♀️"
               });
@@ -980,7 +980,7 @@ await lineClient.pushMessage(event.source.userId, {
           }
 
           // กรณีทั่วไป ตอบข้อความธรรมดา
-          await lineClient.replyMessage(event.replyToken, {
+          await client.replyMessage(event.replyToken, {
             type: 'text',
             text: replyText,
           });
