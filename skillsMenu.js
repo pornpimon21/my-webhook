@@ -12,7 +12,7 @@ const questionColors = [
 
 function buildQuestionFlex(step) {
   const q = questions[step];
-  const color = questionColors[step] || '#1DB446'; // ถ้าเกินจำนวนสี จะใช้สีเขียว default
+  const color = questionColors[step] || '#1DB446'; // สีเขียว default
 
   const buttons = q.options.map(opt => ({
     type: 'button',
@@ -35,14 +35,21 @@ function buildQuestionFlex(step) {
         layout: 'vertical',
         spacing: 'md',
         contents: [
-          { type: 'text', text: q.text, wrap: true, weight: 'bold', size: 'md', color: color }
-        ],
-        footer: {
-          type: 'box',
-          layout: 'vertical',
-          spacing: 'sm',
-          contents: buttons
-        }
+          {
+            type: 'text',
+            text: q.text,
+            wrap: true,
+            weight: 'bold',
+            size: 'md',
+            color: color
+          }
+        ]
+      },
+      footer: {
+        type: 'box',
+        layout: 'vertical',
+        spacing: 'sm',
+        contents: buttons
       }
     }
   };
