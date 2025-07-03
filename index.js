@@ -208,57 +208,40 @@ const labels = {
   "กศน": "กศน 📘"
 };
 
-// สร้างปุ่มแบบ 2 แถว แถวละ 2 ปุ่ม
-const levelBubble = {
+const levelBubbles = levels.map((level, index) => ({
   type: "bubble",
-  size: "mega",
+  size: "micro",
   body: {
     type: "box",
     layout: "vertical",
-    spacing: "md",
     contents: [
       {
         type: "text",
-        text: "เลือกระดับการศึกษา 🎓",
+        text: labels[level],
         weight: "bold",
         size: "md",
-        align: "center"
-      },
+        align: "center",
+        margin: "md"
+      }
+    ]
+  },
+  footer: {
+    type: "box",
+    layout: "vertical",
+    contents: [
       {
-        type: "box",
-        layout: "horizontal",
-        spacing: "sm",
-        contents: levels.slice(0, 2).map((level, i) => ({
-          type: "button",
-          style: "primary",
-          height: "sm",
-          color: colors[i],
-          action: {
-            type: "message",
-            label: labels[level],
-            text: level
-          }
-        }))
-      },
-      {
-        type: "box",
-        layout: "horizontal",
-        spacing: "sm",
-        contents: levels.slice(2, 4).map((level, i) => ({
-          type: "button",
-          style: "primary",
-          height: "sm",
-          color: colors[i + 2],
-          action: {
-            type: "message",
-            label: labels[level],
-            text: level
-          }
-        }))
+        type: "button",
+        style: "primary",
+        color: colors[index],
+        action: {
+          type: "message",
+          label: labels[level],
+          text: level
+        }
       }
     ]
   }
-};
+}));
 
 // 1. ส่งข้อความตอบกลับ Dialogflow ก่อน
 res.json({
@@ -270,11 +253,14 @@ setTimeout(() => {
   lineClient.pushMessage(sessionId, {
     type: "flex",
     altText: "เลือกระดับการศึกษา",
-    contents: levelBubble // ✅ ไม่ใส่ carousel
+    contents: {
+      type: "carousel",
+      contents: levelBubbles
+    }
   }).catch((err) => {
     console.error("Push message error:", err);
   });
-}, 400);
+}, 300); // ✅ รอ 300 มิลลิวินาที
 
 return;
 }
