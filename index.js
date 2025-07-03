@@ -7,11 +7,6 @@ const EventLog = require('./models/eventLog');
 const line = require('@line/bot-sdk');
 const { SessionsClient } = require('@google-cloud/dialogflow');
 const uuid = require('uuid');
-const { buildQuestionFlex } = require('./skillsMenu');
-const analyzeAnswers = require('./analyze');
-const questions = require('./questions');
-
-const userSessions = {};
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -261,8 +256,7 @@ if (intent === "educationLevel") {
 
   if (["มัธยมปลาย", "ปวช", "ปวส", "กศน"].includes(educationLevel)) {
     return res.json({
-      fulfillmentText: `🎓 คุณ${session.name || ""} ได้เลือกระดับการศึกษา : ${educationLevel}\n\n` +
-                       `📘 กรุณากรอกเกรดเฉลี่ย (GPAX) ของคุณ\nตัวอย่าง : 3.25 หรือ 3.50\n\n🔔 โปรดระบุค่าไม่เกิน 4.00 เพื่อความถูกต้องนะคะ 📈`,
+      fulfillmentText: "กรุณากรอกเกรดเฉลี่ยของคุณค่ะ",
       outputContexts: [{
         name: `${sessionFull}/contexts/ask_grad`,
         lifespanCount: 2
@@ -270,8 +264,7 @@ if (intent === "educationLevel") {
     });
   } else {
     return res.json({
-      fulfillmentText : `⚠️ ขอโทษค่ะ คุณ${session.name || ""} 🙏\n\n` +
-                        `❌ กรุณาเลือกระดับการศึกษาใหม่อีกครั้ง (มัธยมปลาย, ปวช, ปวส, กศน) 🙇‍♀️`,
+      fulfillmentText: "ขอโทษค่ะ กรุณาเลือกระดับการศึกษาใหม่อีกครั้ง (มัธยมปลาย, ปวช, ปวส, กศน)",
       outputContexts: [{
         name: `${sessionFull}/contexts/ask_education`,
         lifespanCount: 2
@@ -444,19 +437,6 @@ app.post('/linewebhook',
           const userMessage = event.message.text;
           const sessionId = event.source.userId || uuid.v4();  // LINE user ID ใช้แทน session
 
-// สร้าง session ถ้ายังไม่มี
-          if (!userSessions[sessionId]) {
-            userSessions[sessionId] = {
-              // เก็บข้อมูลที่ต้องการ เช่น history, state ฯลฯ
-              messages: []
-            };
-          }
-
-          // เก็บข้อความที่ผู้ใช้ส่งมา
-          userSessions[sessionId].messages.push(userMessage);
-
-// ทำอะไรต่อ เช่น วิเคราะห์ข้อความ ส่งตอบกลับ         
-
 if (userMessage === 'เริ่มแนะนำใหม่') {
   // ดึง session จาก MongoDB
   let session = await Session.findOne({ sessionId: sessionId });
@@ -488,38 +468,6 @@ if (userMessage === 'เริ่มแนะนำใหม่') {
     return;
   }
 }
-
-// คำสั่ง "ค้นหาความถนัด"
-          if (userMessage === 'ค้นหาความถนัด') {
-            userSessions[userId] = { step: 0, answers: [] };
-            const question = buildQuestionFlex(0);
-            await lineClient.replyMessage(event.replyToken, question);
-            return;
-          }
-
-          // ถ้ามี session อยู่ใน userSessions
-          if (userSessions[userId]) {
-            const session = userSessions[userId];
-            session.answers.push(userMessage);
-            session.step += 1;
-
-            if (session.step < questions.length) {
-              const nextQuestion = buildQuestionFlex(session.step);
-              await lineClient.replyMessage(event.replyToken, nextQuestion);
-              return;
-            } else {
-              const analysis = analyzeAnswers(session.answers);
-              const summaryText = `🧠 สรุปความถนัดของคุณ\n\n` +
-                                  `🔹 กลุ่มความถนัด: ${analysis.track}\n` +
-                                  `🔹 ลักษณะเด่น: ${analysis.traits.join(', ')}`;
-              await lineClient.replyMessage(event.replyToken, {
-                type: 'text',
-                text: summaryText
-              });
-              delete userSessions[userId]; // จบ session
-              return;
-            }
-          }
 
 // ฟังก์ชันช่วยตรวจสอบข้อความ ให้รองรับทั้ง string และ number
 const safeText = (text) => {
