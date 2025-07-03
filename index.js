@@ -447,8 +447,8 @@ app.post('/linewebhook',
           const sessionId = event.source.userId || uuid.v4();  // LINE user ID ใช้แทน session
 
 if (userMessage === 'ค้นหาความถนัด') {
-  userSessions[userId] = { step: 0, answers: [] }; // เริ่ม step ที่ 1 เพราะจะถามข้อแรก
-  const question = buildQuestionFlex(0); // ข้อที่ 1 index 0
+  userSessions[userId] = { step: 0, answers: [] }; // เริ่มที่ข้อ 0
+  const question = buildQuestionFlex(0);
 
   await client.replyMessage(event.replyToken, [
     {
@@ -459,18 +459,22 @@ if (userMessage === 'ค้นหาความถนัด') {
   ]);
   return;
 }
-// ถ้าอยู่ใน session ของการค้นหาความถนัด
+
+// ถ้าอยู่ใน session การค้นหาความถนัด
 if (userSessions[userId]) {
   const session = userSessions[userId];
+
+  // รับคำตอบข้อก่อนหน้า
   session.answers.push(userMessage);
+
+  // เพิ่ม step เพื่อไปถามข้อถัดไป
+  session.step++;
 
   if (session.step < questions.length) {
     const nextQuestion = buildQuestionFlex(session.step);
-    session.step++;
-
     await client.replyMessage(event.replyToken, nextQuestion);
   } else {
-    // วิเคราะห์ผล
+    // ครบคำถามแล้ว วิเคราะห์คำตอบและส่งผลลัพธ์
     const result = analyzeAnswers(session.answers);
     const resultText = `คุณเหมาะกับ: ${result.track}\nลักษณะเด่น: ${result.traits.join(', ')}`;
 
@@ -479,6 +483,7 @@ if (userSessions[userId]) {
       text: resultText
     });
 
+    // ลบ session หลังจบ
     delete userSessions[userId];
   }
   return;
