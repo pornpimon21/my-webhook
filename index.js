@@ -41,7 +41,7 @@ const lineConfig = {
   channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN,
   channelSecret: process.env.LINE_CHANNEL_SECRET,
 };
-const lineClient = new line.Client(lineConfig);
+const client = new line.Client(lineConfig);
 const projectId = process.env.DIALOGFLOW_PROJECT_ID;
 const sessionClient = new SessionsClient();
 
