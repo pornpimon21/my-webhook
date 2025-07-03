@@ -253,7 +253,10 @@ setTimeout(() => {
   lineClient.pushMessage(sessionId, {
     type: "flex",
     altText: "เลือกระดับการศึกษา",
-      contents: levelBubbles
+    contents: {
+    type: "carousel",
+    contents: levelBubbles
+  }  
   }).catch((err) => {
     console.error("Push message error:", err);
   });
