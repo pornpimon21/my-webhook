@@ -208,16 +208,28 @@ const labels = {
   "กศน": "กศน 📘"
 };
 
-// สร้าง bubble แสดงเฉพาะปุ่มในแนวตั้ง ไม่มีข้อความหัว
-const levelBubbles = [
-  {
-    type: "bubble",
-    size: "mega",
-    body: {
-      type: "box",
-      layout: "vertical",
-      spacing: "md",
-      contents: levels.map((level, index) => ({
+const levelBubbles = levels.map((level, index) => ({
+  type: "bubble",
+  size: "micro",
+  body: {
+    type: "box",
+    layout: "vertical",
+    contents: [
+      {
+        type: "text",
+        text: labels[level],
+        weight: "bold",
+        size: "md",
+        align: "center",
+        margin: "md"
+      }
+    ]
+  },
+  footer: {
+    type: "box",
+    layout: "vertical",
+    contents: [
+      {
         type: "button",
         style: "primary",
         color: colors[index],
@@ -226,10 +238,10 @@ const levelBubbles = [
           label: labels[level],
           text: level
         }
-      }))
-    }
+      }
+    ]
   }
-];
+}));
 // 1. ส่งข้อความตอบกลับ Dialogflow ก่อน
 res.json({
 fulfillmentText: `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓\n👇 เลือกจากปุ่มด้านล่างได้เลยค่ะ`
