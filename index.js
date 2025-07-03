@@ -208,28 +208,16 @@ const labels = {
   "กศน": "กศน 📘"
 };
 
-const levelBubbles = levels.map((level, index) => ({
-  type: "bubble",
-  size: "micro",
-  body: {
-    type: "box",
-    layout: "vertical",
-    contents: [
-      {
-        type: "text",
-        text: labels[level],
-        weight: "bold",
-        size: "md",
-        align: "center",
-        margin: "md"
-      }
-    ]
-  },
-  footer: {
-    type: "box",
-    layout: "vertical",
-    contents: [
-      {
+// สร้าง bubble แสดงเฉพาะปุ่มในแนวตั้ง ไม่มีข้อความหัว
+const levelBubbles = [
+  {
+    type: "bubble",
+    size: "mega",
+    body: {
+      type: "box",
+      layout: "vertical",
+      spacing: "md",
+      contents: levels.map((level, index) => ({
         type: "button",
         style: "primary",
         color: colors[index],
@@ -238,11 +226,10 @@ const levelBubbles = levels.map((level, index) => ({
           label: labels[level],
           text: level
         }
-      }
-    ]
+      }))
+    }
   }
-}));
-
+];
 // 1. ส่งข้อความตอบกลับ Dialogflow ก่อน
 res.json({
 fulfillmentText: `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓\n👇 เลือกจากปุ่มด้านล่างได้เลยค่ะ`
@@ -254,9 +241,9 @@ setTimeout(() => {
     type: "flex",
     altText: "เลือกระดับการศึกษา",
     contents: {
-    type: "carousel",
-    contents: levelBubbles
-  }  
+      type: "carousel",
+      contents: levelBubbles
+    }
   }).catch((err) => {
     console.error("Push message error:", err);
   });
