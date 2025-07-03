@@ -11,6 +11,7 @@ const { buildQuestionFlex } = require('./skillsMenu');
 const analyzeAnswers = require('./analyze');
 const questions = require('./questions');
 
+const userSessions = {};
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -443,6 +444,18 @@ app.post('/linewebhook',
           const userMessage = event.message.text;
           const sessionId = event.source.userId || uuid.v4();  // LINE user ID ใช้แทน session
 
+// สร้าง session ถ้ายังไม่มี
+          if (!userSessions[sessionId]) {
+            userSessions[sessionId] = {
+              // เก็บข้อมูลที่ต้องการ เช่น history, state ฯลฯ
+              messages: []
+            };
+          }
+
+          // เก็บข้อความที่ผู้ใช้ส่งมา
+          userSessions[sessionId].messages.push(userMessage);
+
+// ทำอะไรต่อ เช่น วิเคราะห์ข้อความ ส่งตอบกลับ         
 
 if (userMessage === 'เริ่มแนะนำใหม่') {
   // ดึง session จาก MongoDB
