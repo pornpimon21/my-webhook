@@ -211,20 +211,6 @@ const labels = {
 const levelBubbles = levels.map((level, index) => ({
   type: "bubble",
   size: "micro",
-  body: {
-    type: "box",
-    layout: "vertical",
-    contents: [
-      {
-        type: "text",
-        text: labels[level],
-        weight: "bold",
-        size: "md",
-        align: "center",
-        margin: "md"
-      }
-    ]
-  },
   footer: {
     type: "box",
     layout: "vertical",
