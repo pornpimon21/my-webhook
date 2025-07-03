@@ -208,57 +208,26 @@ const labels = {
   "กศน": "กศน 📘"
 };
 
-// สร้างปุ่มแบบ 2 แถว แถวละ 2 ปุ่ม
-const levelBubble = {
+const levelBubbles = levels.map((level, index) => ({
   type: "bubble",
-  size: "mega",
-  body: {
+  size: "micro",
+  footer: {
     type: "box",
     layout: "vertical",
-    spacing: "md",
     contents: [
       {
-        type: "text",
-        text: "เลือกระดับการศึกษา 🎓",
-        weight: "bold",
-        size: "md",
-        align: "center"
-      },
-      {
-        type: "box",
-        layout: "horizontal",
-        spacing: "sm",
-        contents: levels.slice(0, 2).map((level, i) => ({
-          type: "button",
-          style: "primary",
-          height: "sm",
-          color: colors[i],
-          action: {
-            type: "message",
-            label: labels[level],
-            text: level
-          }
-        }))
-      },
-      {
-        type: "box",
-        layout: "horizontal",
-        spacing: "sm",
-        contents: levels.slice(2, 4).map((level, i) => ({
-          type: "button",
-          style: "primary",
-          height: "sm",
-          color: colors[i + 2],
-          action: {
-            type: "message",
-            label: labels[level],
-            text: level
-          }
-        }))
+        type: "button",
+        style: "primary",
+        color: colors[index],
+        action: {
+          type: "message",
+          label: labels[level],
+          text: level
+        }
       }
     ]
   }
-};
+}));
 
 // 1. ส่งข้อความตอบกลับ Dialogflow ก่อน
 res.json({
@@ -483,19 +452,17 @@ if (userMessage === 'เริ่มแนะนำใหม่') {
     await session.save();
 
     await lineClient.replyMessage(event.replyToken, {
-      type: 'text',
-      text:
-        `🔄 มาเริ่มแนะนำกันใหม่จากข้อมูลเดิมนะคะ!\n\n` +
-        `👤 ชื่อ : ${session.name}\n` +
-        `🎓 ระดับการศึกษา : ${session.educationLevel || 'ยังไม่ระบุ'}\n` +
-        `📊 เกรด : ${session.grade}\n\n` +
-        `🧠 กรุณาพิมพ์ความสามารถหรือกิจกรรมที่คุณถนัด\nเช่น คอมพิวเตอร์ คณิต การแสดง วาดรูป เป็นต้น 💬`
+    type: 'text',
+    text: `🔄 มาเริ่มแนะนำกันใหม่จากข้อมูลเดิมนะคะ!
+    👤 ชื่อ : ${session.name}
+    📊 เกรด : ${session.grade}
+    กรุณาพิมพ์ความสามารถหรือกิจกรรมที่คุณถนัด เช่น คอมพิวเตอร์ คณิต การแสดง เป็นต้น `
     });
     return;
   } else {
     await lineClient.replyMessage(event.replyToken, {
       type: 'text',
-      text: '⚠️ ขอโทษค่ะ ไม่พบข้อมูลเก่าของคุณ กรุณาคลิก "แนะนำคณะ" เพื่อเริ่มต้นใหม่ค่ะ'
+      text: '⚠️ ขอโทษค่ะ ไม่พบข้อมูลเก่าของคุณ กรุณากดคลิก "แนะนะคณะ" เพื่อเริ่มต้นใหม่ค่ะ'
     });
     return;
   }
@@ -745,17 +712,11 @@ if (matchedMajor) {
 
   console.log("✅ Bubble Payload:", JSON.stringify(bubble, null, 2));
 
-await lineClient.replyMessage(event.replyToken, [
-  {
-    type: "text",
-    text: `🔍 ข้อมูลคณะที่คุณเลือกมีดังนี้ค่ะ\n\n🏫 ${safeText(matchedFaculty?.name)}\n📘 สาขา${safeText(matchedMajor?.name)}`
-  },
-  {
+  await lineClient.replyMessage(event.replyToken, {
     type: "flex",
     altText: `ข้อมูลสาขา ${safeText(matchedMajor?.name)}`.slice(0, 400),
     contents: bubble
-  }
-]);
+  });
   return;  
 }
 
