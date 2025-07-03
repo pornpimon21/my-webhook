@@ -27,4 +27,4 @@ function analyzeAnswers(answers) {
   return result;
 }
 
-export default analyzeAnswers;
+module.exports = analyzeAnswers;

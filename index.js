@@ -8,6 +8,12 @@ const line = require('@line/bot-sdk');
 const { SessionsClient } = require('@google-cloud/dialogflow');
 const uuid = require('uuid');
 
+const { buildQuestionFlex } = require('./skillsMenu');
+const analyzeAnswers = require('./analyze');
+const questions = require('./questions');
+
+const userSessions = {}; // <== ต้องมีไว้เก็บคำตอบของแต่ละ userId
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 //app.use(express.json());
@@ -256,7 +262,8 @@ if (intent === "educationLevel") {
 
   if (["มัธยมปลาย", "ปวช", "ปวส", "กศน"].includes(educationLevel)) {
     return res.json({
-      fulfillmentText: "กรุณากรอกเกรดเฉลี่ยของคุณค่ะ",
+      fulfillmentText: `🎓 คุณ${session.name || ""} ได้เลือกระดับการศึกษา : ${educationLevel}\n\n` +
+                       `📘 กรุณากรอกเกรดเฉลี่ย (GPAX) ของคุณ\nตัวอย่าง : 3.25 หรือ 3.50\n\n🔔 โปรดระบุค่าไม่เกิน 4.00 เพื่อความถูกต้องนะคะ 📈`,
       outputContexts: [{
         name: `${sessionFull}/contexts/ask_grad`,
         lifespanCount: 2
@@ -264,7 +271,8 @@ if (intent === "educationLevel") {
     });
   } else {
     return res.json({
-      fulfillmentText: "ขอโทษค่ะ กรุณาเลือกระดับการศึกษาใหม่อีกครั้ง (มัธยมปลาย, ปวช, ปวส, กศน)",
+      fulfillmentText: `⚠️ ขอโทษค่ะ คุณ${session.name || ""} 🙏\n\n` +
+                       `❌ กรุณาเลือกระดับการศึกษาใหม่อีกครั้ง (มัธยมปลาย, ปวช, ปวส, กศน) 🙇‍♀️`,
       outputContexts: [{
         name: `${sessionFull}/contexts/ask_education`,
         lifespanCount: 2
@@ -434,8 +442,40 @@ app.post('/linewebhook',
 
       await Promise.all(events.map(async (event) => {
         if (event.type === 'message' && event.message.type === 'text') {
+          const userId = event.source.userId;
           const userMessage = event.message.text;
           const sessionId = event.source.userId || uuid.v4();  // LINE user ID ใช้แทน session
+
+if (userMessage === 'ค้นหาความถนัด') {
+  userSessions[userId] = { step: 1, answers: [] };
+  const question = buildQuestionFlex(0);
+  await client.replyMessage(event.replyToken, question);
+  return;
+}
+
+// ถ้าอยู่ใน session ของการค้นหาความถนัด
+if (userSessions[userId]) {
+  const session = userSessions[userId];
+  session.answers.push(userMessage);
+
+  if (session.step < questions.length) {
+    const nextQuestion = buildQuestionFlex(session.step);
+    session.step++;
+    await client.replyMessage(event.replyToken, nextQuestion);
+  } else {
+    // วิเคราะห์ผล
+    const result = analyzeAnswers(session.answers);
+    const resultText = `คุณเหมาะกับ: ${result.track}\nลักษณะเด่น: ${result.traits.join(', ')}`;
+
+    await client.replyMessage(event.replyToken, {
+      type: 'text',
+      text: resultText
+    });
+
+    delete userSessions[userId];
+  }
+  return;
+}
 
 if (userMessage === 'เริ่มแนะนำใหม่') {
   // ดึง session จาก MongoDB
