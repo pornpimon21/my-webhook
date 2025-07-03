@@ -208,26 +208,57 @@ const labels = {
   "กศน": "กศน 📘"
 };
 
-const levelBubbles = levels.map((level, index) => ({
+// สร้างปุ่มแบบ 2 แถว แถวละ 2 ปุ่ม
+const levelBubble = {
   type: "bubble",
-  size: "micro",
-  footer: {
+  size: "mega",
+  body: {
     type: "box",
     layout: "vertical",
+    spacing: "md",
     contents: [
       {
-        type: "button",
-        style: "primary",
-        color: colors[index],
-        action: {
-          type: "message",
-          label: labels[level],
-          text: level
-        }
+        type: "text",
+        text: "เลือกระดับการศึกษา 🎓",
+        weight: "bold",
+        size: "md",
+        align: "center"
+      },
+      {
+        type: "box",
+        layout: "horizontal",
+        spacing: "sm",
+        contents: levels.slice(0, 2).map((level, i) => ({
+          type: "button",
+          style: "primary",
+          height: "sm",
+          color: colors[i],
+          action: {
+            type: "message",
+            label: labels[level],
+            text: level
+          }
+        }))
+      },
+      {
+        type: "box",
+        layout: "horizontal",
+        spacing: "sm",
+        contents: levels.slice(2, 4).map((level, i) => ({
+          type: "button",
+          style: "primary",
+          height: "sm",
+          color: colors[i + 2],
+          action: {
+            type: "message",
+            label: labels[level],
+            text: level
+          }
+        }))
       }
     ]
   }
-}));
+};
 
 // 1. ส่งข้อความตอบกลับ Dialogflow ก่อน
 res.json({
