@@ -272,7 +272,7 @@ setTimeout(() => {
     altText: "เลือกระดับการศึกษา",
     contents: {
       type: "carousel",
-      contents: levelBubbles
+      contents: levelBubble
     }
   }).catch((err) => {
     console.error("Push message error:", err);
