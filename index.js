@@ -201,31 +201,17 @@ if (intent === "get name") {
 
 const levels = ["มัธยมปลาย", "ปวช", "ปวส", "กศน"];
 const colors = ["#FFCC80", "#F48FB1", "#BA68C8", "#4FC3F7"];
-const labels = {
-  "มัธยมปลาย": "ม.ปลาย 🎓",
-  "ปวช": "ปวช 🛠️",
-  "ปวส": "ปวส 🔧",
-  "กศน": "กศน 📘"
+const labelToValue = {
+  "ม.ปลาย 🎓": "มัธยมปลาย",
+  "ปวช 🛠️": "ปวช",
+  "ปวส 🔧": "ปวส",
+  "กศน 📘": "กศน"
 };
 
 const levelBubbles = levels.map((level, index) => ({
   type: "bubble",
   size: "micro",
   body: {
-    type: "box",
-    layout: "vertical",
-    contents: [
-      {
-        type: "text",
-        text: labels[level],
-        weight: "bold",
-        size: "md",
-        align: "center",
-        margin: "md"
-      }
-    ]
-  },
-  footer: {
     type: "box",
     layout: "vertical",
     contents: [
@@ -265,15 +251,13 @@ return;
 }
 
 if (intent === "educationLevel") {
-  const educationLevel = params.educationLevel || "";
+  const educationLevel = (params.educationLevel || "").toLowerCase();
   session.educationLevel = educationLevel;
   await saveSession(session);
 
-  const validLevels = ["มัธยมปลาย", "ปวช", "ปวส", "กศน"];
-  if (validLevels.includes(educationLevel)) {
+  if (["มัธยมปลาย", "ปวช", "ปวส", "กศน"].includes(educationLevel)) {
     return res.json({
-      fulfillmentText: `🎓 คุณ${session.name || ""} ได้เลือกระดับการศึกษา : ${educationLevel}\n\n` +
-                       `📘 กรุณากรอกเกรดเฉลี่ย (GPAX) ของคุณ\nตัวอย่าง : 3.25 หรือ 3.50\n\n🔔 โปรดระบุค่าไม่เกิน 4.00 เพื่อความถูกต้องนะคะ 📈`,
+      fulfillmentText: "กรุณากรอกเกรดเฉลี่ยของคุณค่ะ",
       outputContexts: [{
         name: `${sessionFull}/contexts/ask_grad`,
         lifespanCount: 2
@@ -281,15 +265,14 @@ if (intent === "educationLevel") {
     });
   } else {
     return res.json({
-      fulfillmentText: `⚠️ ขอโทษค่ะ คุณ${session.name || ""} 🙏\n\n` +
-                       `❌ กรุณาเลือกระดับการศึกษาใหม่อีกครั้ง (มัธยมปลาย, ปวช, ปวส, กศน) 🙇‍♀️`,
+      fulfillmentText: "ขอโทษค่ะ กรุณาเลือกระดับการศึกษาใหม่อีกครั้ง (มัธยมปลาย, ปวช, ปวส, กศน)",
       outputContexts: [{
         name: `${sessionFull}/contexts/ask_education`,
         lifespanCount: 2
       }]
     });
   }
-}
+} 
 
   if (intent === "get grade") {
     const grade = params.grade;
