@@ -6,9 +6,10 @@ const questionColors = [
   '#7FE4B3', // เขียวมิ้นต์เข้ม
   '#FFA982', // ส้มพีชเข้ม
   '#B580F2', // ม่วงพาสเทลเข้ม
-  '#FFE66D', // เหลืองนวลเข้มขึ้น
+  '#D4B300',  // เหลืองทองอมส้ม
   '#89CFF0'  // ฟ้าเข้มพาสเทล
 ];
+
 function buildQuestionFlex(step) {
   const q = questions[step];
   const color = questionColors[step] || '#1DB446'; // สีเขียว default
