@@ -486,7 +486,6 @@ const flexResult = {
   altText: "ผลการวิเคราะห์ความถนัดของคุณ",
   contents: {
     type: "bubble",
-    size: "mega",
     body: {
       type: "box",
       layout: "vertical",
