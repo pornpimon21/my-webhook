@@ -492,14 +492,15 @@ const flexResult = {
       layout: "vertical",
       spacing: "xl",
       contents: [
-        {
-          type: "text",
-          text: "🎯 ผลการวิเคราะห์ความถนัด",
-          weight: "bold",
-          size: "xl",
-          color: "#1DB446",
-          align: "center"
-        },
+{
+  type: "text",
+  text: "🎯 ผลการวิเคราะห์ความถนัด",
+  weight: "bold",
+  size: "lg",       // จาก "xl" → "lg"
+  color: "#1DB446",
+  align: "center",
+  wrap: true        // เพิ่ม wrap
+},
         {
           type: "separator",
           margin: "md"
@@ -520,7 +521,7 @@ const flexResult = {
             {
               type: "text",
               text: result.bestTrack || "ไม่สามารถวิเคราะห์ได้",
-              size: "lg",
+              size: "md",
               weight: "bold",
               color: "#0D99FF",
               wrap: true
