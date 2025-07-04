@@ -1,15 +1,14 @@
 const questions = require('./questions');
 
 const questionColors = [
-  '#FF6F61', // สีแดงอมส้ม สำหรับคำถาม 1
-  '#6B5B95', // สีม่วง สำหรับคำถาม 2
-  '#88B04B', // สีเขียว สำหรับคำถาม 3
-  '#F7CAC9', // สีชมพูอ่อน สำหรับคำถาม 4
-  '#92A8D1', // สีฟ้า สำหรับคำถาม 5
-  '#955251', // สีแดงเข้ม สำหรับคำถาม 6
-  '#B565A7'  // สีม่วงอมชมพู สำหรับคำถาม 7
+  '#A0E7E5', // ฟ้าน้ำทะเล สดใส
+  '#FFB5E8', // ชมพูพาสเทล อ่อนโยน
+  '#B4F8C8', // เขียวมิ้นต์ สดชื่น
+  '#FFDAC1', // ส้มพีช ดูอบอุ่น
+  '#E2F0CB', // เขียวอ่อน ธรรมชาติ
+  '#D5AAFF', // ม่วงพาสเทลสงบ
+  '#FBE7C6'  // ครีมทองนุ่มนวล
 ];
-
 function buildQuestionFlex(step) {
   const q = questions[step];
   const color = questionColors[step] || '#1DB446'; // สีเขียว default
@@ -41,7 +40,7 @@ function buildQuestionFlex(step) {
             wrap: true,
             weight: 'bold',
             size: 'md',
-            color: color
+            color: '#000000'
           }
         ]
       },
