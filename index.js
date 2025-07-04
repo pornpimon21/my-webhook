@@ -486,6 +486,7 @@ const flexResult = {
   altText: "ผลการวิเคราะห์ความถนัดของคุณ",
   contents: {
     type: "bubble",
+    size: "mega",
     body: {
       type: "box",
       layout: "vertical",
@@ -495,16 +496,13 @@ const flexResult = {
           type: "text",
           text: "🎯 ผลการวิเคราะห์ความถนัด",
           weight: "bold",
-          size: "lg",       // จาก "xl" → "lg"
+          size: "lg",
           color: "#1DB446",
-          align: "center",
-          wrap: true        // เพิ่ม wrap
+          align: "center"
         },
         {
           type: "separator",
-          margin: "md",
-          color: "#CCCCCC",  // สีเทาอ่อน 
-          size: "md"         
+          margin: "md"
         },
         {
           type: "box",
@@ -589,6 +587,7 @@ const flexResult = {
     }
   }
 };
+
 await client.replyMessage(event.replyToken, flexResult);
 
     // ลบ session หลังจบ
