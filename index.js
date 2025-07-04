@@ -450,6 +450,7 @@ if (userMessage === 'ค้นหาความถนัด') {
   userSessions[userId] = { step: 0, answers: [] };
   const question = buildQuestionFlex(0);
 
+  // ส่งข้อความต้อนรับ + คำถามข้อแรกใน replyMessage ทีเดียว
   await client.replyMessage(event.replyToken, [
     {
       type: 'text',
@@ -475,119 +476,122 @@ if (userSessions[userId]) {
 
   if (session.step < questions.length) {
     const nextQuestion = buildQuestionFlex(session.step);
+
+    // ส่งคำถามถัดไปใน replyMessage ครั้งเดียว
     await client.replyMessage(event.replyToken, Array.isArray(nextQuestion) ? nextQuestion : [nextQuestion]);
   } else {
     // วิเคราะห์คำตอบทั้งหมด
     const result = analyzeAnswers(session.answers);
 
-    // Flex message สำหรับแสดงผลลัพธ์
-const flexResult = {
-  type: "flex",
-  altText: "ผลการวิเคราะห์ความถนัดของคุณ",
-  contents: {
-    type: "bubble",
-    size: "mega",
-    body: {
-      type: "box",
-      layout: "vertical",
-      spacing: "xl",
-      contents: [
-        {
-          type: "text",
-          text: "🎯 ผลการวิเคราะห์ความถนัด",
-          weight: "bold",
-          size: "xl",
-          color: "#1DB446",
-          align: "center"
-        },
-        {
-          type: "separator",
-          margin: "md"
-        },
-        {
+    // สร้าง flex message สำหรับแสดงผลลัพธ์
+    const flexResult = {
+      type: "flex",
+      altText: "ผลการวิเคราะห์ความถนัดของคุณ",
+      contents: {
+        type: "bubble",
+        size: "mega",
+        body: {
           type: "box",
           layout: "vertical",
-          spacing: "sm",
-          margin: "lg",
+          spacing: "xl",
           contents: [
             {
               type: "text",
-              text: "📌 คุณเหมาะกับสายงาน",
-              size: "md",
+              text: "🎯 ผลการวิเคราะห์ความถนัด",
               weight: "bold",
-              color: "#333333"
+              size: "xl",
+              color: "#1DB446",
+              align: "center"
             },
             {
-              type: "text",
-              text: result.bestTrack || "ไม่สามารถวิเคราะห์ได้",
-              size: "lg",
-              weight: "bold",
-              color: "#0D99FF",
-              wrap: true
+              type: "separator",
+              margin: "md"
+            },
+            {
+              type: "box",
+              layout: "vertical",
+              spacing: "sm",
+              margin: "lg",
+              contents: [
+                {
+                  type: "text",
+                  text: "📌 คุณเหมาะกับสายงาน",
+                  size: "md",
+                  weight: "bold",
+                  color: "#333333"
+                },
+                {
+                  type: "text",
+                  text: result.bestTrack || "ไม่สามารถวิเคราะห์ได้",
+                  size: "lg",
+                  weight: "bold",
+                  color: "#0D99FF",
+                  wrap: true
+                }
+              ]
+            },
+            {
+              type: "box",
+              layout: "vertical",
+              spacing: "sm",
+              margin: "lg",
+              contents: [
+                {
+                  type: "text",
+                  text: "💡 จุดเด่นของคุณ",
+                  size: "md",
+                  weight: "bold",
+                  color: "#333333"
+                },
+                {
+                  type: "text",
+                  text: result.traits.length > 0 ? result.traits.join(', ') : "ไม่มีข้อมูล",
+                  wrap: true,
+                  color: "#555555"
+                }
+              ]
+            },
+            {
+              type: "box",
+              layout: "vertical",
+              spacing: "sm",
+              margin: "lg",
+              contents: [
+                {
+                  type: "text",
+                  text: "📎 คำแนะนำ",
+                  size: "md",
+                  weight: "bold",
+                  color: "#333333"
+                },
+                {
+                  type: "text",
+                  text: "ลองมุ่งเน้นพัฒนาทักษะที่เกี่ยวข้องกับสายงานนี้เพื่อความก้าวหน้าในอนาคต 😊",
+                  wrap: true,
+                  color: "#555555"
+                }
+              ]
             }
           ]
         },
-        {
+        footer: {
           type: "box",
           layout: "vertical",
-          spacing: "sm",
-          margin: "lg",
           contents: [
             {
               type: "text",
-              text: "💡 จุดเด่นของคุณ",
-              size: "md",
-              weight: "bold",
-              color: "#333333"
-            },
-            {
-              type: "text",
-              text: result.traits.length > 0 ? result.traits.join(', ') : "ไม่มีข้อมูล",
-              wrap: true,
-              color: "#555555"
-            }
-          ]
-        },
-        {
-          type: "box",
-          layout: "vertical",
-          spacing: "sm",
-          margin: "lg",
-          contents: [
-            {
-              type: "text",
-              text: "📎 คำแนะนำ",
-              size: "md",
-              weight: "bold",
-              color: "#333333"
-            },
-            {
-              type: "text",
-              text: "ลองมุ่งเน้นพัฒนาทักษะที่เกี่ยวข้องกับสายงานนี้เพื่อความก้าวหน้าในอนาคต 😊",
-              wrap: true,
-              color: "#555555"
+              text: "ขอบคุณที่ร่วมสนุกกับเรา 💚",
+              size: "sm",
+              align: "center",
+              color: "#888888",
+              margin: "md"
             }
           ]
         }
-      ]
-    },
-    footer: {
-      type: "box",
-      layout: "vertical",
-      contents: [
-        {
-          type: "text",
-          text: "ขอบคุณที่ร่วมสนุกกับเรา 💚",
-          size: "sm",
-          align: "center",
-          color: "#888888",
-          margin: "md"
-        }
-      ]
-    }
-  }
-};
+      }
+    };
 
+    // ส่งข้อความแจ้งผลลัพธ์ใน replyMessage ครั้งเดียว
     await client.replyMessage(event.replyToken, flexResult);
 
     // ลบ session หลังจบ
