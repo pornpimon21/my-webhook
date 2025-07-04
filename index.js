@@ -499,13 +499,14 @@ if (userSessions[userId]) {
               type: "text",
               text: "🎯 ผลการวิเคราะห์ความถนัด",
               weight: "bold",
-              size: "xl",
+              size: "lg",
               color: "#1DB446",
               align: "center"
             },
             {
               type: "separator",
-              margin: "md"
+              margin: "md",
+              color: "#666666"
             },
             {
               type: "box",
