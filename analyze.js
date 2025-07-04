@@ -148,11 +148,14 @@ function analyzeAnswers(answers) {
     }
   }
 
-  // ถ้ามีสายงานเดียว คืน bestTrack เป็นชื่อสายงานนั้น
-  // ถ้ามากกว่า 1 คืน null (หรือจะคืน bestTracks ก็ได้ตามต้องการ)
-  const bestTrack = bestTracks.length === 1 ? bestTracks[0] : null;
-
-  return {
+// ถ้ามีสายงานเดียว คืนชื่อสายงานนั้น
+// ถ้ามากกว่า 1 คืนเป็น string รวมสายงานทั้งหมดด้วย comma
+const bestTrack = bestTracks.length === 1 
+  ? bestTracks[0] 
+  : bestTracks.join(', ');
+  
+  
+    return {
     bestTrack,   // string หรือ null
     bestTracks,  // array ของสายงานที่คะแนนสูงสุด
     traits,
