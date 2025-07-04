@@ -497,7 +497,7 @@ if (userSessions[userId]) {
           contents: [
             {
               type: "text",
-              text: "🎯 ผลการวิเคราะห์ความถนัด",
+              text: "🎯 ผลการวิเคราะห์ความถนัด 🎯",
               weight: "bold",
               size: "lg",
               color: "#1DB446",
@@ -575,23 +575,33 @@ if (userSessions[userId]) {
             }
           ]
         },
-        footer: {
-          type: "box",
-          layout: "vertical",
-          contents: [
-            {
-              type: "text",
-              text: "ขอบคุณที่ร่วมสนุกกับเรา 💚",
-              size: "sm",
-              align: "center",
-              color: "#888888",
-              margin: "md"
-            }
-          ]
+    footer: {
+      type: "box",
+      layout: "vertical",
+      contents: [
+        {
+          type: "text",
+          text: "ขอบคุณที่ร่วมสนุกกับเรา 💚",
+          size: "sm",
+          align: "center",
+          color: "#888888",
+          margin: "md"
+        },
+        {
+          type: "button",
+          action: {
+            type: "message",
+            label: "🔁 เริ่มค้นหาความถนัดใหม่",
+            text: "ค้นหาความถนัด"
+          },
+          style: "primary",
+          color: "#1DB446",
+          margin: "md"
         }
-      }
-    };
-
+      ]
+    }
+  }
+};
     // ส่งข้อความแจ้งผลลัพธ์ใน replyMessage ครั้งเดียว
     await client.replyMessage(event.replyToken, flexResult);
 
