@@ -493,7 +493,7 @@ if (userSessions[userId]) {
         body: {
           type: "box",
           layout: "vertical",
-          spacing: "xl",
+          spacing: "lg",
           contents: [
             {
               type: "text",
@@ -523,7 +523,7 @@ if (userSessions[userId]) {
                 {
                   type: "text",
                   text: result.bestTrack || "ไม่สามารถวิเคราะห์ได้",
-                  size: "lg",
+                  size: "md",
                   weight: "bold",
                   color: "#0D99FF",
                   wrap: true
