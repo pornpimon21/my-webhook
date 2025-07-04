@@ -496,7 +496,7 @@ const flexResult = {
           type: "text",
           text: "🎯 ผลการวิเคราะห์ความถนัด",
           weight: "bold",
-          size: "lg",
+          size: "xl",
           color: "#1DB446",
           align: "center"
         },
@@ -520,7 +520,7 @@ const flexResult = {
             {
               type: "text",
               text: result.bestTrack || "ไม่สามารถวิเคราะห์ได้",
-              size: "md",
+              size: "lg",
               weight: "bold",
               color: "#0D99FF",
               wrap: true
@@ -588,7 +588,7 @@ const flexResult = {
   }
 };
 
-await client.replyMessage(event.replyToken, flexResult);
+    await client.replyMessage(event.replyToken, flexResult);
 
     // ลบ session หลังจบ
     delete userSessions[userId];
