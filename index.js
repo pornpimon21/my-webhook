@@ -445,8 +445,8 @@ app.post('/linewebhook',
           const userId = event.source.userId;
           const userMessage = event.message.text;
           const sessionId = event.source.userId || uuid.v4();  // LINE user ID ใช้แทน session
-
-
+ 
+          
 if (userMessage === "คำกิจกรรมที่ระบบเข้าใจ") {
   const categorizedActivityFlex = {
     type: "flex",
@@ -582,6 +582,25 @@ if (userMessage === "คำกิจกรรมที่ระบบเข้�
   };
 
   await client.replyMessage(event.replyToken, categorizedActivityFlex);
+  return;
+}
+
+
+if (userMessage === 'ค้นหาความถนัด') {
+  userSessions[userId] = { step: 0, answers: [] };
+  const question = buildQuestionFlex(0);
+
+  // ส่งข้อความต้อนรับ + คำถามข้อแรกใน replyMessage ทีเดียว
+  await client.replyMessage(event.replyToken, [
+    {
+      type: 'text',
+      text: `👋 สวัสดีค่ะ!\n\n` +
+        `วันนี้เราจะช่วยคุณค้นหาความถนัดที่เหมาะสมกับตัวเอง ✨ ผ่านคำถามง่าย ๆ ไม่กี่ข้อ\n` +
+        `กรุณาเลือกคำตอบที่ตรงกับตัวคุณมากที่สุด เพื่อให้ผลลัพธ์แม่นยำที่สุดนะคะ 😊\n\n` +
+        `พร้อมแล้ว... ไปเริ่มกันเลย! 🚀`
+    },
+    ...(Array.isArray(question) ? question : [question])
+  ]);
   return;
 }
 
