@@ -492,18 +492,20 @@ const flexResult = {
       layout: "vertical",
       spacing: "xl",
       contents: [
-{
-  type: "text",
-  text: "🎯 ผลการวิเคราะห์ความถนัด",
-  weight: "bold",
-  size: "lg",       // จาก "xl" → "lg"
-  color: "#1DB446",
-  align: "center",
-  wrap: true        // เพิ่ม wrap
-},
+        {
+          type: "text",
+          text: "🎯 ผลการวิเคราะห์ความถนัด",
+          weight: "bold",
+          size: "lg",       // จาก "xl" → "lg"
+          color: "#1DB446",
+          align: "center",
+          wrap: true        // เพิ่ม wrap
+        },
         {
           type: "separator",
-          margin: "md"
+          margin: "md",
+          color: "#CCCCCC",  // สีเทาอ่อน 
+          size: "md"         
         },
         {
           type: "box",
@@ -588,7 +590,6 @@ const flexResult = {
     }
   }
 };
-
 await client.replyMessage(event.replyToken, flexResult);
 
     // ลบ session หลังจบ
