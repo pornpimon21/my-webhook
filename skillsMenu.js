@@ -73,7 +73,7 @@ function buildQuestionFlex(step) {
                 type: 'box',
                 layout: 'vertical',
                 width: `${progressPercent}%`,
-                backgroundColor: color,
+                backgroundColor: '#1DB446', // 🟢 ใช้สีเขียวตายตัว
                 contents: []
               }
             ]
