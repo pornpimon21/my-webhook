@@ -11,6 +11,7 @@ const uuid = require('uuid');
 const { buildQuestionFlex } = require('./skillsMenu');
 const analyzeAnswers = require('./analyze');
 const questions = require('./questions');
+const { faqFlex, faqs } = require('./faqFlex');
 
 const userSessions = {}; // <== ต้องมีไว้เก็บคำตอบของแต่ละ userId
 
@@ -445,8 +446,23 @@ app.post('/linewebhook',
           const userId = event.source.userId;
           const userMessage = event.message.text;
           const sessionId = event.source.userId || uuid.v4();  // LINE user ID ใช้แทน session
- 
-          
+
+
+if (userMessage === "คำถามที่พบบ่อย") {
+    // ส่งเมนู FAQ Flex Message
+    await client.replyMessage(event.replyToken, faqFlex);
+    return;
+  }
+
+  if (faqs[userMessage]) {
+    // ส่งคำตอบ FAQ ตามคำถามที่ผู้ใช้เลือก
+    await client.replyMessage(event.replyToken, {
+      type: "text",
+      text: faqs[userMessage],
+    });
+    return;
+  }
+
 if (userMessage === "คำกิจกรรมที่ระบบเข้าใจ") {
   const categorizedActivityFlex = {
     type: "flex",
@@ -637,7 +653,7 @@ if (userSessions[userId]) {
           contents: [
             {
               type: "text",
-              text: "🎯 ผลการวิเคราะห์ความถนัด 🎯",
+              text: "🎯 ผลการวิเคราะห์ความถนัด",
               weight: "bold",
               size: "lg",
               color: "#1DB446",
