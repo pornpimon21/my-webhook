@@ -1040,174 +1040,182 @@ await client.replyMessage(event.replyToken, [
                   `🧠 ความสามารถหรือความถนัดของคุณ : ${session.abilitiesInputText}\n\n` +
                   `🎯 เราขอแนะนำคณะและสาขาที่เหมาะสมกับคุณ 5 ลำดับดังนี้ค่ะ 👇`;
               // สร้าง Flex Message carousel
-              const bubbles = session.recommendations.map((rec) => {
-                return {
-                  type: "bubble",
-                  size: "mega", 
-                  header: {
-                    type: "box",
-                    layout: "vertical",
-                    contents: [
-                      {
-                        type: "text",
-                        text: `🎓 อันดับที่ ${rec.rank}`,
-                        weight: "bold",
-                        color: "#1DB446",
-                        size: "lg"
-                      },
-                      {
-                        type: "text",
-                        text: rec.faculty,
-                        weight: "bold",
-                        size: "md",
-                        wrap: true,
-                        margin: "sm"
-                      },
-                      {
-                      type: "text",
-                      text: `🏫 สาขา${rec.major}`,
-                      weight: "bold",
-                      size: "sm",
-                      wrap: true
-                      }
-                    ]
-                  },
-                  body: {
-                    type: "box",
-                    layout: "vertical",
-                    spacing: "sm",
-                    contents: [
-                     {
-                        type: "text",
-                        text: "📊 เกรดขั้นต่ำที่กำหนด",
-                        size: "sm",
-                        weight: "bold",
-                        wrap: true,
-                        margin: "md"
-                     },
-                     {
-                        type: "text",
-                        text: rec.requiredGrade !== null ? `${rec.requiredGrade}` : "ไม่ระบุ",
-                        size: "sm",
-                        wrap: true,
-                        margin: "xs"
-                      },
-                      {
-                        type: "text",
-                        text: "🛠️ ทักษะความสามารถ",
-                        size: "sm",
-                        weight: "bold",
-                        wrap: true,
-                        margin: "md"
-                      },
-                      {
-                        type: "text",
-                        text: rec.abilities && rec.abilities.length > 0 ? `${rec.abilities.join(", ")}` : "ไม่ระบุ",
-                        size: "sm",
-                        wrap: true,
-                        margin: "xs"
-                      },
-                      {
-                        type: "text",
-                        text: "✅ ความสามารถของคุณที่ตรงกับสาขา",
-                        size: "sm",
-                        weight: "bold",
-                        wrap: true,
-                        margin: "md"
-                      },
-                      {
-                        type: "text",
-                        text: rec.matchedAbilities && rec.matchedAbilities.length > 0 ? `${rec.matchedAbilities.join(", ")}` : "ไม่ระบุ",
-                        size: "sm",
-                        wrap: true,
-                        margin: "xs"
-                      },
-                      {
-                        type: "text",
-                        text: "👥 รับจำนวน",
-                        size: "sm",
-                        weight: "bold",
-                        wrap: true,
-                        margin: "md"
-                      },
-                      {
-                        type: "text",
-                        text: rec.quota ? `${rec.quota} คน` : "ไม่ระบุ",
-                        size: "sm",
-                        wrap: true,
-                        margin: "xs"
-                      },
-                      {
-                        type: "text",
-                        text: "📄 คุณสมบัติ",
-                        size: "sm",
-                        weight: "bold",
-                        wrap: true,
-                        margin: "md"
-                      },
-                      {
-                        type: "text",
-                        text: rec.condition ? rec.condition : "ไม่ระบุ",
-                        size: "sm",
-                        wrap: true,
-                        margin: "xs"
-                      },
-                      {
-                        type: "text",
-                        text: "💡 เหตุผลที่เหมาะสม",
-                        size: "sm",
-                        weight: "bold",
-                        wrap: true,
-                        margin: "md"
-                      },
-                      {
-                        type: "text",
-                        text: rec.reason ? rec.reason : "ไม่ระบุ",
-                        size: "sm",
-                        wrap: true,
-                        margin: "xs"
-                      },
-                      {
-                        type: "text",
-                        text: `💼 อาชีพที่เกี่ยวข้อง`,
-                        weight: "bold",
-                        margin: "md",
-                        size: "sm"
-                      },
-                      ...((rec.careers && rec.careers.length > 0) ?
-                        rec.careers.map(career => ({
-                          type: "text",
-                          text: `• ${career}`,
-                          size: "sm",
-                          margin: "xs",
-                          wrap: true
-                        }))
-                        : [{
-                          type: "text",
-                          text: "ไม่ระบุ",
-                          size: "sm",
-                          margin: "xs"
-                        }]
-                      )
-                    ]
-                  },
-                  footer: {
-                    type: "box",
-                    layout: "horizontal",
-                    contents: [
-                      {
-                        type: "button",
-                        style: "primary",
-                        action: {
-                          type: "message",
-                          label: "เริ่มใหม่",
-                          text: "เริ่มแนะนำใหม่"
-                        }
-                      }
-                    ]
-                  }
-                };
-              });
+             const bubbles = session.recommendations.map((rec) => {
+  return {
+    type: "bubble",
+    size: "mega",
+    hero: {
+      type: "image",
+      url: "https://www.uru.ac.th/images/logouru2011.png", // โลโก้มหาวิทยาลัย
+      size: "full",
+      aspectRatio: "1.51:1",
+      aspectMode: "fit"
+    },
+    header: {
+      type: "box",
+      layout: "vertical",
+      contents: [
+        {
+          type: "text",
+          text: `🎓 อันดับที่ ${rec.rank}`,
+          weight: "bold",
+          color: "#1DB446",
+          size: "lg"
+        },
+        {
+          type: "text",
+          text: rec.faculty,
+          weight: "bold",
+          size: "md",
+          wrap: true,
+          margin: "sm"
+        },
+        {
+          type: "text",
+          text: `🏫 สาขา${rec.major}`,
+          weight: "bold",
+          size: "sm",
+          wrap: true
+        }
+      ]
+    },
+    body: {
+      type: "box",
+      layout: "vertical",
+      spacing: "sm",
+      contents: [
+        {
+          type: "text",
+          text: "📊 เกรดขั้นต่ำที่กำหนด",
+          size: "sm",
+          weight: "bold",
+          wrap: true,
+          margin: "md"
+        },
+        {
+          type: "text",
+          text: rec.requiredGrade !== null ? `${rec.requiredGrade}` : "ไม่ระบุ",
+          size: "sm",
+          wrap: true,
+          margin: "xs"
+        },
+        {
+          type: "text",
+          text: "🛠️ ทักษะความสามารถ",
+          size: "sm",
+          weight: "bold",
+          wrap: true,
+          margin: "md"
+        },
+        {
+          type: "text",
+          text: rec.abilities && rec.abilities.length > 0 ? `${rec.abilities.join(", ")}` : "ไม่ระบุ",
+          size: "sm",
+          wrap: true,
+          margin: "xs"
+        },
+        {
+          type: "text",
+          text: "✅ ความสามารถของคุณที่ตรงกับสาขา",
+          size: "sm",
+          weight: "bold",
+          wrap: true,
+          margin: "md"
+        },
+        {
+          type: "text",
+          text: rec.matchedAbilities && rec.matchedAbilities.length > 0 ? `${rec.matchedAbilities.join(", ")}` : "ไม่ระบุ",
+          size: "sm",
+          wrap: true,
+          margin: "xs"
+        },
+        {
+          type: "text",
+          text: "👥 รับจำนวน",
+          size: "sm",
+          weight: "bold",
+          wrap: true,
+          margin: "md"
+        },
+        {
+          type: "text",
+          text: rec.quota ? `${rec.quota} คน` : "ไม่ระบุ",
+          size: "sm",
+          wrap: true,
+          margin: "xs"
+        },
+        {
+          type: "text",
+          text: "📄 คุณสมบัติ",
+          size: "sm",
+          weight: "bold",
+          wrap: true,
+          margin: "md"
+        },
+        {
+          type: "text",
+          text: rec.condition ? rec.condition : "ไม่ระบุ",
+          size: "sm",
+          wrap: true,
+          margin: "xs"
+        },
+        {
+          type: "text",
+          text: "💡 เหตุผลที่เหมาะสม",
+          size: "sm",
+          weight: "bold",
+          wrap: true,
+          margin: "md"
+        },
+        {
+          type: "text",
+          text: rec.reason ? rec.reason : "ไม่ระบุ",
+          size: "sm",
+          wrap: true,
+          margin: "xs"
+        },
+        {
+          type: "text",
+          text: `💼 อาชีพที่เกี่ยวข้อง`,
+          weight: "bold",
+          margin: "md",
+          size: "sm"
+        },
+        ...(rec.careers && rec.careers.length > 0
+          ? rec.careers.map(career => ({
+              type: "text",
+              text: `• ${career}`,
+              size: "sm",
+              margin: "xs",
+              wrap: true
+            }))
+          : [
+              {
+                type: "text",
+                text: "ไม่ระบุ",
+                size: "sm",
+                margin: "xs"
+              }
+            ])
+      ]
+    },
+    footer: {
+      type: "box",
+      layout: "horizontal",
+      contents: [
+        {
+          type: "button",
+          style: "primary",
+          action: {
+            type: "message",
+            label: "เริ่มใหม่",
+            text: "เริ่มแนะนำใหม่"
+          }
+        }
+      ]
+    }
+  };
+});
 
 // 1. ส่งข้อความแนะนำก่อน
 await client.replyMessage(event.replyToken, {
