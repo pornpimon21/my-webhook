@@ -787,9 +787,6 @@ if (userMessage === 'เริ่มแนะนำใหม่') {
       });
     }
 
-
-
-
 // ฟังก์ชันช่วยตรวจสอบข้อความ ให้รองรับทั้ง string และ number
 const safeText = (text) => {
   if (typeof text === 'string' && text.trim() !== '') return text;
@@ -1246,8 +1243,7 @@ footer: {
         label: "เริ่มใหม่",
         text: "เริ่มแนะนำใหม่"
       }
-      }        
-      ]
+      }              ]
     }
   };
 });
