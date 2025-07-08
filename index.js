@@ -1235,9 +1235,9 @@ footer: {
   style: "primary",
   color: "#1DB446",
   action: {
-    type: "message",
+    type: "postback",
     label: "ดูแผนการเรียน",
-    text: `ดูแผนการเรียน ${rec.faculty} - ${rec.major}`
+    data: `studyplan=${rec.faculty}|${rec.major}`
   }
 },
     {
@@ -1280,81 +1280,77 @@ await client.pushMessage(event.source.userId, {
             }
           }
 
-if (event.message.type === 'text' && event.message.text.startsWith('ดูแผนการเรียน ')) {
-  const sessionId = event.source.userId; // ดึง sessionId ตามที่คุณใช้งานจริง
-  const session = await getSession(sessionId); // ฟังก์ชันโหลด session จาก DB
+if (event.type === 'postback' && event.postback.data.startsWith('studyplan=')) {
+  const sessionId = event.source.userId;
+  const session = await getSession(sessionId);
 
-  const text = event.message.text; // เช่น "ดูแผนการเรียน คณะศึกษาศาสตร์ - ภาษาไทย"
-  const match = text.match(/^ดูแผนการเรียน (.+) - (.+)$/);
-  if (match) {
-    const faculty = match[1];
-    const major = match[2];
+  const data = event.postback.data.replace('studyplan=', '');
+  const [faculty, major] = data.split('|');
 
-    if (session && session.recommendations) {
-      const rec = session.recommendations.find(r => r.faculty === faculty && r.major === major);
-      if (rec) {
-        const studyPlanContents = rec.studyPlan.map(line => ({
-          type: "text",
-          text: line,
-          size: "sm",
-          wrap: true,
-          margin: "xs"
-        }));
+  if (session && session.recommendations) {
+    const rec = session.recommendations.find(r => r.faculty === faculty && r.major === major);
+    if (rec) {
+      const studyPlanContents = rec.studyPlan.map(line => ({
+        type: "text",
+        text: line,
+        size: "sm",
+        wrap: true,
+        margin: "xs"
+      }));
 
-        await client.replyMessage(event.replyToken, {
-          type: "flex",
-          altText: `แผนการเรียน ${faculty} - ${major}`,
-          contents: {
-            type: "bubble",
-            header: {
-              type: "box",
-              layout: "vertical",
-              contents: [
-                {
-                  type: "text",
-                  text: `แผนการเรียน ${faculty} - ${major}`,
-                  weight: "bold",
-                  size: "lg"
+      await client.replyMessage(event.replyToken, {
+        type: "flex",
+        altText: `แผนการเรียน ${faculty} - ${major}`,
+        contents: {
+          type: "bubble",
+          header: {
+            type: "box",
+            layout: "vertical",
+            contents: [
+              {
+                type: "text",
+                text: `แผนการเรียน ${faculty} - ${major}`,
+                weight: "bold",
+                size: "lg"
+              }
+            ]
+          },
+          body: {
+            type: "box",
+            layout: "vertical",
+            contents: studyPlanContents
+          },
+          footer: {
+            type: "box",
+            layout: "horizontal",
+            contents: [
+              {
+                type: "button",
+                style: "primary",
+                action: {
+                  type: "uri",
+                  label: "ดูแผนเต็ม (PDF)",
+                  uri: rec.studyPlanPdf || "https://edu.uru.ac.th/"
                 }
-              ]
-            },
-            body: {
-              type: "box",
-              layout: "vertical",
-              contents: studyPlanContents
-            },
-            footer: {
-              type: "box",
-              layout: "horizontal",
-              contents: [
-                {
-                  type: "button",
-                  style: "primary",
-                  action: {
-                    type: "uri",
-                    label: "ดูแผนเต็ม (PDF)",
-                    uri: rec.studyPlanPdf || "https://edu.uru.ac.th/"
-                  }
-                }
-              ]
-            }
+              }
+            ]
           }
-        });
-        return;
-      } else {
-        await client.replyMessage(event.replyToken, {
-          type: "text",
-          text: `❌ ไม่พบแผนการเรียนของคณะ ${faculty} - สาขา ${major}`
-        });
-        return;
-      }
+        }
+      });
+      return;
     } else {
       await client.replyMessage(event.replyToken, {
         type: "text",
-        text: "❌ ไม่พบข้อมูล session ของคุณ กรุณาเริ่มแนะนำใหม่อีกครั้ง"
+        text: `❌ ไม่พบแผนการเรียนของคณะ ${faculty} - สาขา ${major}`
       });
       return;
     }
+  } else {
+    await client.replyMessage(event.replyToken, {
+      type: "text",
+      text: "❌ ไม่พบข้อมูล session ของคุณ กรุณาเริ่มแนะนำใหม่อีกครั้ง"
+    });
+    return;
   }
 }
           // กรณีทั่วไป ตอบข้อความธรรมดา
