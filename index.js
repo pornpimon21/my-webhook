@@ -12,7 +12,7 @@ const { buildQuestionFlex } = require('./skillsMenu');
 const analyzeAnswers = require('./analyze');
 const questions = require('./questions');
 const { faqFlex, faqs } = require('./faqFlex');
-const { generateInfoDetailsFlex, generateStudyPlanFlex } = require('./flexTemplates');
+
 const userSessions = {}; // <== ต้องมีไว้เก็บคำตอบของแต่ละ userId
 
 const app = express();
@@ -415,7 +415,6 @@ app.post('/linewebhook',
 
       await Promise.all(events.map(async (event) => {
         if (event.type === 'message' && event.message.type === 'text') {
-          const text = event.message.text;  // ประกาศตัวแปร text ที่นี่
           const userId = event.source.userId;
           const userMessage = event.message.text;
           const sessionId = event.source.userId || uuid.v4();  // LINE user ID ใช้แทน session
@@ -763,28 +762,6 @@ if (userMessage === 'เริ่มแนะนำใหม่') {
       text: '⚠️ ขอโทษค่ะ ไม่พบข้อมูลเก่าครบถ้วน กรุณากด "แนะนำคณะ" เพื่อเริ่มต้นใหม่นะคะ 💬'
     });
     return;
-  }
-}
-
-  if (text === 'ข้อมูลเพิ่มเติม') {
-    const flexMessage = generateInfoDetailsFlex(data);
-    return client.replyMessage(event.replyToken, {
-      type: 'flex',
-      altText: 'ข้อมูลเพิ่มเติม',
-      contents: flexMessage
-    });
-  } else if (text === 'เริ่มแนะนำใหม่') {
-    // ตอบข้อความเริ่มใหม่หรืออื่น ๆ ตามที่ต้องการ
-  }
-
-if (event.type === 'postback') {
-  if (event.postback.data === 'action=show_study_plan') {
-    const flexMessage = generateStudyPlanFlex(data);
-    return client.replyMessage(event.replyToken, {
-      type: 'flex',
-      altText: 'แผนการเรียน',
-      contents: flexMessage
-    });
   }
 }
 
@@ -1231,11 +1208,39 @@ footer: {
       type: "button",
       style: "primary",
       action: {
-        type: "message",
-        label: "ดูข้อมูลเพิ่มเติม",
-        text: `ข้อมูลเพิ่มเติม`
+        type: "uri",
+        label: "ลิงค์เว็บ",
+        uri: rec.website || "https://edu.uru.ac.th/"
       }
     },
+    {
+      type: "button",
+      style: "primary",
+      action: {
+        type: "uri",
+        label: "ลิงค์เฟสสาขา",
+        uri: rec.majorsFacebook || "https://www.facebook.com/"
+      }
+    },
+    {
+      type: "button",
+      style: "primary",
+      action: {
+        type: "uri",
+        label: "ลิงค์เฟสคณะ",
+        uri: rec.facultyFacebook || "https://www.facebook.com/"
+      }
+    },
+{
+  type: "button",
+  style: "primary",
+  color: "#1DB446",
+  action: {
+    type: "message",
+    label: "ดูแผนการเรียน",
+    text: `ดูแผนการเรียน ${rec.faculty} - ${rec.major}`
+  }
+},
     {
       type: "button",
       style: "secondary",
@@ -1244,7 +1249,8 @@ footer: {
         label: "เริ่มใหม่",
         text: "เริ่มแนะนำใหม่"
       }
-      }              ]
+    }
+    ]
     }
   };
 });
@@ -1274,6 +1280,72 @@ await client.pushMessage(event.source.userId, {
               return;
             }
           }
+
+// กรณีผู้ใช้กดปุ่ม ดูแผนการเรียน
+    if (event.message.type === 'text' && event.message.text.startsWith('ดูแผนการเรียน ')) {
+      // ดึงชื่อคณะกับสาขาจากข้อความ
+      const text = event.message.text; // เช่น "ดูแผนการเรียน คณะศึกษาศาสตร์ - ภาษาไทย"
+      const match = text.match(/^ดูแผนการเรียน (.+) - (.+)$/);
+      if (match) {
+        const faculty = match[1];
+        const major = match[2];
+
+        if (session && session.recommendations) {
+          const rec = session.recommendations.find(r => r.faculty === faculty && r.major === major);
+          if (rec) {
+            // สร้างเนื้อหาแผนการเรียนจาก array
+            const studyPlanContents = rec.studyPlan.map(line => ({
+              type: "text",
+              text: line,
+              size: "sm",
+              wrap: true,
+              margin: "xs"
+            }));
+
+            await client.replyMessage(event.replyToken, {
+              type: "flex",
+              altText: `แผนการเรียน ${faculty} - ${major}`,
+              contents: {
+                type: "bubble",
+                header: {
+                  type: "box",
+                  layout: "vertical",
+                  contents: [
+                    {
+                      type: "text",
+                      text: `แผนการเรียน ${faculty} - ${major}`,
+                      weight: "bold",
+                      size: "lg"
+                    }
+                  ]
+                },
+                body: {
+                  type: "box",
+                  layout: "vertical",
+                  contents: studyPlanContents
+                },
+                footer: {
+                  type: "box",
+                  layout: "horizontal",
+                  contents: [
+                    {
+                      type: "button",
+                      style: "primary",
+                      action: {
+                        type: "uri",
+                        label: "ดูแผนเต็ม (PDF)",
+                        uri: rec.studyPlanPdf || "https://edu.uru.ac.th/"
+                      }
+                    }
+                  ]
+                }
+              }
+            });
+            return;
+          }
+        }
+      }
+    }
 
           // กรณีทั่วไป ตอบข้อความธรรมดา
           await client.replyMessage(event.replyToken, {
