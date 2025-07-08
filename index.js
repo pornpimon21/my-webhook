@@ -12,7 +12,7 @@ const { buildQuestionFlex } = require('./skillsMenu');
 const analyzeAnswers = require('./analyze');
 const questions = require('./questions');
 const { faqFlex, faqs } = require('./faqFlex');
-const { infoDetailsFlex, studyPlanFlex } = require('./flexTemplates');
+const { generateInfoDetailsFlex, generateStudyPlanFlex } = require('./flexTemplates');
 const userSessions = {}; // <== ต้องมีไว้เก็บคำตอบของแต่ละ userId
 
 const app = express();
@@ -766,32 +766,26 @@ if (userMessage === 'เริ่มแนะนำใหม่') {
 }
 
 //ดูข้อแผนการเรียน
-if (event.type === 'postback') {
-  const data = event.postback.data;
-
-  if (data === 'action=show_study_plan') {
-    await client.replyMessage(event.replyToken, {
-      type: 'flex',
-      altText: 'แผนการเรียน',
-      contents: studyPlanFlex
-    });
-    return;
+ if (event.type === 'postback') {
+    if (event.postback.data === 'action=show_study_plan') {
+      const flexMessage = generateStudyPlanFlex(data);
+      return client.replyMessage(event.replyToken, {
+        type: 'flex',
+        altText: 'แผนการเรียน',
+        contents: flexMessage
+      });
+    }
   }
-}
-
+  
 //ดูขอมูลเพิ่มเติม
-if (event.type === 'message' && event.message.type === 'text') {
-  const userMessage = event.message.text;
-
-  if (userMessage === 'ข้อมูลเพิ่มเติม') {
-    await client.replyMessage(event.replyToken, {
-      type: 'flex',
-      altText: 'ข้อมูลเพิ่มเติม',
-      contents: infoDetailsFlex
-    });
-    return;
-  }
-}
+   if (text === 'ข้อมูลเพิ่มเติม') {
+      const flexMessage = generateInfoDetailsFlex(data);
+      return client.replyMessage(event.replyToken, {
+        type: 'flex',
+        altText: 'ข้อมูลเพิ่มเติม',
+        contents: flexMessage
+      });
+    }
 
 
 
