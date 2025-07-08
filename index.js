@@ -364,6 +364,14 @@ results.forEach((r, i) => {
 
 reply += `\n✨ ขอให้โชคดีกับการเลือกคณะนะคะ!`;
     
+// ✅ เก็บข้อมูลผู้ใช้ด้านบนสุดก่อนเลย และ // เก็บค่าผลลัพธ์ทั้งหมดใน session แบบ array (ไม่รวม quota, gradeRequirement, etc.) 5 ลำดับ
+session.sessionId = sessionId;
+session.name = name;
+session.educationLevel = educationLevel; // เพิ่มระดับการศึกษาที่เลือก (ต้องดึงจาก params)
+session.grade = grade;
+session.abilitiesInputText = abilities.join(", ");
+
+// แล้วค่อย map results
 session.recommendations = results.map((r, i) => {
   const majorInfo = faculties
     .find(f => f.name === r.faculty)
@@ -379,14 +387,7 @@ session.recommendations = results.map((r, i) => {
     quota: majorInfo.quota,
     condition: majorInfo.condition,
     reason: majorInfo.reason,
-    careers: majorInfo.careers,
-
-    // เพิ่มข้อมูลใหม่จาก majorInfo
-    studyPlan: majorInfo.studyPlan,
-    studyPlanPdf: majorInfo.studyPlanPdf,
-    website: majorInfo.website,
-    majorsFacebook: majorInfo.majorsFacebook,
-    facultyFacebook: majorInfo.facultyFacebook,
+    careers: majorInfo.careers
   };
 });
 
@@ -1039,7 +1040,7 @@ await client.replyMessage(event.replyToken, [
                   `🧠 ความสามารถหรือความถนัดของคุณ : ${session.abilitiesInputText}\n\n` +
                   `🎯 เราขอแนะนำคณะและสาขาที่เหมาะสมกับคุณ 5 ลำดับดังนี้ค่ะ 👇`;
               // สร้าง Flex Message carousel
-const bubbles = session.recommendations.map((rec) => {
+             const bubbles = session.recommendations.map((rec) => {
   return {
     type: "bubble",
     size: "mega",
@@ -1108,7 +1109,7 @@ const bubbles = session.recommendations.map((rec) => {
         },
         {
           type: "text",
-          text: rec.abilities?.length > 0 ? `${rec.abilities.join(", ")}` : "ไม่ระบุ",
+          text: rec.abilities && rec.abilities.length > 0 ? `${rec.abilities.join(", ")}` : "ไม่ระบุ",
           size: "sm",
           wrap: true,
           margin: "xs"
@@ -1123,7 +1124,7 @@ const bubbles = session.recommendations.map((rec) => {
         },
         {
           type: "text",
-          text: rec.matchedAbilities?.length > 0 ? `${rec.matchedAbilities.join(", ")}` : "ไม่ระบุ",
+          text: rec.matchedAbilities && rec.matchedAbilities.length > 0 ? `${rec.matchedAbilities.join(", ")}` : "ไม่ระบุ",
           size: "sm",
           wrap: true,
           margin: "xs"
@@ -1153,7 +1154,7 @@ const bubbles = session.recommendations.map((rec) => {
         },
         {
           type: "text",
-          text: rec.condition || "ไม่ระบุ",
+          text: rec.condition ? rec.condition : "ไม่ระบุ",
           size: "sm",
           wrap: true,
           margin: "xs"
@@ -1168,19 +1169,19 @@ const bubbles = session.recommendations.map((rec) => {
         },
         {
           type: "text",
-          text: rec.reason || "ไม่ระบุ",
+          text: rec.reason ? rec.reason : "ไม่ระบุ",
           size: "sm",
           wrap: true,
           margin: "xs"
         },
         {
           type: "text",
-          text: "💼 อาชีพที่เกี่ยวข้อง",
+          text: `💼 อาชีพที่เกี่ยวข้อง`,
           weight: "bold",
           margin: "md",
           size: "sm"
         },
-        ...(rec.careers?.length > 0
+        ...(rec.careers && rec.careers.length > 0
           ? rec.careers.map(career => ({
               type: "text",
               text: `• ${career}`,
@@ -1195,72 +1196,16 @@ const bubbles = session.recommendations.map((rec) => {
                 size: "sm",
                 margin: "xs"
               }
-            ]),
-        {
-          type: "text",
-          text: "🔗 แหล่งข้อมูลเพิ่มเติม",
-          size: "sm",
-          weight: "bold",
-          wrap: true,
-          margin: "md"
-        },
-        {
-          type: "box",
-          layout: "horizontal",
-          spacing: "sm",
-          contents: [
-            {
-              type: "button",
-              style: "link",
-              height: "sm",
-              action: {
-                type: "uri",
-                label: "🌐 เว็บไซต์",
-                uri: rec.website || "https://edu.uru.ac.th/"
-              }
-            },
-            {
-              type: "button",
-              style: "link",
-              height: "sm",
-              action: {
-                type: "uri",
-                label: "📘 เฟสบุ๊คสาขา",
-                uri: rec.majorsFacebook || "https://www.facebook.com/"
-              }
-            },
-            {
-              type: "button",
-              style: "link",
-              height: "sm",
-              action: {
-                type: "uri",
-                label: "🏫 เฟสบุ๊คคณะ",
-                uri: rec.facultyFacebook || "https://www.facebook.com/"
-              }
-            }
-          ]
-        }
+            ])
       ]
     },
     footer: {
       type: "box",
-      layout: "vertical",
-      spacing: "sm",
+      layout: "horizontal",
       contents: [
-        /*{
-          type: "button",
-          style: "primary",
-          color: "#1DB446",
-          action: {
-            type: "postback",
-            label: "ดูแผนการเรียน",
-            data: `studyplan=${encodeURIComponent(rec.faculty)}|${encodeURIComponent(rec.major)}`
-          }
-        },*/
         {
           type: "button",
-          style: "secondary",
+          style: "primary",
           action: {
             type: "message",
             label: "เริ่มใหม่",
