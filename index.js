@@ -415,6 +415,7 @@ app.post('/linewebhook',
 
       await Promise.all(events.map(async (event) => {
         if (event.type === 'message' && event.message.type === 'text') {
+          const text = event.message.text;  // ประกาศตัวแปร text ที่นี่
           const userId = event.source.userId;
           const userMessage = event.message.text;
           const sessionId = event.source.userId || uuid.v4();  // LINE user ID ใช้แทน session
