@@ -1231,16 +1231,15 @@ footer: {
       }
     },
 {
-  type: "button",
-  style: "primary",
-  color: "#1DB446",
-  action: {
-    type: "postback",
-    label: "ดูแผนการเรียน",
-    data: `studyplan=${rec.faculty}|${rec.major}`
-  }
-},
-    {
+      type: "button",
+      style: "primary",
+      color: "#1DB446",
+      action: {
+        type: "postback",
+        label: "ดูแผนการเรียน",
+        data: `studyplan=${encodeURIComponent(rec.faculty)}|${encodeURIComponent(rec.major)}`
+      }
+    },    {
       type: "button",
       style: "secondary",
       action: {
@@ -1285,10 +1284,19 @@ if (event.type === 'postback' && event.postback.data.startsWith('studyplan=')) {
   const session = await getSession(sessionId);
 
   const data = event.postback.data.replace('studyplan=', '');
-  const [faculty, major] = data.split('|');
+  const [facultyRaw, majorRaw] = data.split('|');
+  const faculty = decodeURIComponent(facultyRaw);
+  const major = decodeURIComponent(majorRaw);
+
+  console.log("📥 Postback Data:", data);
+  console.log("🔍 Faculty:", faculty, "Major:", major);
 
   if (session && session.recommendations) {
-    const rec = session.recommendations.find(r => r.faculty === faculty && r.major === major);
+    const rec = session.recommendations.find(r =>
+      r.faculty.trim().toLowerCase() === faculty.trim().toLowerCase() &&
+      r.major.trim().toLowerCase() === major.trim().toLowerCase()
+    );
+
     if (rec) {
       const studyPlanContents = rec.studyPlan.map(line => ({
         type: "text",
