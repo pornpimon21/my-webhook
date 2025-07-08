@@ -12,8 +12,7 @@ const { buildQuestionFlex } = require('./skillsMenu');
 const analyzeAnswers = require('./analyze');
 const questions = require('./questions');
 const { faqFlex, faqs } = require('./faqFlex');
-const { createPlanBubble } = require('./flexTemplates');
-
+const { infoDetailsFlex, studyPlanFlex } = require('./flexTemplates');
 const userSessions = {}; // <== ต้องมีไว้เก็บคำตอบของแต่ละ userId
 
 const app = express();
@@ -766,6 +765,37 @@ if (userMessage === 'เริ่มแนะนำใหม่') {
   }
 }
 
+//ดูข้อแผนการเรียน
+if (event.type === 'postback') {
+  const data = event.postback.data;
+
+  if (data === 'action=show_study_plan') {
+    await client.replyMessage(event.replyToken, {
+      type: 'flex',
+      altText: 'แผนการเรียน',
+      contents: studyPlanFlex
+    });
+    return;
+  }
+}
+
+//ดูขอมูลเพิ่มเติม
+if (event.type === 'message' && event.message.type === 'text') {
+  const userMessage = event.message.text;
+
+  if (userMessage === 'ข้อมูลเพิ่มเติม') {
+    await client.replyMessage(event.replyToken, {
+      type: 'flex',
+      altText: 'ข้อมูลเพิ่มเติม',
+      contents: infoDetailsFlex
+    });
+    return;
+  }
+}
+
+
+
+
 // ฟังก์ชันช่วยตรวจสอบข้อความ ให้รองรับทั้ง string และ number
 const safeText = (text) => {
   if (typeof text === 'string' && text.trim() !== '') return text;
@@ -1024,66 +1054,15 @@ await client.replyMessage(event.replyToken, [
   return;  
 }
 
-        // ตรวจสอบ Intent จาก Dialogflow
-        const dialogflowResult = await detectIntentText(sessionId, userMessage);
-        const replyText = dialogflowResult.fulfillmentText || '❗ ขออภัยค่ะ  \nฉันไม่เข้าใจข้อความของคุณในครั้งนี้  \nกรุณาลองพิมพ์ใหม่อีกครั้งนะคะ 😊';
+          // ตรวจสอบ Intent จาก Dialogflow
+          const dialogflowResult = await detectIntentText(sessionId, userMessage);
+          const replyText = dialogflowResult.fulfillmentText || '❗ ขออภัยค่ะ  \nฉันไม่เข้าใจข้อความของคุณในครั้งนี้  \nกรุณาลองพิมพ์ใหม่อีกครั้งนะคะ 😊';
 
-        // <--- ตรงนี้คือจุดที่ให้ใส่โค้ดแสดง carousel --->
-        if (dialogflowResult.intent && dialogflowResult.intent.displayName === 'get skills') {
-        // ดึงข้อมูล session จาก MongoDB
-        const session = await getSession(sessionId);
+          // <--- ตรงนี้คือจุดที่ให้ใส่โค้ดแสดง carousel --->
+          if (dialogflowResult.intent && dialogflowResult.intent.displayName === 'get skills') {
+            // ดึงข้อมูล session จาก MongoDB
+            const session = await getSession(sessionId);
 
-
-  // ดักข้อความ: "ข้อมูลเพิ่มเติม"
-  if (event.message.text.startsWith("ข้อมูลเพิ่มเติม: ")) {
-  const majorName = event.message.text.split(": ")[1];
-  const rec = session?.recommendations?.find(r => r.major === majorName);
-
-  if (rec) {
-    await client.replyMessage(event.replyToken, {
-      type: "flex",
-      altText: `เลือกดูข้อมูลเพิ่มเติมของ ${rec.major}`,
-      contents: {
-        type: "bubble",
-        header: {
-          type: "box",
-          layout: "vertical",
-          contents: [
-            { type: "text", text: rec.major, weight: "bold", size: "lg", wrap: true },
-            { type: "text", text: "เลือกสิ่งที่ต้องการดูเพิ่มเติม", size: "sm", color: "#888888" }
-          ]
-        },
-        body: {
-          type: "box",
-          layout: "vertical",
-          spacing: "md",
-          contents: [
-            { type: "button", style: "primary", action: { type: "message", label: "📘 ดูแผนการเรียน", text: `แผนการเรียน: ${rec.major}` } },
-            { type: "button", style: "link", action: { type: "uri", label: "🌐 เว็บไซต์คณะ", uri: rec.website } },
-            { type: "button", style: "link", action: { type: "uri", label: "📘 Facebook สาขา", uri: rec.majorFacebook } },
-            { type: "button", style: "link", action: { type: "uri", label: "🏫 Facebook คณะ", uri: rec.facultyFacebook } }
-          ]
-        }
-      }
-    });
-    return;
-  }
-}
-
-        if (event.message.text.startsWith("แผนการเรียน: ")) {
-        const majorName = event.message.text.split(": ")[1];
-        const rec = session?.recommendations?.find(r => r.major === majorName);
-
-        if (rec) {
-        const bubble = createPlanBubble(rec); // ✅ ใช้ที่นี่เลย
-        await client.replyMessage(event.replyToken, {
-        type: "flex",
-        altText: `แผนการเรียนของ ${rec.major}`,
-        contents: bubble
-    });
-  }
-}
-  
           if (session && session.recommendations && session.recommendations.length > 0) {
           // สร้างข้อความแนะนำก่อน carousel
           const introText = `🙏 ขอบคุณค่ะ คุณ${session.name || ''} จากข้อมูลที่คุณกรอกมามีดังนี้\n\n` +
@@ -1251,28 +1230,29 @@ await client.replyMessage(event.replyToken, [
             ])
       ]
     },
-    footer: {
-      type: "box",
-      layout: "horizontal",
-      contents: [
-        {
-            type: "button",
-            style: "primary",
-            action: {
-              type: "message",
-              label: "ดูข้อมูลเพิ่มเติม",
-              text: `ข้อมูลเพิ่มเติม: ${rec.major}`
-            }
-          },
-          {
-            type: "button",
-            style: "secondary",
-            action: {
-              type: "message",
-              label: "เริ่มใหม่",
-              text: "เริ่มแนะนำใหม่"
-          }
-        }
+footer: {
+  type: "box",
+  layout: "vertical",
+  spacing: "sm",
+  contents: [
+    {
+      type: "button",
+      style: "primary",
+      action: {
+        type: "message",
+        label: "ดูข้อมูลเพิ่มเติม",
+        text: `ข้อมูลเพิ่มเติม: ${rec.major}` // หรือจะเป็น "ดูข้อมูลเพิ่มเติม: ภาษาไทย"
+      }
+    },
+    {
+      type: "button",
+      style: "secondary",
+      action: {
+        type: "message",
+        label: "เริ่มใหม่",
+        text: "เริ่มแนะนำใหม่"
+      }
+      }        
       ]
     }
   };
@@ -1319,7 +1299,6 @@ await client.pushMessage(event.source.userId, {
     }
   }
 );
-
 // --- จบโค้ด LINE bot ---
 
 app.listen(PORT, () => {
