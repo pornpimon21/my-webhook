@@ -1039,7 +1039,7 @@ await client.replyMessage(event.replyToken, [
                   `🧠 ความสามารถหรือความถนัดของคุณ : ${session.abilitiesInputText}\n\n` +
                   `🎯 เราขอแนะนำคณะและสาขาที่เหมาะสมกับคุณ 5 ลำดับดังนี้ค่ะ 👇`;
               // สร้าง Flex Message carousel
-             const bubbles = session.recommendations.map((rec) => {
+const bubbles = session.recommendations.map((rec) => {
   return {
     type: "bubble",
     size: "mega",
@@ -1078,191 +1078,196 @@ await client.replyMessage(event.replyToken, [
         }
       ]
     },
-body: {
-  type: "box",
-  layout: "vertical",
-  spacing: "sm",
-  contents: [
-    {
-      type: "text",
-      text: "📊 เกรดขั้นต่ำที่กำหนด",
-      size: "sm",
-      weight: "bold",
-      wrap: true,
-      margin: "md"
-    },
-    {
-      type: "text",
-      text: rec.requiredGrade !== null ? `${rec.requiredGrade}` : "ไม่ระบุ",
-      size: "sm",
-      wrap: true,
-      margin: "xs"
-    },
-    {
-      type: "text",
-      text: "🛠️ ทักษะความสามารถ",
-      size: "sm",
-      weight: "bold",
-      wrap: true,
-      margin: "md"
-    },
-    {
-      type: "text",
-      text: rec.abilities?.length > 0 ? `${rec.abilities.join(", ")}` : "ไม่ระบุ",
-      size: "sm",
-      wrap: true,
-      margin: "xs"
-    },
-    {
-      type: "text",
-      text: "✅ ความสามารถของคุณที่ตรงกับสาขา",
-      size: "sm",
-      weight: "bold",
-      wrap: true,
-      margin: "md"
-    },
-    {
-      type: "text",
-      text: rec.matchedAbilities?.length > 0 ? `${rec.matchedAbilities.join(", ")}` : "ไม่ระบุ",
-      size: "sm",
-      wrap: true,
-      margin: "xs"
-    },
-    {
-      type: "text",
-      text: "👥 รับจำนวน",
-      size: "sm",
-      weight: "bold",
-      wrap: true,
-      margin: "md"
-    },
-    {
-      type: "text",
-      text: rec.quota ? `${rec.quota} คน` : "ไม่ระบุ",
-      size: "sm",
-      wrap: true,
-      margin: "xs"
-    },
-    {
-      type: "text",
-      text: "📄 คุณสมบัติ",
-      size: "sm",
-      weight: "bold",
-      wrap: true,
-      margin: "md"
-    },
-    {
-      type: "text",
-      text: rec.condition || "ไม่ระบุ",
-      size: "sm",
-      wrap: true,
-      margin: "xs"
-    },
-    {
-      type: "text",
-      text: "💡 เหตุผลที่เหมาะสม",
-      size: "sm",
-      weight: "bold",
-      wrap: true,
-      margin: "md"
-    },
-    {
-      type: "text",
-      text: rec.reason || "ไม่ระบุ",
-      size: "sm",
-      wrap: true,
-      margin: "xs"
-    },
-    {
-      type: "text",
-      text: "💼 อาชีพที่เกี่ยวข้อง",
-      weight: "bold",
-      margin: "md",
-      size: "sm"
-    },
-    ...(rec.careers?.length > 0
-      ? rec.careers.map(career => ({
+    body: {
+      type: "box",
+      layout: "vertical",
+      spacing: "sm",
+      contents: [
+        {
           type: "text",
-          text: `• ${career}`,
+          text: "📊 เกรดขั้นต่ำที่กำหนด",
           size: "sm",
-          margin: "xs",
-          wrap: true
-        }))
-      : [
-          {
-            type: "text",
-            text: "ไม่ระบุ",
-            size: "sm",
-            margin: "xs"
+          weight: "bold",
+          wrap: true,
+          margin: "md"
+        },
+        {
+          type: "text",
+          text: rec.requiredGrade !== null ? `${rec.requiredGrade}` : "ไม่ระบุ",
+          size: "sm",
+          wrap: true,
+          margin: "xs"
+        },
+        {
+          type: "text",
+          text: "🛠️ ทักษะความสามารถ",
+          size: "sm",
+          weight: "bold",
+          wrap: true,
+          margin: "md"
+        },
+        {
+          type: "text",
+          text: rec.abilities?.length > 0 ? `${rec.abilities.join(", ")}` : "ไม่ระบุ",
+          size: "sm",
+          wrap: true,
+          margin: "xs"
+        },
+        {
+          type: "text",
+          text: "✅ ความสามารถของคุณที่ตรงกับสาขา",
+          size: "sm",
+          weight: "bold",
+          wrap: true,
+          margin: "md"
+        },
+        {
+          type: "text",
+          text: rec.matchedAbilities?.length > 0 ? `${rec.matchedAbilities.join(", ")}` : "ไม่ระบุ",
+          size: "sm",
+          wrap: true,
+          margin: "xs"
+        },
+        {
+          type: "text",
+          text: "👥 รับจำนวน",
+          size: "sm",
+          weight: "bold",
+          wrap: true,
+          margin: "md"
+        },
+        {
+          type: "text",
+          text: rec.quota ? `${rec.quota} คน` : "ไม่ระบุ",
+          size: "sm",
+          wrap: true,
+          margin: "xs"
+        },
+        {
+          type: "text",
+          text: "📄 คุณสมบัติ",
+          size: "sm",
+          weight: "bold",
+          wrap: true,
+          margin: "md"
+        },
+        {
+          type: "text",
+          text: rec.condition || "ไม่ระบุ",
+          size: "sm",
+          wrap: true,
+          margin: "xs"
+        },
+        {
+          type: "text",
+          text: "💡 เหตุผลที่เหมาะสม",
+          size: "sm",
+          weight: "bold",
+          wrap: true,
+          margin: "md"
+        },
+        {
+          type: "text",
+          text: rec.reason || "ไม่ระบุ",
+          size: "sm",
+          wrap: true,
+          margin: "xs"
+        },
+        {
+          type: "text",
+          text: "💼 อาชีพที่เกี่ยวข้อง",
+          weight: "bold",
+          margin: "md",
+          size: "sm"
+        },
+        ...(rec.careers?.length > 0
+          ? rec.careers.map(career => ({
+              type: "text",
+              text: `• ${career}`,
+              size: "sm",
+              margin: "xs",
+              wrap: true
+            }))
+          : [
+              {
+                type: "text",
+                text: "ไม่ระบุ",
+                size: "sm",
+                margin: "xs"
+              }
+            ]),
+        {
+          type: "text",
+          text: "🔗 แหล่งข้อมูลเพิ่มเติม",
+          size: "sm",
+          weight: "bold",
+          wrap: true,
+          margin: "md"
+        },
+        {
+          type: "box",
+          layout: "horizontal",
+          spacing: "sm",
+          contents: [
+            {
+              type: "button",
+              style: "link",
+              height: "sm",
+              action: {
+                type: "uri",
+                label: "🌐 เว็บไซต์",
+                uri: rec.website || "https://edu.uru.ac.th/"
+              }
+            },
+            {
+              type: "button",
+              style: "link",
+              height: "sm",
+              action: {
+                type: "uri",
+                label: "📘 เฟสบุ๊คสาขา",
+                uri: rec.majorsFacebook || "https://www.facebook.com/"
+              }
+            },
+            {
+              type: "button",
+              style: "link",
+              height: "sm",
+              action: {
+                type: "uri",
+                label: "🏫 เฟสบุ๊คคณะ",
+                uri: rec.facultyFacebook || "https://www.facebook.com/"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    footer: {
+      type: "box",
+      layout: "vertical",
+      spacing: "sm",
+      contents: [
+        /*{
+          type: "button",
+          style: "primary",
+          color: "#1DB446",
+          action: {
+            type: "postback",
+            label: "ดูแผนการเรียน",
+            data: `studyplan=${encodeURIComponent(rec.faculty)}|${encodeURIComponent(rec.major)}`
           }
-        ]),
-
-    // 🔗 ปุ่มลิงก์เล็กๆ
-    {
-      type: "text",
-      text: "🔗 แหล่งข้อมูลเพิ่มเติม",
-      size: "sm",
-      weight: "bold",
-      wrap: true,
-      margin: "md"
-    },
-    {
-      type: "button",
-      style: "link",
-      height: "sm",
-      action: {
-        type: "uri",
-        label: "🌐 เว็บไซต์",
-        uri: rec.website || "https://edu.uru.ac.th/"
-      }
-    },
-    {
-      type: "button",
-      style: "link",
-      height: "sm",
-      action: {
-        type: "uri",
-        label: "📘 เฟสบุ๊คสาขา",
-        uri: rec.majorsFacebook || "https://www.facebook.com/"
-      }
-    },
-    {
-      type: "button",
-      style: "link",
-      height: "sm",
-      action: {
-        type: "uri",
-        label: "🏫 เฟสบุ๊คคณะ",
-        uri: rec.facultyFacebook || "https://www.facebook.com/"
-      }
-    }
-  ]
-},
-footer: {
-  type: "box",
-  layout: "vertical",
-  spacing: "sm",
-  contents: [
-/*{
-      type: "button",
-      style: "primary",
-      color: "#1DB446",
-      action: {
-        type: "postback",
-        label: "ดูแผนการเรียน",
-        data: `studyplan=${encodeURIComponent(rec.faculty)}|${encodeURIComponent(rec.major)}`
-      }
-    },*/
-      {
-      type: "button",
-      style: "secondary",
-      action: {
-        type: "message",
-        label: "เริ่มใหม่",
-        text: "เริ่มแนะนำใหม่"
-      }
-    }
-    ]
+        },*/
+        {
+          type: "button",
+          style: "secondary",
+          action: {
+            type: "message",
+            label: "เริ่มใหม่",
+            text: "เริ่มแนะนำใหม่"
+          }
+        }
+      ]
     }
   };
 });
