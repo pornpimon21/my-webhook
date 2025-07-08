@@ -1040,15 +1040,15 @@ await client.replyMessage(event.replyToken, [
                   `🧠 ความสามารถหรือความถนัดของคุณ : ${session.abilitiesInputText}\n\n` +
                   `🎯 เราขอแนะนำคณะและสาขาที่เหมาะสมกับคุณ 5 ลำดับดังนี้ค่ะ 👇`;
               // สร้าง Flex Message carousel
-             const bubbles = session.recommendations.map((rec) => {
-  return {
+const bubbles = session.recommendations.map((rec) => {
+  const mainBubble = {
     type: "bubble",
     size: "mega",
     hero: {
       type: "image",
-      url: "https://www.uru.ac.th/images/logouru2011.png", // โลโก้มหาวิทยาลัย
+      url: "https://www.uru.ac.th/images/logouru2011.png",
       size: "full",
-      aspectRatio: "1.51:1",
+      aspectRatio: "1:1",
       aspectMode: "fit"
     },
     header: {
@@ -1094,7 +1094,7 @@ await client.replyMessage(event.replyToken, [
         },
         {
           type: "text",
-          text: rec.requiredGrade !== null ? `${rec.requiredGrade}` : "ไม่ระบุ",
+          text: rec.requiredGrade || "ไม่ระบุ",
           size: "sm",
           wrap: true,
           margin: "xs"
@@ -1109,7 +1109,7 @@ await client.replyMessage(event.replyToken, [
         },
         {
           type: "text",
-          text: rec.abilities && rec.abilities.length > 0 ? `${rec.abilities.join(", ")}` : "ไม่ระบุ",
+          text: rec.abilities?.join(", ") || "ไม่ระบุ",
           size: "sm",
           wrap: true,
           margin: "xs"
@@ -1124,7 +1124,7 @@ await client.replyMessage(event.replyToken, [
         },
         {
           type: "text",
-          text: rec.matchedAbilities && rec.matchedAbilities.length > 0 ? `${rec.matchedAbilities.join(", ")}` : "ไม่ระบุ",
+          text: rec.matchedAbilities?.join(", ") || "ไม่ระบุ",
           size: "sm",
           wrap: true,
           margin: "xs"
@@ -1154,7 +1154,7 @@ await client.replyMessage(event.replyToken, [
         },
         {
           type: "text",
-          text: rec.condition ? rec.condition : "ไม่ระบุ",
+          text: rec.condition || "ไม่ระบุ",
           size: "sm",
           wrap: true,
           margin: "xs"
@@ -1169,7 +1169,7 @@ await client.replyMessage(event.replyToken, [
         },
         {
           type: "text",
-          text: rec.reason ? rec.reason : "ไม่ระบุ",
+          text: rec.reason || "ไม่ระบุ",
           size: "sm",
           wrap: true,
           margin: "xs"
@@ -1181,7 +1181,7 @@ await client.replyMessage(event.replyToken, [
           margin: "md",
           size: "sm"
         },
-        ...(rec.careers && rec.careers.length > 0
+        ...(rec.careers?.length
           ? rec.careers.map(career => ({
               type: "text",
               text: `• ${career}`,
@@ -1189,23 +1189,31 @@ await client.replyMessage(event.replyToken, [
               margin: "xs",
               wrap: true
             }))
-          : [
-              {
-                type: "text",
-                text: "ไม่ระบุ",
-                size: "sm",
-                margin: "xs"
-              }
-            ])
+          : [{
+              type: "text",
+              text: "ไม่ระบุ",
+              size: "sm",
+              margin: "xs"
+            }])
       ]
     },
     footer: {
       type: "box",
-      layout: "horizontal",
+      layout: "vertical",
+      spacing: "sm",
       contents: [
         {
           type: "button",
           style: "primary",
+          action: {
+            type: "message",
+            label: "📚 ดูข้อมูลเพิ่มเติม",
+            text: `ดูข้อมูลเพิ่มเติม ${rec.major}`
+          }
+        },
+        {
+          type: "button",
+          style: "secondary",
           action: {
             type: "message",
             label: "เริ่มใหม่",
@@ -1215,7 +1223,93 @@ await client.replyMessage(event.replyToken, [
       ]
     }
   };
-});
+const planBubble = {
+  type: "bubble",
+  header: {
+    type: "box",
+    layout: "vertical",
+    contents: [
+      {
+        type: "text",
+        text: `🗓️ แผนการเรียนสาขา ${rec.name}`,
+        weight: "bold",
+        size: "lg",
+        wrap: true
+      }
+    ]
+  },
+  body: {
+    type: "box",
+    layout: "vertical",
+    spacing: "sm",
+    contents: rec.studyPlan.map(line => ({
+      type: "text",
+      text: line,
+      size: "sm",
+      wrap: true
+    }))
+  },
+  footer: {
+    type: "box",
+    layout: "vertical",
+    spacing: "sm",
+    contents: [
+      {
+        type: "button",
+        style: "link",
+        action: {
+          type: "uri",
+          label: "🔗 ดูแผนการเรียนเต็ม",
+          uri: rec.planLink || "https://your-default-plan-link.com"
+        }
+      },
+      {
+        type: "button",
+        style: "link",
+        action: {
+          type: "uri",
+          label: "🌐 เว็บไซต์คณะ",
+          uri: rec.facultyWebsite || "https://uru.ac.th"
+        }
+      },
+      {
+        type: "button",
+        style: "link",
+        action: {
+          type: "uri",
+          label: "📘 Facebook คณะ",
+          uri: rec.facultyFacebook || "https://facebook.com"
+        }
+      },
+      {
+        type: "button",
+        style: "link",
+        action: {
+          type: "uri",
+          label: "📘 Facebook สาขา",
+          uri: rec.majorsFacebook || "https://facebook.com"
+        }
+      }
+    ]
+  }
+};
+
+  return [mainBubble, planBubble];
+}).flat();  // ✅ สุดท้ายใช้ .flat() รวมเป็น array เดียว
+
+
+if (event.message.text.startsWith("ดูข้อมูลเพิ่มเติม ")) {
+  const majorName = event.message.text.replace("ดูข้อมูลเพิ่มเติม ", "");
+  const rec = recommendations.find(r => r.name === majorName);
+  
+  if (rec) {
+    const planBubble = createPlanBubble(rec);
+    client.replyMessage(event.replyToken, planBubble);
+  } else {
+    client.replyMessage(event.replyToken, { type: "text", text: "ไม่พบข้อมูลสาขานี้" });
+  }
+}
+
 
 // 1. ส่งข้อความแนะนำก่อน
 await client.replyMessage(event.replyToken, {
