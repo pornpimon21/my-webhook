@@ -17,7 +17,14 @@ const sessionSchema = new mongoose.Schema({
       quota: Number,
       condition: String,
       reason: String,
-      careers: [String]
+      careers: [String],
+
+      // เพิ่มข้อมูลใหม่
+      studyPlan: [String],
+      studyPlanPdf: String,
+      website: String,
+      majorsFacebook: String,
+      facultyFacebook: String,
     }
   ]
 }, { timestamps: true });
