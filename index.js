@@ -766,27 +766,27 @@ if (userMessage === 'เริ่มแนะนำใหม่') {
   }
 }
 
-//ดูข้อแผนการเรียน
- if (event.type === 'postback') {
-    if (event.postback.data === 'action=show_study_plan') {
-      const flexMessage = generateStudyPlanFlex(data);
-      return client.replyMessage(event.replyToken, {
-        type: 'flex',
-        altText: 'แผนการเรียน',
-        contents: flexMessage
-      });
-    }
+  if (text === 'ข้อมูลเพิ่มเติม') {
+    const flexMessage = generateInfoDetailsFlex(data);
+    return client.replyMessage(event.replyToken, {
+      type: 'flex',
+      altText: 'ข้อมูลเพิ่มเติม',
+      contents: flexMessage
+    });
+  } else if (text === 'เริ่มแนะนำใหม่') {
+    // ตอบข้อความเริ่มใหม่หรืออื่น ๆ ตามที่ต้องการ
   }
-  
-//ดูขอมูลเพิ่มเติม
-   if (text === 'ข้อมูลเพิ่มเติม') {
-      const flexMessage = generateInfoDetailsFlex(data);
-      return client.replyMessage(event.replyToken, {
-        type: 'flex',
-        altText: 'ข้อมูลเพิ่มเติม',
-        contents: flexMessage
-      });
-    }
+
+if (event.type === 'postback') {
+  if (event.postback.data === 'action=show_study_plan') {
+    const flexMessage = generateStudyPlanFlex(data);
+    return client.replyMessage(event.replyToken, {
+      type: 'flex',
+      altText: 'แผนการเรียน',
+      contents: flexMessage
+    });
+  }
+}
 
 // ฟังก์ชันช่วยตรวจสอบข้อความ ให้รองรับทั้ง string และ number
 const safeText = (text) => {
@@ -1233,7 +1233,7 @@ footer: {
       action: {
         type: "message",
         label: "ดูข้อมูลเพิ่มเติม",
-        text: `ข้อมูลเพิ่มเติม: ${rec.major}` // หรือจะเป็น "ดูข้อมูลเพิ่มเติม: ภาษาไทย"
+        text: `ข้อมูลเพิ่มเติม`
       }
     },
     {
