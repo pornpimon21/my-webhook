@@ -12,7 +12,7 @@ const { buildQuestionFlex } = require('./skillsMenu');
 const analyzeAnswers = require('./analyze');
 const questions = require('./questions');
 const { faqFlex, faqs } = require('./faqFlex');
-
+const createFlexPlanSummary = require('./flexTemplates.js');
 const userSessions = {}; // <== ต้องมีไว้เก็บคำตอบของแต่ละ userId
 
 const app = express();
@@ -737,6 +737,29 @@ if (userSessions[userId]) {
   return;
 }
 
+if (userMessage === "📚 แผนการเรียน") {
+  const session = await getSession(userId);
+
+  if (!session || !session.recommendations || session.recommendations.length === 0) {
+    await client.replyMessage(event.replyToken, {
+      type: "text",
+      text: "ยังไม่มีข้อมูลแนะนำ กรุณาเริ่มใหม่ก่อนนะครับ"
+    });
+    return;
+  }
+
+  const rec = session.recommendations[0]; // เอาตัวแรกก่อน หรือเลือกตาม logic ของคุณ
+  const flexMessage = createFlexPlanSummary(rec);
+
+  await client.replyMessage(event.replyToken, {
+    type: "flex",
+    altText: "แผนการเรียนสรุป",
+    contents: flexMessage
+  });
+  return;
+}
+
+
 if (userMessage === 'เริ่มแนะนำใหม่') {
   let session = await Session.findOne({ sessionId: sessionId });
 
@@ -1293,17 +1316,16 @@ const bubbles = session.recommendations.map((rec) => {
       layout: "vertical",
       spacing: "sm",
       contents: [
-        /*{
-          type: "button",
-          style: "primary",
-          color: "#1DB446",
-          action: {
-            type: "postback",
-            label: "ดูแผนการเรียน",
-            data: `studyplan=${encodeURIComponent(rec.faculty)}|${encodeURIComponent(rec.major)}`
-          }
-        },*/
-        {
+      {
+      type: "button",
+      style: "secondary",
+      action: {
+        type: "message",
+        label: "📚 แผนการเรียน",
+        text: "ขอดูแผนการเรียน"
+       }
+      },
+      {
          type: "button",
           style: "primary",
           action: {
