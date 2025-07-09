@@ -765,10 +765,10 @@ if (userMessage === 'เริ่มแนะนำใหม่') {
   }
 }
 
- if (userMessage.startsWith("แผนการเรียน:")) {
-    const parts = userMessage.split(":")[1].split("-");
-    const facultyName = parts[0].trim();
-    const majorName = parts[1].trim();
+if (userMessage.startsWith("📚 แผนการเรียน")) {
+  const lines = userMessage.split("\n");
+  const facultyName = lines[1].replace("🏛️ คณะ : ", "").trim();
+  const majorName = lines[2].replace("📘 สาขา : ", "").trim();
 
     const session = await getSession(event.source.userId);
     const rec = session?.recommendations?.find(
@@ -1329,7 +1329,7 @@ const majorName = rec.major || "";
     action: {
     type: "message",
     label: "📚 แผนการเรียน",
-    text: `แผนการเรียน: ${facultyName} - ${majorName}`
+    text: `📚 แผนการเรียน\n🏛️ คณะ : ${facultyName}\n📘 สาขา : ${majorName}`
   }
       },
       {
