@@ -746,7 +746,8 @@ if (event.type === "postback") {
     const facultyName = data.get("faculty");
     const majorName = data.get("major");
 
-    const session = await getSession(sessionId); // ดึง session จาก DB
+    // ใช้ userId จาก event เป็น sessionId
+    const session = await getSession(event.source.userId);
 
     if (!session || !session.recommendations) {
       await client.replyMessage(event.replyToken, {
@@ -774,6 +775,7 @@ if (event.type === "postback") {
       altText: "แผนการเรียนสรุป",
       contents: flexMessage
     });
+    return;
   }
 }
 
