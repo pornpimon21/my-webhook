@@ -1,5 +1,3 @@
-// flexPlanCard.js
-
 function createPlanCard(facultyName, majorName, rec) {
   return {
     type: "bubble",
@@ -28,7 +26,7 @@ function createPlanCard(facultyName, majorName, rec) {
       contents: [
         {
           type: "text",
-          text: Array.isArray(rec.studyPlan) ? rec.studyPlan.join('\n') : (rec.studyPlan || "ไม่มีสรุปแผนการเรียน"),
+          text: rec.studyPlan ? rec.studyPlan.join('\n') : "ไม่มีสรุปแผนการเรียน",
           wrap: true,
           size: "sm"
         }
