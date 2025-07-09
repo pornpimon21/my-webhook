@@ -16,15 +16,17 @@ function createPlanCard(facultyName, majorName, rec) {
         {
           type: "text",
           text: `🏛️ ${facultyName} 📘 สาขา${majorName}`,
-          size: "sm",
+          size: "md",
+          weight: "bold",
           wrap: true,
-          margin: "sm"
+          margin: "xs"
         }
       ]
     },
     body: {
       type: "box",
       layout: "vertical",
+       margin: "sm",  // ห่างจาก header นิดเดียว
       contents: [
         {
           type: "separator",
@@ -37,15 +39,6 @@ function createPlanCard(facultyName, majorName, rec) {
           wrap: true,
           size: "sm",
           margin: "md"
-        },
-        {
-          type: "text",
-          text: "📄 นี่เป็นแค่แผนการเรียนแบบสรุป หากสนใจดูแผนการเรียนฉบับเต็มสามารถคลิกปุ่มข้างล่างได้เลยค่ะ 😊",
-          wrap: true,
-          size: "xs",
-          color: "#888888",
-          margin: "md",
-          align: "center"
         }
       ],
       spacing: "md"
@@ -54,6 +47,14 @@ function createPlanCard(facultyName, majorName, rec) {
       type: "box",
       layout: "vertical",
       contents: [
+        {
+          type: "text",
+          text: "📄 นี่เป็นแค่แผนการเรียนแบบสรุป หากสนใจดูแผนการเรียนฉบับเต็มสามารถคลิกปุ่มข้างล่างได้เลยค่ะ 😊",
+          size: "sm",
+          align: "center",
+          color: "#888888",
+          margin: "md"
+        },
         {
           type: "button",
           action: {
