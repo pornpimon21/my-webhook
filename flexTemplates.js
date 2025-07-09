@@ -1,4 +1,5 @@
-function createFlexPlanSummary(rec) {
+// ฟังก์ชันสร้าง flex message แผนการเรียน
+function createFlexPlanSummary(facultyName, major) {
   return {
     type: "bubble",
     header: {
@@ -7,10 +8,11 @@ function createFlexPlanSummary(rec) {
       contents: [
         {
           type: "text",
-          text: `📚 แผนการเรียน: ${rec.name}`,
+          text: `📚 แผนการเรียนสรุป: ${facultyName} - ${major.name}`,
           weight: "bold",
           size: "lg",
-          align: "center"
+          align: "center",
+          wrap: true
         }
       ]
     },
@@ -21,7 +23,7 @@ function createFlexPlanSummary(rec) {
       contents: [
         {
           type: "text",
-          text: rec.studyPlan.join("\n"),
+          text: major.studyPlan.join("\n"),
           size: "sm",
           wrap: true
         },
@@ -32,7 +34,7 @@ function createFlexPlanSummary(rec) {
           action: {
             type: "uri",
             label: "ดูแผนการเรียนเต็ม (PDF)",
-            uri: rec.studyPlanPdf || "https://default-url.com"
+            uri: major.studyPlanPdf || "https://yourdomain.com/default.pdf"
           }
         }
       ]

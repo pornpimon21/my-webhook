@@ -737,26 +737,47 @@ if (userSessions[userId]) {
   return;
 }
 
-if (userMessage === "📚 แผนการเรียน") {
-  const session = await getSession(userId);
 
-  if (!session || !session.recommendations || session.recommendations.length === 0) {
+// โค้ดส่วนตอบกลับข้อความ
+if (userMessage === "📚 แผนการเรียน") {
+  const session = await getSession(userId); // ดึง session จาก DB หรือ cache
+
+  if (!session || !session.faculty || !session.major) {
     await client.replyMessage(event.replyToken, {
       type: "text",
-      text: "ยังไม่มีข้อมูลแนะนำ กรุณาเริ่มใหม่ก่อนนะครับ"
+      text: "ยังไม่มีข้อมูลคณะหรือสาขาที่เลือก กรุณาเริ่มใหม่ก่อนนะครับ"
     });
     return;
   }
 
-  const rec = session.recommendations[0]; // เอาตัวแรกก่อน หรือเลือกตาม logic ของคุณ
-  const flexMessage = createFlexPlanSummary(rec);
+  const facultyName = session.faculty;
+  const majorName = session.major;
+
+  const faculty = faculties.find(f => f.name === facultyName);
+  if (!faculty) {
+    await client.replyMessage(event.replyToken, {
+      type: "text",
+      text: "ไม่พบข้อมูลคณะ กรุณาลองใหม่ครับ"
+    });
+    return;
+  }
+
+  const major = faculty.majors.find(m => m.name === majorName);
+  if (!major) {
+    await client.replyMessage(event.replyToken, {
+      type: "text",
+      text: "ไม่พบข้อมูลสาขาที่เลือก กรุณาลองใหม่ครับ"
+    });
+    return;
+  }
+
+  const flexMessage = createFlexPlanSummary(facultyName, major);
 
   await client.replyMessage(event.replyToken, {
     type: "flex",
     altText: "แผนการเรียนสรุป",
     contents: flexMessage
   });
-  return;
 }
 
 
