@@ -1342,66 +1342,69 @@ await client.pushMessage(event.source.userId, {
               return;
             }
           }
+   
+      
+      for (const event of events) {
+      if (event.type === 'message') {
+        // ... จัดการข้อความ
+      }
 
-if (event.type === "postback") {
-  console.log("Received postback event:", event);
+      // 👇 วางไว้ตรงนี้
+      else if (event.type === 'postback') {
+        console.log("Received postback event:", event);
 
-  if (!event.replyToken) {
-    console.log("ไม่มี replyToken ใน event นี้");
-    return;
-  }
+        if (!event.replyToken) {
+          console.log("ไม่มี replyToken ใน event นี้");
+          return;
+        }
 
-  const data = new URLSearchParams(event.postback.data);
-  const action = data.get("action");
-  console.log("Postback action:", action);
+        const data = new URLSearchParams(event.postback.data);
+        const action = data.get("action");
+        console.log("Postback action:", action);
 
-  if (action === "showStudyPlan") {
-    const facultyName = data.get("faculty");
-    const majorName = data.get("major");
-    console.log(`faculty: ${facultyName}, major: ${majorName}`);
+        if (action === "showStudyPlan") {
+          const facultyName = data.get("faculty");
+          const majorName = data.get("major");
+          console.log(`faculty: ${facultyName}, major: ${majorName}`);
 
-    const session = await getSession(event.source.userId);
-    console.log("Session data:", session);
+          const session = await getSession(event.source.userId);
+          console.log("Session data:", session);
 
-    if (!session || !session.recommendations) {
-      await client.replyMessage(event.replyToken, {
-        type: "text",
-        text: "ไม่พบข้อมูลคณะหรือสาขาที่เลือก กรุณาเริ่มใหม่"
-      });
-      return;
+          if (!session || !session.recommendations) {
+            await client.replyMessage(event.replyToken, {
+              type: "text",
+              text: "ไม่พบข้อมูลคณะหรือสาขาที่เลือก กรุณาเริ่มใหม่"
+            });
+            return;
+          }
+
+          const rec = session.recommendations.find(
+            r => r.faculty === facultyName && r.major === majorName
+          );
+
+          if (!rec) {
+            await client.replyMessage(event.replyToken, {
+              type: "text",
+              text: "ไม่พบข้อมูลแผนการเรียนของสาขาที่เลือกครับ"
+            });
+            return;
+          }
+
+          const flexMessage = createFlexPlanSummary(facultyName, majorName, rec);
+
+          await client.replyMessage(event.replyToken, {
+            type: "flex",
+            altText: "แผนการเรียนสรุป",
+            contents: flexMessage
+          });
+        } else {
+          await client.replyMessage(event.replyToken, {
+            type: "text",
+            text: "ยังไม่รองรับคำสั่งนี้ครับ"
+          });
+        }
+      }
     }
-
-    const rec = session.recommendations.find(r => r.faculty === facultyName && r.major === majorName);
-    console.log("Found recommendation:", rec);
-
-    if (!rec) {
-      await client.replyMessage(event.replyToken, {
-        type: "text",
-        text: "ไม่พบข้อมูลแผนการเรียนของสาขาที่เลือกครับ"
-      });
-      return;
-    }
-
-    const flexMessage = createFlexPlanSummary(facultyName, majorName, rec);
-
-    try {
-      await client.replyMessage(event.replyToken, {
-        type: "flex",
-        altText: "แผนการเรียนสรุป",
-        contents: flexMessage
-      });
-      console.log("Sent flex message successfully");
-    } catch (error) {
-      console.error("Error sending flex message:", error);
-    }
-  } else {
-    await client.replyMessage(event.replyToken, {
-      type: "text",
-      text: "ยังไม่รองรับคำสั่งนี้ครับ"
-    });
-  }
-}
-
           // กรณีทั่วไป ตอบข้อความธรรมดา
           await client.replyMessage(event.replyToken, {
             type: 'text',
