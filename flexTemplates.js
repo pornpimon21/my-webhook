@@ -28,7 +28,7 @@ function createPlanCard(facultyName, majorName, rec) {
       contents: [
         {
           type: "text",
-          text: rec.studyPlan || "ไม่มีสรุปแผนการเรียน",
+          text: Array.isArray(rec.studyPlan) ? rec.studyPlan.join('\n') : (rec.studyPlan || "ไม่มีสรุปแผนการเรียน"),
           wrap: true,
           size: "sm"
         }
