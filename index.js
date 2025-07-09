@@ -1318,29 +1318,28 @@ const majorName = rec.major || "";
   }
   ]
     },
-    footer: {
-      type: "box",
-      layout: "vertical",
-      spacing: "sm",
-      contents: [
-      {
-    type: "button",
-    style: "secondary",
-    action: {
-    type: "message",
-    label: "📚 แผนการเรียน",
-    text: `📚 แผนการเรียน\n🏛️ คณะ : ${facultyName}\n📘 สาขา : ${majorName}`
-  }
-      },
-      {
-         type: "button",
-          style: "primary",
-          action: {
-            type: "message",
-            label: "เริ่มใหม่",
-            text: "เริ่มแนะนำใหม่"
-          }
-        }
+  footer: {
+  type: "box",
+  layout: "horizontal",
+  spacing: "sm",
+  contents: [
+    {
+      type: "button",
+      style: "secondary",
+      action: {
+        type: "message",
+        label: "📚 แผนการเรียน",
+        text: `📚 แผนการเรียน\n🏛️ คณะ : ${facultyName}\n📘 สาขา : ${majorName}`
+      }
+    },
+    {
+      type: "button",
+      style: "primary",
+      action: {
+        type: "message",
+        label: "เริ่มใหม่",
+        text: "เริ่มแนะนำใหม่"
+      }        }
       ]
     }
   };
