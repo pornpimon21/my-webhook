@@ -12,7 +12,7 @@ const { buildQuestionFlex } = require('./skillsMenu');
 const analyzeAnswers = require('./analyze');
 const questions = require('./questions');
 const { faqFlex, faqs } = require('./faqFlex');
-const createPlanCard = require('./flexTemplates.js');
+const { createPlanCard } = require('./flexTemplates');
 const userSessions = {}; // <== ต้องมีไว้เก็บคำตอบของแต่ละ userId
 
 const app = express();
