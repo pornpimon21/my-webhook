@@ -12,7 +12,7 @@ const { buildQuestionFlex } = require('./skillsMenu');
 const analyzeAnswers = require('./analyze');
 const questions = require('./questions');
 const { faqFlex, faqs } = require('./faqFlex');
-const createFlexPlanSummary = require('./flexTemplates.js');
+const createPlanCard = require('./flexTemplates.js');
 const userSessions = {}; // <== ต้องมีไว้เก็บคำตอบของแต่ละ userId
 
 const app = express();
@@ -737,6 +737,7 @@ if (userSessions[userId]) {
   return;
 }
 
+
 if (userMessage === 'เริ่มแนะนำใหม่') {
   let session = await Session.findOne({ sessionId: sessionId });
 
@@ -763,6 +764,33 @@ if (userMessage === 'เริ่มแนะนำใหม่') {
     return;
   }
 }
+
+ if (userMessage.startsWith("แผนการเรียน:")) {
+    const parts = userMessage.split(":")[1].split("-");
+    const facultyName = parts[0].trim();
+    const majorName = parts[1].trim();
+
+    const session = await getSession(event.source.userId);
+    const rec = session?.recommendations?.find(
+      r => r.faculty === facultyName && r.major === majorName
+    );
+
+    if (!rec) {
+      await client.replyMessage(event.replyToken, {
+        type: "text",
+        text: "❌ ไม่พบข้อมูลแผนการเรียนของสาขานี้ค่ะ"
+      });
+      return;
+    }
+ const planCard = createPlanCard(facultyName, majorName, rec);
+
+    await client.replyMessage(event.replyToken, {
+      type: "flex",
+      altText: "แผนการเรียน",
+      contents: planCard
+    });
+     return;
+  }
 
 // ฟังก์ชันช่วยตรวจสอบข้อความ ให้รองรับทั้ง string และ number
 const safeText = (text) => {
@@ -1299,9 +1327,10 @@ const majorName = rec.major || "";
     type: "button",
     style: "secondary",
     action: {
-    type: "postback",
+    type: "message",
     label: "📚 แผนการเรียน",
-    data: `action=showStudyPlan&faculty=${encodeURIComponent(facultyName)}&major=${encodeURIComponent(majorName)}`       }
+    text: `แผนการเรียน: ${facultyName} - ${majorName}`
+  }
       },
       {
          type: "button",
@@ -1342,70 +1371,7 @@ await client.pushMessage(event.source.userId, {
               return;
             }
           }
-   
-      
-      for (const event of events) {
-      if (event.type === 'message') {
-        // ... จัดการข้อความ
-      }
-
-      // 👇 วางไว้ตรงนี้
-      else if (event.type === 'postback') {
-        console.log("Received postback event:", event);
-
-        if (!event.replyToken) {
-          console.log("ไม่มี replyToken ใน event นี้");
-          return;
-        }
-
-        const data = new URLSearchParams(event.postback.data);
-        const action = data.get("action");
-        console.log("Postback action:", action);
-
-        if (action === "showStudyPlan") {
-          const facultyName = data.get("faculty");
-          const majorName = data.get("major");
-          console.log(`faculty: ${facultyName}, major: ${majorName}`);
-
-          const session = await getSession(event.source.userId);
-          console.log("Session data:", session);
-
-          if (!session || !session.recommendations) {
-            await client.replyMessage(event.replyToken, {
-              type: "text",
-              text: "ไม่พบข้อมูลคณะหรือสาขาที่เลือก กรุณาเริ่มใหม่"
-            });
-            return;
-          }
-
-          const rec = session.recommendations.find(
-            r => r.faculty === facultyName && r.major === majorName
-          );
-
-          if (!rec) {
-            await client.replyMessage(event.replyToken, {
-              type: "text",
-              text: "ไม่พบข้อมูลแผนการเรียนของสาขาที่เลือกครับ"
-            });
-            return;
-          }
-
-          const flexMessage = createFlexPlanSummary(facultyName, majorName, rec);
-
-          await client.replyMessage(event.replyToken, {
-            type: "flex",
-            altText: "แผนการเรียนสรุป",
-            contents: flexMessage
-          });
-        } else {
-          await client.replyMessage(event.replyToken, {
-            type: "text",
-            text: "ยังไม่รองรับคำสั่งนี้ครับ"
-          });
-        }
-      }
-    }
-          // กรณีทั่วไป ตอบข้อความธรรมดา
+             // กรณีทั่วไป ตอบข้อความธรรมดา
           await client.replyMessage(event.replyToken, {
             type: 'text',
             text: replyText,

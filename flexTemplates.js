@@ -1,4 +1,6 @@
-function createFlexPlanSummary(facultyName, majorName, rec) {
+// flexPlanCard.js
+
+function createPlanCard(facultyName, majorName, rec) {
   return {
     type: "bubble",
     header: {
@@ -7,39 +9,47 @@ function createFlexPlanSummary(facultyName, majorName, rec) {
       contents: [
         {
           type: "text",
-          text: `📚 แผนการเรียนสรุป: ${facultyName} - ${majorName}`,
-          weight: "bold",
+          text: `📚 แผนการเรียน`,
           size: "lg",
-          align: "center",
-          wrap: true
+          weight: "bold"
+        },
+        {
+          type: "text",
+          text: `${facultyName} - ${majorName}`,
+          size: "sm",
+          wrap: true,
+          margin: "sm"
         }
       ]
     },
     body: {
       type: "box",
       layout: "vertical",
-      spacing: "sm",
       contents: [
         {
           type: "text",
-          // ตรวจสอบว่า studyPlan เป็น array หรือไม่ก่อน join
-          text: Array.isArray(rec.studyPlan) ? rec.studyPlan.join("\n") : "ไม่มีข้อมูลแผนการเรียน",
-          size: "sm",
-          wrap: true
-        },
+          text: rec.studyPlanSummary || "ไม่มีสรุปแผนการเรียน",
+          wrap: true,
+          size: "sm"
+        }
+      ]
+    },
+    footer: {
+      type: "box",
+      layout: "vertical",
+      contents: [
         {
           type: "button",
-          style: "link",
-          height: "sm",
           action: {
             type: "uri",
-            label: "ดูแผนการเรียนเต็ม (PDF)",
-            uri: rec.studyPlanPdf || "https://yourdomain.com/default.pdf"
-          }
+            label: "🔗 ดูแผนการเรียนฉบับเต็ม (PDF)",
+            uri: rec.studyPlanPdf || "https://example.com/default.pdf"
+          },
+          style: "primary"
         }
       ]
     }
   };
 }
 
-module.exports = createFlexPlanSummary;
+module.exports = { createPlanCard };
