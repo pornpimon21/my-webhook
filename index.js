@@ -363,7 +363,14 @@ results.forEach((r, i) => {
 });
 
 reply += `\n✨ ขอให้โชคดีกับการเลือกคณะนะคะ!`;
-    
+
+// ✅ เก็บข้อมูลผู้ใช้ด้านบนสุดก่อนเลย และ // เก็บค่าผลลัพธ์ทั้งหมดใน session แบบ array (ไม่รวม quota, gradeRequirement, etc.) 5 ลำดับ
+session.sessionId = sessionId;
+session.name = name;
+session.grade = grade;
+session.abilitiesInputText = abilities.join(", ");
+
+// แล้วค่อย map results
 session.recommendations = results.map((r, i) => {
   const majorInfo = faculties
     .find(f => f.name === r.faculty)
@@ -1328,7 +1335,7 @@ const majorName = rec.major || "";
       style: "secondary",
       action: {
         type: "message",
-        label: "📚 แผนการเรียน",
+        label: "แผนการเรียน",
         text: `📚 แผนการเรียน\n🏛️ คณะ : ${facultyName}\n📘 สาขา : ${majorName}`
       }
     },

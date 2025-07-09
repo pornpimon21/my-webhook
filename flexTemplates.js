@@ -7,10 +7,9 @@ function createPlanCard(facultyName, majorName, rec) {
       contents: [
         {
           type: "text",
-          text: `📚 แผนการเรียน`,
+          text: "📚 แผนการเรียน",
           size: "lg",
-          weight: "bold",
-          margin: "none"
+          weight: "bold"
         },
         {
           type: "text",
@@ -19,31 +18,34 @@ function createPlanCard(facultyName, majorName, rec) {
           wrap: true,
           margin: "md"
         }
-      ],
-      paddingBottom: "lg"  // เว้นห่างระหว่าง header กับ body เยอะขึ้น
+      ]
     },
     body: {
       type: "box",
       layout: "vertical",
       contents: [
         {
+          type: "separator",
+          margin: "md",
+          color: "#DDDDDD"
+        },
+        {
           type: "text",
           text: rec.studyPlan ? rec.studyPlan.join('\n\n') : "ไม่มีสรุปแผนการเรียน",
           wrap: true,
           size: "sm",
-          margin: "none"
+          margin: "md"
         },
         {
           type: "text",
-          text: "นี่เป็นแค่แผนการเรียนแบบสรุป หากสนใจดูแผนการเรียนฉบับเต็มสามารถคลิกปุ่มข้างล่างได้เลยค่ะ 😊",
+          text: "📄 นี่เป็นแค่แผนการเรียนแบบสรุป หากสนใจดูแผนการเรียนฉบับเต็มสามารถคลิกปุ่มข้างล่างได้เลยค่ะ 😊",
           wrap: true,
           size: "xs",
-          color: "#999999",
+          color: "#888888",
           margin: "md"
         }
       ],
-      spacing: "md",    // เว้นระยะห่างระหว่างข้อความใน body
-      paddingTop: "none"
+      spacing: "md"
     },
     footer: {
       type: "box",
@@ -56,7 +58,8 @@ function createPlanCard(facultyName, majorName, rec) {
             label: "🔗 ดูแผนการเรียนฉบับเต็ม (PDF)",
             uri: rec.studyPlanPdf || "https://example.com/default.pdf"
           },
-          style: "primary"
+          style: "primary",
+          color: "#4A90E2"
         }
       ],
       spacing: "md"
