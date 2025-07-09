@@ -742,12 +742,16 @@ if (event.type === "postback") {
   const data = new URLSearchParams(event.postback.data);
   const action = data.get("action");
 
+  if (!event.replyToken) {
+    console.log("ไม่มี replyToken ใน event นี้");
+    return;
+  }
+
   if (action === "showStudyPlan") {
     const facultyName = data.get("faculty");
     const majorName = data.get("major");
 
-    // ใช้ userId จาก event เป็น sessionId
-    const session = await getSession(event.source.userId);
+    const session = await getSession(event.source.userId); // หรือใช้ sessionId ที่ถูกต้อง
 
     if (!session || !session.recommendations) {
       await client.replyMessage(event.replyToken, {
@@ -767,7 +771,6 @@ if (event.type === "postback") {
       return;
     }
 
-    // สร้าง flex message แผนการเรียน
     const flexMessage = createFlexPlanSummary(facultyName, majorName, rec);
 
     await client.replyMessage(event.replyToken, {
@@ -775,7 +778,12 @@ if (event.type === "postback") {
       altText: "แผนการเรียนสรุป",
       contents: flexMessage
     });
-    return;
+  } else {
+    // ถ้า action อื่น ๆ หรือไม่รู้จัก
+    await client.replyMessage(event.replyToken, {
+      type: "text",
+      text: "ยังไม่รองรับคำสั่งนี้ครับ"
+    });
   }
 }
 
@@ -1343,8 +1351,7 @@ const majorName = rec.major || "";
     action: {
     type: "postback",
     label: "📚 แผนการเรียน",
-    data: `action=showStudyPlan&faculty=${encodeURIComponent(facultyName)}&major=${encodeURIComponent(majorName)}`
-       }
+    data: `action=showStudyPlan&faculty=${encodeURIComponent(facultyName)}&major=${encodeURIComponent(majorName)}`       }
       },
       {
          type: "button",
