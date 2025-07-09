@@ -1196,52 +1196,97 @@ const bubbles = session.recommendations.map((rec) => {
                 margin: "xs"
               }
             ]),
+{
+  type: "text",
+  text: "🔗 ช่องทางติดตามข่าวสาร",
+  size: "sm",
+  weight: "bold",
+  wrap: true,
+  margin: "md"
+},
+{
+  type: "box",
+  layout: "horizontal",
+  spacing: "sm",
+  contents: [
+    {
+      type: "box",
+      layout: "vertical",
+      contents: [
         {
-          type: "text",
-          text: "🔗 ช่องทางติดต่อสื่อสาร",
-          size: "sm",
-          weight: "bold",
-          wrap: true,
-          margin: "md"
+          type: "button",
+          style: "link",
+          height: "sm",
+          action: {
+            type: "uri",
+            label: "🌐",
+            uri: rec.website || "https://edu.uru.ac.th/"
+          }
         },
         {
-          type: "box",
-          layout: "horizontal",
-          spacing: "sm",
-          contents: [
-            {
-              type: "button",
-              style: "link",
-              height: "sm",
-              action: {
-                type: "uri",
-                label: "🌐",
-                uri: rec.website || "https://edu.uru.ac.th/"
-              }
-            },
-            {
-              type: "button",
-              style: "link",
-              height: "sm",
-              action: {
-                type: "uri",
-                label: "📘",
-                uri: rec.majorsFacebook || "https://www.facebook.com/"
-              }
-            },
-            {
-              type: "button",
-              style: "link",
-              height: "sm",
-              action: {
-                type: "uri",
-                label: "🏫",
-                uri: rec.facultyFacebook || "https://www.facebook.com/"
-              }
-            }
-          ]
+          type: "text",
+          text: "เว็บไซต์",
+          align: "center",
+          size: "xs",
+          wrap: true
         }
-      ]
+      ],
+      flex: 1,
+      spacing: "xs"
+    },
+    {
+      type: "box",
+      layout: "vertical",
+      contents: [
+        {
+          type: "button",
+          style: "link",
+          height: "sm",
+          action: {
+            type: "uri",
+            label: "📘",
+            uri: rec.majorsFacebook || "https://www.facebook.com/"
+          }
+        },
+        {
+          type: "text",
+          text: "สาขา",
+          align: "center",
+          size: "xs",
+          wrap: true
+        }
+      ],
+      flex: 1,
+      spacing: "xs"
+    },
+    {
+      type: "box",
+      layout: "vertical",
+      contents: [
+        {
+          type: "button",
+          style: "link",
+          height: "sm",
+          action: {
+            type: "uri",
+            label: "🏫",
+            uri: rec.facultyFacebook || "https://www.facebook.com/"
+          }
+        },
+        {
+          type: "text",
+          text: "คณะ",
+          align: "center",
+          size: "xs",
+          wrap: true
+        }
+      ],
+      flex: 1,
+      spacing: "xs"
+    }
+  ]
+  }
+  ]
     },
     footer: {
       type: "box",
