@@ -7,16 +7,18 @@ function createPlanCard(facultyName, majorName, rec) {
       contents: [
         {
           type: "text",
-          text: "📚 แผนการเรียน",
+          text: "📚 แผนการเรียน 📚",
           size: "lg",
-          weight: "bold"
+          weight: "bold",
+          color: "#8E44AD",
+          align: "center"
         },
         {
           type: "text",
-          text: `🏛️ คณะ : ${facultyName}  📘 สาขา : ${majorName}`,
+          text: `🏛️ ${facultyName} 📘 สาขา${majorName}`,
           size: "sm",
           wrap: true,
-          margin: "md"
+          margin: "sm"
         }
       ]
     },
@@ -26,7 +28,7 @@ function createPlanCard(facultyName, majorName, rec) {
       contents: [
         {
           type: "separator",
-          margin: "md",
+          margin: "sm",
           color: "#DDDDDD"
         },
         {
@@ -42,7 +44,8 @@ function createPlanCard(facultyName, majorName, rec) {
           wrap: true,
           size: "xs",
           color: "#888888",
-          margin: "md"
+          margin: "md",
+          align: "center"
         }
       ],
       spacing: "md"
