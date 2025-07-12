@@ -1003,31 +1003,122 @@ if (matchedMajor) {
       layout: "vertical",
       spacing: "sm",
       contents: [
-     // เกรดขั้นต่ำ
-    { type: "text", text: "📊 เกรดขั้นต่ำ", size: "sm", weight: "bold", margin: "md" },
-    { type: "text", text: gradeText, size: "sm", wrap: true },
+        // เกรดขั้นต่ำ
+        { type: "text", text: "📊 เกรดขั้นต่ำ", size: "sm", weight: "bold", margin: "md" },
+        { type: "text", text: gradeText, size: "sm", wrap: true },
 
-    // ทักษะความสามารถ
-    { type: "text", text: "🧠 ความสามารถที่ควรมี", size: "sm", weight: "bold", margin: "md" },
-    { type: "text", text: abilityText, size: "sm", wrap: true },
+        // ทักษะความสามารถ
+        { type: "text", text: "🧠 ความสามารถที่ควรมี", size: "sm", weight: "bold", margin: "md" },
+        { type: "text", text: abilityText, size: "sm", wrap: true },
 
-    // จำนวนที่รับ
-    { type: "text", text: "🧠 รับจำนวน", size: "sm", weight: "bold", margin: "md" },
-    { type: "text", text: quotaText, size: "sm", wrap: true },
+        // จำนวนที่รับ
+        { type: "text", text: "🧠 รับจำนวน", size: "sm", weight: "bold", margin: "md" },
+        { type: "text", text: quotaText, size: "sm", wrap: true },
 
-    // คุณสมบัติ
-    { type: "text", text: "📌 เงื่อนไข", size: "sm", weight: "bold", margin: "md" },
-    { type: "text", text: conditionText, size: "sm", wrap: true },
+        // คุณสมบัติ
+        { type: "text", text: "📌 เงื่อนไข", size: "sm", weight: "bold", margin: "md" },
+        { type: "text", text: conditionText, size: "sm", wrap: true },
 
-    // อาชีพ
-    { type: "text", text: "🎯 อาชีพที่เกี่ยวข้อง", size: "sm", weight: "bold", margin: "md" },
-    ...careersContents
-  ] 
+        // อาชีพ
+        { type: "text", text: "🎯 อาชีพที่เกี่ยวข้อง", size: "sm", weight: "bold", margin: "md" },
+        ...careersContents,
+
+        // ช่องทางติดตามข่าวสาร
+        { type: "text", text: "🔗 ช่องทางติดตามข่าวสาร", size: "sm", weight: "bold", wrap: true, margin: "md" },
+        {
+          type: "box",
+          layout: "horizontal",
+          spacing: "sm",
+          contents: [
+            {
+              type: "box",
+              layout: "vertical",
+              flex: 1,
+              spacing: "xs",
+              contents: [
+                {
+                  type: "button",
+                  style: "link",
+                  height: "sm",
+                  action: {
+                    type: "uri",
+                    label: "🌐",
+                    uri: safeText(matchedMajor?.website) || "https://edu.uru.ac.th/"                  }
+                },
+                {
+                  type: "text",
+                  text: "เว็บไซต์",
+                  align: "center",
+                  size: "xs",
+                  wrap: true
+                }
+              ]
+            },
+            {
+              type: "box",
+              layout: "vertical",
+              flex: 1,
+              spacing: "xs",
+              contents: [
+                {
+                  type: "button",
+                  style: "link",
+                  height: "sm",
+                  action: {
+                    type: "uri",
+                    label: "📘",
+                    uri: safeText(matchedMajor?.majorsFacebook) || "https://www.facebook.com/"                  }
+                },
+                {
+                  type: "text",
+                  text: "สาขา",
+                  align: "center",
+                  size: "xs",
+                  wrap: true
+                }
+              ]
+            },
+            {
+              type: "box",
+              layout: "vertical",
+              flex: 1,
+              spacing: "xs",
+              contents: [
+                {
+                  type: "button",
+                  style: "link",
+                  height: "sm",
+                  action: {
+                    type: "uri",
+                    label: "🏫",
+                    uri: safeText(matchedMajor?.facultyFacebook) || "https://www.facebook.com/"                  }
+                },
+                {
+                  type: "text",
+                  text: "คณะ",
+                  align: "center",
+                  size: "xs",
+                  wrap: true
+                }
+              ]
+            }
+          ]
+        }
+      ]
     },
     footer: {
       type: "box",
       layout: "horizontal",
       contents: [
+        {
+          type: "button",
+          style: "secondary",
+          action: {
+            type: "message",
+            label: "แผนการเรียน",
+            text: `📚 แผนการเรียน\n🏛️ คณะ : ${facultyName}\n📘 สาขา : ${majorName}`
+          }
+        },    
         {
           type: "button",
           style: "primary",
