@@ -986,7 +986,7 @@ if (matchedMajor) {
       type: "image",
       url: safeText(matchedMajor?.logoUrl) || "https://www.uru.ac.th/images/logouru2011.png",
       size: "full",
-      aspectRatio: "1.85:1",
+      aspectRatio: "1.51:1",
       aspectMode: "fit"
     },
       header: {
@@ -1186,7 +1186,7 @@ const majorName = rec.major || "";
       type: "image",
       url: rec.logoUrl || "https://www.uru.ac.th/images/logouru2011.png",
       size: "full",
-      aspectRatio: "1.85:1",
+      aspectRatio: "1.51:1",
       aspectMode: "fit"
     },
     header: {
