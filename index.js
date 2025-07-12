@@ -968,6 +968,8 @@ if (matchedMajor) {
   const abilityText = safeArray(matchedMajor?.ability).join(", ");
   const quotaText = safeText(matchedMajor?.quota);
   const careersArray = safeArray(matchedMajor?.careers);
+  const facultyName = safeText(matchedFaculty?.name);
+  const majorName = safeText(matchedMajor?.name);
 
   const careersContents = careersArray.map(career => ({
     type: "text",
