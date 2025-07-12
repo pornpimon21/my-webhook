@@ -394,6 +394,7 @@ session.recommendations = results.map((r, i) => {
     website: majorInfo.website,
     majorsFacebook: majorInfo.majorsFacebook,
     facultyFacebook: majorInfo.facultyFacebook,
+    logoUrl: majorInfo.logoUrl
   };
 });
 
@@ -1175,7 +1176,7 @@ const majorName = rec.major || "";
     size: "mega",
     hero: {
       type: "image",
-      url: logoUrl || "https://www.uru.ac.th/images/logouru2011.png",
+      url: rec.logoUrl || "https://www.uru.ac.th/images/logouru2011.png",
       size: "full",
       aspectRatio: "1.51:1",
       aspectMode: "fit"
