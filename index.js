@@ -986,7 +986,7 @@ if (matchedMajor) {
       type: "image",
       url: safeText(matchedMajor?.logoUrl) || "https://www.uru.ac.th/images/logouru2011.png",
       size: "full",
-      aspectRatio: "1.51:1",
+      aspectRatio: "1.2:1",
       aspectMode: "fit"
     },
       header: {
@@ -1101,7 +1101,7 @@ if (matchedMajor) {
                   height: "sm",
                   action: {
                     type: "uri",
-                    label: "🏫",
+                    label: "🏛️",
                     uri: safeText(matchedMajor?.facultyFacebook) || "https://www.facebook.com/"                  }
                 },
                 {
@@ -1186,7 +1186,7 @@ const majorName = rec.major || "";
       type: "image",
       url: rec.logoUrl || "https://www.uru.ac.th/images/logouru2011.png",
       size: "full",
-      aspectRatio: "1.51:1",
+      aspectRatio: "1.2:1",
       aspectMode: "fit"
     },
     header: {
@@ -1408,7 +1408,7 @@ const majorName = rec.major || "";
           height: "sm",
           action: {
             type: "uri",
-            label: "🏫",
+            label: "🏛️",
             uri: rec.facultyFacebook || "https://www.facebook.com/"
           }
         },
