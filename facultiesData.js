@@ -17,7 +17,8 @@ const faculties = [
         studyPlanPdf: "http://academic.uru.ac.th/DB_course/doc_course/124.pdf",
         website: "https://edu.uru.ac.th/",      
         majorsFacebook: "https://www.facebook.com/profile.php?id=100063988815394#",
-        facultyFacebook: "https://www.facebook.com/educationuruacth"
+        facultyFacebook: "https://www.facebook.com/educationuruacth",
+        logoUrl: "https://kharusartsuksa.uru.ac.th/images/uru_logo.png"
       },
       {
         name: 'วิทยาศาสตร์ทั่วไป',

@@ -1175,7 +1175,7 @@ const majorName = rec.major || "";
     size: "mega",
     hero: {
       type: "image",
-      url: "https://www.uru.ac.th/images/logouru2011.png", // โลโก้มหาวิทยาลัย
+      url: logoUrl || "https://www.uru.ac.th/images/logouru2011.png",
       size: "full",
       aspectRatio: "1.51:1",
       aspectMode: "fit"

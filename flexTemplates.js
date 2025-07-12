@@ -16,14 +16,14 @@ function createPlanCard(facultyName, majorName, rec) {
         },
         {
           type: "text",
-          text: `🏛️ คณะ: ${facultyName}`,
+          text: `🏛️ ${facultyName}`,
           size: "md",
           weight: "bold",
           wrap: true
         },
         {
           type: "text",
-          text: `📘 สาขา: ${majorName}`,
+          text: `📘 สาขา${majorName}`,
           size: "md",
           weight: "bold",
           wrap: true
@@ -55,7 +55,7 @@ function createPlanCard(facultyName, majorName, rec) {
       contents: [
         {
           type: "text",
-          text: "📄 คลิกดูแผนการเรียนฉบับเต็มข้างล่างได้เลยค่ะ 😊",
+          text: "📄 เป็นแค่แผนการเรียนแบบสรุปนะคะ 😊",
           size: "sm",
           align: "center",
           color: "#888888",
