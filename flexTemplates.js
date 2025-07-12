@@ -4,6 +4,7 @@ function createPlanCard(facultyName, majorName, rec) {
     header: {
       type: "box",
       layout: "vertical",
+      spacing: "xs",
       contents: [
         {
           type: "text",
@@ -15,41 +16,46 @@ function createPlanCard(facultyName, majorName, rec) {
         },
         {
           type: "text",
-          text: `🏛️ ${facultyName} 📘 สาขา${majorName}`,
+          text: `🏛️ คณะ: ${facultyName}`,
           size: "md",
           weight: "bold",
-          wrap: true,
-          margin: "xs"
+          wrap: true
+        },
+        {
+          type: "text",
+          text: `📘 สาขา: ${majorName}`,
+          size: "md",
+          weight: "bold",
+          wrap: true
+        },
+        {
+          type: "separator",
+          margin: "sm",
+          color: "#DDDDDD"
         }
       ]
     },
     body: {
       type: "box",
       layout: "vertical",
-       margin: "sm",  // ห่างจาก header นิดเดียว
+      spacing: "md",
       contents: [
-        {
-          type: "separator",
-          margin: "sm",
-          color: "#DDDDDD"
-        },
         {
           type: "text",
           text: rec.studyPlan ? rec.studyPlan.join('\n\n') : "ไม่มีสรุปแผนการเรียน",
           wrap: true,
-          size: "sm",
-          margin: "md"
+          size: "sm"
         }
-      ],
-      spacing: "md"
+      ]
     },
     footer: {
       type: "box",
       layout: "vertical",
+      spacing: "md",
       contents: [
         {
           type: "text",
-          text: "📄 นี่เป็นแค่แผนการเรียนแบบสรุป หากสนใจดูแผนการเรียนฉบับเต็มสามารถคลิกปุ่มข้างล่างได้เลยค่ะ 😊",
+          text: "📄 คลิกดูแผนการเรียนฉบับเต็มข้างล่างได้เลยค่ะ 😊",
           size: "sm",
           align: "center",
           color: "#888888",
@@ -65,8 +71,7 @@ function createPlanCard(facultyName, majorName, rec) {
           style: "primary",
           color: "#4A90E2"
         }
-      ],
-      spacing: "md"
+      ]
     }
   };
 }
