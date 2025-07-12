@@ -984,7 +984,7 @@ if (matchedMajor) {
     size: "mega",
     hero: {
       type: "image",
-      url: safeText(matchedFaculty?.logoUrl) || "https://www.uru.ac.th/images/logouru2011.png",
+      url: safeText(matchedMajor?.logoUrl) || "https://www.uru.ac.th/images/logouru2011.png",
       size: "full",
       aspectRatio: "1.51:1",
       aspectMode: "fit"
