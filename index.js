@@ -981,7 +981,15 @@ if (matchedMajor) {
 
   const bubble = {
     type: "bubble",
-    header: {
+    size: "mega",
+    hero: {
+      type: "image",
+      url: safeText(matchedFaculty?.logoUrl) || "https://www.uru.ac.th/images/logouru2011.png",
+      size: "full",
+      aspectRatio: "1.51:1",
+      aspectMode: "fit"
+    },
+      header: {
       type: "box",
       layout: "vertical",
       contents: [
