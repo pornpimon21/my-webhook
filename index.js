@@ -173,25 +173,27 @@ app.post("/webhook", async (req, res) => {
     });
   }
 
-// ฟังก์ชัน delay (หน่วงเวลา)
+
+// ฟังก์ชันหน่วงเวลา
 function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// ฟังก์ชันส่ง pushMessage พร้อม retry ถ้าโดน 429
+// ฟังก์ชันส่ง push message พร้อม retry เมื่อเจอ 429 (Too Many Requests)
 async function safePushMessage(to, message, retryCount = 0) {
   try {
     await client.pushMessage(to, message);
   } catch (err) {
     if (err.statusCode === 429 && retryCount < 5) {
-      console.warn(`Too many requests, retry #${retryCount + 1} after 1 second`);
-      await delay(1000);
+      console.warn(`Too many requests, retrying pushMessage #${retryCount + 1} after 1 second...`);
+      await delay(1000); // รอ 1 วินาที แล้วลองใหม่
       return safePushMessage(to, message, retryCount + 1);
     }
     console.error("Push message error:", err);
   }
 }
 
+// โค้ดหลัก (เช่น ใน webhook handler)
 if (intent === "get name") {
   const name = params.name || "คุณ";
   session.name = name;
@@ -205,6 +207,7 @@ if (intent === "get name") {
     "ปวส": "ปวส 🔧",
     "อื่นๆ": "อื่นๆ 📘"
   };
+
   const levelBubbles = levels.map((level, index) => ({
     type: "bubble",
     size: "micro",
@@ -226,14 +229,17 @@ if (intent === "get name") {
     }
   }));
 
-  // 1. ตอบกลับ Dialogflow ก่อน
+  // ตอบกลับ Dialogflow ทันที
   res.json({
     fulfillmentText: `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓\n👇 เลือกจากปุ่มด้านล่างได้เลยค่ะ`
   });
 
-  // 2. หน่วงเวลามากขึ้น ก่อนส่ง pushMessage
-  setTimeout(() => {
-    safePushMessage(sessionId, {
+  // ฟังก์ชัน async สำหรับหน่วงเวลาและส่ง push message
+  async function delayedPush() {
+    await delay(1500); // หน่วง 1.5 วินาที เพื่อให้ข้อความแสดงก่อน
+
+    // ส่ง push message พร้อม retry ถ้าโดน rate limit
+    await safePushMessage(sessionId, {
       type: "flex",
       altText: "เลือกระดับการศึกษา",
       contents: {
@@ -241,7 +247,10 @@ if (intent === "get name") {
         contents: levelBubbles
       }
     });
-  }, 2000); // รอ 2 วินาที
+  }
+
+  // เรียกฟังก์ชัน async แบบไม่บล็อก flow หลัก
+  delayedPush().catch(err => console.error("Delayed push failed:", err));
 
   return;
 }
