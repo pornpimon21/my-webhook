@@ -25,6 +25,7 @@ const sessionSchema = new mongoose.Schema({
       website: String,
       majorsFacebook: String,
       facultyFacebook: String,
+      logoUrl: String //โลโก้
     }
   ]
 }, { timestamps: true });
