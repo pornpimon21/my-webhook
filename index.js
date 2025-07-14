@@ -394,6 +394,7 @@ session.recommendations = results.map((r, i) => {
     website: majorInfo.website,
     majorsFacebook: majorInfo.majorsFacebook,
     facultyFacebook: majorInfo.facultyFacebook,
+    logoUrl: majorInfo.logoUrl
   };
 });
 
@@ -745,7 +746,7 @@ if (userSessions[userId]) {
 }
 
 
-if (userMessage === 'เริ่มแนะนำใหม่') {
+if (userMessage === 'เริ่มแนะนำคณะและสาขาใหม่') {
   let session = await Session.findOne({ sessionId: sessionId });
 
   if (session && session.name && session.grade && session.educationLevel) {
@@ -968,6 +969,8 @@ if (matchedMajor) {
   const abilityText = safeArray(matchedMajor?.ability).join(", ");
   const quotaText = safeText(matchedMajor?.quota);
   const careersArray = safeArray(matchedMajor?.careers);
+  const facultyName = safeText(matchedFaculty?.name);
+  const majorName = safeText(matchedMajor?.name);
 
   const careersContents = careersArray.map(career => ({
     type: "text",
@@ -978,7 +981,15 @@ if (matchedMajor) {
 
   const bubble = {
     type: "bubble",
-    header: {
+    size: "mega",
+    hero: {
+      type: "image",
+      url: safeText(matchedMajor?.logoUrl) || "https://www.uru.ac.th/images/logouru2011.png",
+      size: "full",
+      aspectRatio: "1.51:1",
+      aspectMode: "fit"
+    },
+      header: {
       type: "box",
       layout: "vertical",
       contents: [
@@ -1003,31 +1014,122 @@ if (matchedMajor) {
       layout: "vertical",
       spacing: "sm",
       contents: [
-     // เกรดขั้นต่ำ
-    { type: "text", text: "📊 เกรดขั้นต่ำ", size: "sm", weight: "bold", margin: "md" },
-    { type: "text", text: gradeText, size: "sm", wrap: true },
+        // เกรดขั้นต่ำ
+        { type: "text", text: "📊 เกรดขั้นต่ำ", size: "sm", weight: "bold", margin: "md" },
+        { type: "text", text: gradeText, size: "sm", wrap: true },
 
-    // ทักษะความสามารถ
-    { type: "text", text: "🧠 ความสามารถที่ควรมี", size: "sm", weight: "bold", margin: "md" },
-    { type: "text", text: abilityText, size: "sm", wrap: true },
+        // ทักษะความสามารถ
+        { type: "text", text: "🧠 ความสามารถที่ควรมี", size: "sm", weight: "bold", margin: "md" },
+        { type: "text", text: abilityText, size: "sm", wrap: true },
 
-    // จำนวนที่รับ
-    { type: "text", text: "🧠 รับจำนวน", size: "sm", weight: "bold", margin: "md" },
-    { type: "text", text: quotaText, size: "sm", wrap: true },
+        // จำนวนที่รับ
+        { type: "text", text: "🧠 รับจำนวน", size: "sm", weight: "bold", margin: "md" },
+        { type: "text", text: quotaText, size: "sm", wrap: true },
 
-    // คุณสมบัติ
-    { type: "text", text: "📌 เงื่อนไข", size: "sm", weight: "bold", margin: "md" },
-    { type: "text", text: conditionText, size: "sm", wrap: true },
+        // คุณสมบัติ
+        { type: "text", text: "📌 เงื่อนไข", size: "sm", weight: "bold", margin: "md" },
+        { type: "text", text: conditionText, size: "sm", wrap: true },
 
-    // อาชีพ
-    { type: "text", text: "🎯 อาชีพที่เกี่ยวข้อง", size: "sm", weight: "bold", margin: "md" },
-    ...careersContents
-  ] 
+        // อาชีพ
+        { type: "text", text: "🎯 อาชีพที่เกี่ยวข้อง", size: "sm", weight: "bold", margin: "md" },
+        ...careersContents,
+
+        // ช่องทางติดตามข่าวสาร
+        { type: "text", text: "🔗 ช่องทางติดตามข่าวสาร", size: "sm", weight: "bold", wrap: true, margin: "md" },
+        {
+          type: "box",
+          layout: "horizontal",
+          spacing: "sm",
+          contents: [
+            {
+              type: "box",
+              layout: "vertical",
+              flex: 1,
+              spacing: "xs",
+              contents: [
+                {
+                  type: "button",
+                  style: "link",
+                  height: "sm",
+                  action: {
+                    type: "uri",
+                    label: "🌐",
+                    uri: safeText(matchedMajor?.website) || "https://edu.uru.ac.th/"                  }
+                },
+                {
+                  type: "text",
+                  text: "เว็บไซต์",
+                  align: "center",
+                  size: "xs",
+                  wrap: true
+                }
+              ]
+            },
+            {
+              type: "box",
+              layout: "vertical",
+              flex: 1,
+              spacing: "xs",
+              contents: [
+                {
+                  type: "button",
+                  style: "link",
+                  height: "sm",
+                  action: {
+                    type: "uri",
+                    label: "📘",
+                    uri: safeText(matchedMajor?.majorsFacebook) || "https://www.facebook.com/"                  }
+                },
+                {
+                  type: "text",
+                  text: "สาขา",
+                  align: "center",
+                  size: "xs",
+                  wrap: true
+                }
+              ]
+            },
+            {
+              type: "box",
+              layout: "vertical",
+              flex: 1,
+              spacing: "xs",
+              contents: [
+                {
+                  type: "button",
+                  style: "link",
+                  height: "sm",
+                  action: {
+                    type: "uri",
+                    label: "🏛️",
+                    uri: safeText(matchedMajor?.facultyFacebook) || "https://www.facebook.com/"                  }
+                },
+                {
+                  type: "text",
+                  text: "คณะ",
+                  align: "center",
+                  size: "xs",
+                  wrap: true
+                }
+              ]
+            }
+          ]
+        }
+      ]
     },
     footer: {
       type: "box",
       layout: "horizontal",
       contents: [
+        {
+          type: "button",
+          style: "secondary",
+          action: {
+            type: "message",
+            label: "แผนการเรียน",
+            text: `📚 แผนการเรียน\n🏛️ คณะ : ${facultyName}\n📘 สาขา : ${majorName}`
+          }
+        },    
         {
           type: "button",
           style: "primary",
@@ -1082,7 +1184,7 @@ const majorName = rec.major || "";
     size: "mega",
     hero: {
       type: "image",
-      url: "https://www.uru.ac.th/images/logouru2011.png", // โลโก้มหาวิทยาลัย
+      url: rec.logoUrl || "https://www.uru.ac.th/images/logouru2011.png",
       size: "full",
       aspectRatio: "1.51:1",
       aspectMode: "fit"
@@ -1306,7 +1408,7 @@ const majorName = rec.major || "";
           height: "sm",
           action: {
             type: "uri",
-            label: "🏫",
+            label: "🏛️",
             uri: rec.facultyFacebook || "https://www.facebook.com/"
           }
         },
@@ -1345,7 +1447,7 @@ const majorName = rec.major || "";
       action: {
         type: "message",
         label: "เริ่มใหม่",
-        text: "เริ่มแนะนำใหม่"
+        text: "เริ่มแนะนำคณะและสาขาใหม่"
       }        }
       ]
     }
