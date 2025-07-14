@@ -173,77 +173,59 @@ app.post("/webhook", async (req, res) => {
     });
   }
 
-// ฟังก์ชันหน่วงเวลา
-function delay(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-// ฟังก์ชันส่ง push message พร้อม retry เมื่อเจอ 429
-async function safePushMessage(to, message, retryCount = 0) {
-  try {
-    await client.pushMessage(to, message);
-  } catch (err) {
-    if (err.statusCode === 429 && retryCount < 5) {
-      console.warn(`Too many requests, retrying pushMessage #${retryCount + 1} after 1 second...`);
-      await delay(1000);
-      return safePushMessage(to, message, retryCount + 1);
-    }
-    console.error("Push message error:", err);
-  }
-}
-
 if (intent === "get name") {
   const name = params.name || "คุณ";
   session.name = name;
   await saveSession(session);
 
-  const levels = ["มัธยมปลาย", "ปวช", "ปวส", "อื่นๆ"];
-  const colors = ["#FFCC80", "#F48FB1", "#BA68C8", "#4FC3F7"];
-  const labels = {
-    "มัธยมปลาย": "ม.ปลาย 🎓",
-    "ปวช": "ปวช 🛠️",
-    "ปวส": "ปวส 🔧",
-    "อื่นๆ": "อื่นๆ 📘"
-  };
-  const levelBubbles = levels.map((level, index) => ({
-    type: "bubble",
-    size: "micro",
-    body: {
-      type: "box",
-      layout: "vertical",
-      contents: [
-        {
-          type: "button",
-          style: "primary",
-          color: colors[index],
-          action: {
-            type: "message",
-            label: labels[level],
-            text: level
-          }
+const levels = ["มัธยมปลาย", "ปวช", "ปวส", "อื่นๆ"];
+const colors = ["#FFCC80", "#F48FB1", "#BA68C8", "#4FC3F7"];
+const labels = {
+  "มัธยมปลาย": "ม.ปลาย 🎓",
+  "ปวช": "ปวช 🛠️",
+  "ปวส": "ปวส 🔧",
+  "อื่นๆ": "อื่นๆ 📘"
+};
+const levelBubbles = levels.map((level, index) => ({
+  type: "bubble",
+  size: "micro",
+  body: {
+    type: "box",
+    layout: "vertical",
+    contents: [
+      {
+        type: "button",
+        style: "primary",
+        color: colors[index],
+        action: {
+          type: "message",
+          label: labels[level],
+          text: level
         }
-      ]
-    }
-  }));
-
-  // 1. ส่งข้อความตอบกลับ Dialogflow ก่อน
-  res.json({
-    fulfillmentText: `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓\n👇 เลือกจากปุ่มด้านล่างได้เลยค่ะ`
-  });
-
-  // 2. หน่วงเวลา 300ms ก่อนส่ง push message (เพื่อให้ข้อความ Dialogflow แสดงก่อน)
-  setTimeout(() => {
-    safePushMessage(sessionId, {
-      type: "flex",
-      altText: "เลือกระดับการศึกษา",
-      contents: {
-        type: "carousel",
-        contents: levelBubbles
       }
-    });
-  }, 300);
+    ]
+  }
+}));
+// 1. ส่งข้อความตอบกลับ Dialogflow ก่อน
+res.json({
+fulfillmentText: `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓\n👇 เลือกจากปุ่มด้านล่างได้เลยค่ะ`
+});
 
-  return;
+// 2. หน่วงเวลาเล็กน้อยก่อน push message (เพื่อให้ข้อความขึ้นก่อน)
+setTimeout(() => {
+  client.pushMessage(sessionId, {
+    type: "flex",
+    altText: "เลือกระดับการศึกษา",
+    contents: {
+      type: "carousel",
+      contents: levelBubbles
+    }
+  }).catch((err) => {
+    console.error("Push message error:", err);
+  });
+}, 1500); // ✅ รอ 300 มิลลิวินาที
+
+return;
 }
 
 if (intent === "educationLevel") {
