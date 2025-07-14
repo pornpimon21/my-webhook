@@ -4,10 +4,11 @@ function createPlanCard(facultyName, majorName, rec) {
     header: {
       type: "box",
       layout: "vertical",
+      spacing: "xs",
       contents: [
         {
           type: "text",
-          text: "📚 แผนการเรียน 📚",
+          text: "📅 แผนการเรียน 📅",
           size: "lg",
           weight: "bold",
           color: "#8E44AD",
@@ -15,41 +16,46 @@ function createPlanCard(facultyName, majorName, rec) {
         },
         {
           type: "text",
-          text: `🏛️ ${facultyName} 📘 สาขา${majorName}`,
+          text: `🏛️ ${facultyName}`,
           size: "md",
           weight: "bold",
-          wrap: true,
-          margin: "xs"
+          wrap: true
+        },
+        {
+          type: "text",
+          text: `📘 สาขา${majorName}`,
+          size: "md",
+          weight: "bold",
+          wrap: true
+        },
+        {
+          type: "separator",
+          margin: "sm",
+          color: "#666666"
         }
       ]
     },
     body: {
       type: "box",
       layout: "vertical",
-       margin: "sm",  // ห่างจาก header นิดเดียว
+      spacing: "md",
       contents: [
-        {
-          type: "separator",
-          margin: "sm",
-          color: "#DDDDDD"
-        },
         {
           type: "text",
           text: rec.studyPlan ? rec.studyPlan.join('\n\n') : "ไม่มีสรุปแผนการเรียน",
           wrap: true,
-          size: "sm",
-          margin: "md"
+          size: "sm"
         }
-      ],
-      spacing: "md"
+      ]
     },
     footer: {
       type: "box",
       layout: "vertical",
+      spacing: "md",
       contents: [
         {
           type: "text",
-          text: "📄 นี่เป็นแค่แผนการเรียนแบบสรุป หากสนใจดูแผนการเรียนฉบับเต็มสามารถคลิกปุ่มข้างล่างได้เลยค่ะ 😊",
+          text: "📄 เป็นแค่แผนการเรียนแบบสรุปนะคะ 😊",
           size: "sm",
           align: "center",
           color: "#888888",
@@ -65,8 +71,7 @@ function createPlanCard(facultyName, majorName, rec) {
           style: "primary",
           color: "#4A90E2"
         }
-      ],
-      spacing: "md"
+      ]
     }
   };
 }

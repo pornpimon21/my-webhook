@@ -1,21 +1,34 @@
 const questions = require('./questions');
 
 const questionColors = [
-  '#72D6D3', // ฟ้าน้ำทะเลเข้มขึ้น
-  '#FF90CF', // ชมพูสดขึ้น
-  '#7FE4B3', // เขียวมิ้นต์เข้ม
-  '#FFA982', // ส้มพีชเข้ม
-  '#B580F2', // ม่วงพาสเทลเข้ม
-  '#D4B300', // เหลืองทองอมส้ม
-  '#89CFF0',  // ฟ้าเข้มพาสเทล
-  '#FFB6B9' // แดงพาสเทลชมพูอ่อน
+  '#54C6C2', // ฟ้าน้ำทะเลเข้มขึ้นจาก #72D6D3
+  '#FF6DC2', // ชมพูสดขึ้นจาก #FF90CF
+  '#5ED7A1', // เขียวมิ้นต์เข้มขึ้นจาก #7FE4B3
+  '#FF8B5B', // ส้มพีชเข้มขึ้นจาก #FFA982
+  '#9C6BE0', // ม่วงพาสเทลเข้มขึ้นจาก #B580F2
+  '#7A4B2B', // น้ำตาล
+  '#59B2E5', // ฟ้าเข้มพาสเทลจาก #89CFF0
+  '#f86a71'  // แดงพาสเทลเข้มจาก #FFB6B9
 ];
+
+// ✅ ฟังก์ชันสำหรับไล่เฉดสีเขียวจากอ่อน → เข้ม
+function getProgressColor(percent) {
+  const start = { r: 168, g: 230, b: 163 }; // เขียวอ่อน (#A8E6A3)
+  const end = { r: 29, g: 180, b: 70 };     // เขียวเข้ม (#1DB446)
+
+  const r = Math.round(start.r + ((end.r - start.r) * percent) / 100);
+  const g = Math.round(start.g + ((end.g - start.g) * percent) / 100);
+  const b = Math.round(start.b + ((end.b - start.b) * percent) / 100);
+
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
 
 function buildQuestionFlex(step) {
   const q = questions[step];
   const color = questionColors[step] || '#1DB446';
   const total = questions.length;
   const progressPercent = Math.round(((step + 1) / total) * 100);
+  const progressColor = getProgressColor(progressPercent);
 
   const buttons = q.options.map(opt => ({
     type: 'button',
@@ -73,7 +86,7 @@ function buildQuestionFlex(step) {
                 type: 'box',
                 layout: 'vertical',
                 width: `${progressPercent}%`,
-                backgroundColor: '#1DB446', // 🟢 ใช้สีเขียวตายตัว
+                backgroundColor: progressColor,
                 contents: []
               }
             ]
