@@ -208,6 +208,7 @@ if (intent === "get name") {
     }
   }));
 
+  const body = req.body;
   const replyToken = body.originalDetectIntentRequest?.payload?.data?.replyToken;
 
   if (!replyToken) {
