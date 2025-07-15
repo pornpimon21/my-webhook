@@ -214,22 +214,15 @@ if (intent === "get name") {
     }
   ];
 
-  return res.json({
-    fulfillmentMessages: [
-      {
-        platform: "LINE",
-        type: "text",
-        text: {
-          text: [
-            `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓`
-          ]
-        },
-        quickReplies: {
-          items: quickReplyItems
-        }
-      }
-    ]
+  await client.replyMessage(event.replyToken, {
+    type: "text",
+    text: `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓`,
+    quickReply: {
+      items: quickReplyItems
+    }
   });
+
+  return;
 }
 
 if (intent === "educationLevel") {
