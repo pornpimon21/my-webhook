@@ -1514,21 +1514,14 @@ const majorName = rec.major || "";
     }
   };
 });
-
-await client.replyMessage(event.replyToken, [
-  {
-    type: 'text',
-    text: introText
-  },
-  {
-    type: 'flex',
-    altText: 'ผลลัพธ์แนะนำคณะและสาขา',
-    contents: {
-      type: 'carousel',
-      contents: bubbles // ← array of bubble objects
-    }
+await client.replyMessage(event.replyToken, {
+  type: 'flex',
+  altText: 'ผลลัพธ์แนะนำคณะและสาขา',
+  contents: {
+    type: 'carousel',
+    contents: bubbles
   }
-]);
+});
   return;  // หยุดโค้ดตรงนี้เพื่อไม่ส่งข้อความอื่นซ้ำ
             } else {
               // กรณี session ไม่มี recommendations
