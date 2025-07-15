@@ -187,7 +187,6 @@ if (intent === "get name") {
   await saveSession(session);
   return res.json({
     fulfillmentText: `👋 สวัสดีค่ะ คุณ${name} กรุณาเลือกระดับการศึกษาของคุณ 🎓`,
-    outputContexts: [], // เคลียร์ context นี้ออกเมื่อรับชื่อแล้ว
   });
 }
 
@@ -392,107 +391,172 @@ app.post('/linewebhook',
 
 const replyToken = event.replyToken;
 
-// เรียก Dialogflow
-const dfResult = await detectIntentText(userId, userMessage);
-const intent = dfResult.intent.displayName;
-const fulfillmentText = dfResult.fulfillmentText;
-
-if (intent === "get name") {
-  const flexMsg = {
-    type: "flex",
-    altText: "เลือกระดับการศึกษา",
-    contents: {
-      type: "carousel",
-      contents: [
-        {
-          type: "bubble",
-          size: "micro",
-          body: {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              {
-                type: "button",
-                style: "primary",
-                color: "#FFCC80",
-                action: {
-                  type: "message",
-                  label: "ม.ปลาย 🎓",
-                  text: "มัธยมปลาย"
-                }
-              }
-            ]
-          }
+const flexMsg = {
+  type: "flex",
+  altText: "เลือกระดับการศึกษา",
+  contents: {
+    type: "carousel",
+    contents: [
+      {
+        type: "bubble",
+        size: "micro",
+        body: {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "text",
+              text: "ม.ปลาย",
+              weight: "bold",
+              size: "sm",
+              wrap: true,
+              align: "center"
+            }
+          ],
+          paddingAll: "10px",
+          spacing: "sm"
         },
-        {
-          type: "bubble",
-          size: "micro",
-          body: {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              {
-                type: "button",
-                style: "primary",
-                color: "#F48FB1",
-                action: {
-                  type: "message",
-                  label: "ปวช 🛠️",
-                  text: "ปวช"
-                }
+        footer: {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "button",
+              style: "primary",
+              color: "#FFCC80",
+              action: {
+                type: "message",
+                label: "ม.ปลาย 🎓",
+                text: "มัธยมปลาย"
               }
-            ]
-          }
-        },
-        {
-          type: "bubble",
-          size: "micro",
-          body: {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              {
-                type: "button",
-                style: "primary",
-                color: "#BA68C8",
-                action: {
-                  type: "message",
-                  label: "ปวส 🔧",
-                  text: "ปวส"
-                }
-              }
-            ]
-          }
-        },
-        {
-          type: "bubble",
-          size: "micro",
-          body: {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              {
-                type: "button",
-                style: "primary",
-                color: "#4FC3F7",
-                action: {
-                  type: "message",
-                  label: "อื่นๆ 📘",
-                  text: "อื่นๆ"
-                }
-              }
-            ]
-          }
+            }
+          ],
+          paddingAll: "10px",
+          spacing: "sm"
         }
-      ]
-    }
-  };
+      },
+      {
+        type: "bubble",
+        size: "micro",
+        body: {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "text",
+              text: "ปวช",
+              weight: "bold",
+              size: "sm",
+              wrap: true,
+              align: "center"
+            }
+          ],
+          paddingAll: "10px",
+          spacing: "sm"
+        },
+        footer: {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "button",
+              style: "primary",
+              color: "#F48FB1",
+              action: {
+                type: "message",
+                label: "ปวช 🛠️",
+                text: "ปวช"
+              }
+            }
+          ],
+          paddingAll: "10px",
+          spacing: "sm"
+        }
+      },
+      {
+        type: "bubble",
+        size: "micro",
+        body: {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "text",
+              text: "ปวส",
+              weight: "bold",
+              size: "sm",
+              wrap: true,
+              align: "center"
+            }
+          ],
+          paddingAll: "10px",
+          spacing: "sm"
+        },
+        footer: {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "button",
+              style: "primary",
+              color: "#BA68C8",
+              action: {
+                type: "message",
+                label: "ปวส 🔧",
+                text: "ปวส"
+              }
+            }
+          ],
+          paddingAll: "10px",
+          spacing: "sm"
+        }
+      },
+      {
+        type: "bubble",
+        size: "micro",
+        body: {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "text",
+              text: "อื่นๆ",
+              weight: "bold",
+              size: "sm",
+              wrap: true,
+              align: "center"
+            }
+          ],
+          paddingAll: "10px",
+          spacing: "sm"
+        },
+        footer: {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "button",
+              style: "primary",
+              color: "#4FC3F7",
+              action: {
+                type: "message",
+                label: "อื่นๆ 📘",
+                text: "อื่นๆ"
+              }
+            }
+          ],
+          paddingAll: "10px",
+          spacing: "sm"
+        }
+      }
+    ]
+  }
+};
 
-  await client.replyMessage(replyToken, [
-    { type: "text", text: fulfillmentText },
-    flexMsg // <== ส่งทั้งอันนี้เลย ไม่ใช่ flexMsg.contents
-  ]);
-}
+await client.replyMessage(replyToken, [
+  { type: "text", text: fulfillmentText },
+  flexMsg
+]);
 
 
 
