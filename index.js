@@ -208,8 +208,16 @@ if (intent === "get name") {
     }
   }));
 
-  // ✅ ตอบกลับด้วย LINE Messaging API (ไม่ใช้ res.json)
-  await client.replyMessage(req.body.originalDetectIntentRequest.payload.data.replyToken, [
+  // ✅ ป้องกัน error จาก undefined replyToken
+  const replyToken = req.body?.originalDetectIntentRequest?.payload?.data?.replyToken;
+
+  if (!replyToken) {
+    console.error("❌ ไม่พบ replyToken ใน webhook request");
+    return res.status(200).send(); // ส่งกลับ Dialogflow ให้จบ
+  }
+
+  // ✅ ตอบกลับ LINE ด้วยข้อความและ Flex
+  await client.replyMessage(replyToken, [
     {
       type: "text",
       text: `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓\n👇 เลือกจากปุ่มด้านล่างได้เลยค่ะ`
@@ -224,8 +232,7 @@ if (intent === "get name") {
     }
   ]);
 
-  // ✅ ส่งสถานะให้ Dialogflow รับรู้ว่าเสร็จแล้ว (ไม่ต้อง push เพิ่ม)
-  res.status(200).send(); 
+  res.status(200).send();
   return;
 }
 
