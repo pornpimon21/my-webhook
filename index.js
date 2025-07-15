@@ -173,65 +173,20 @@ app.post("/webhook", async (req, res) => {
     });
   }
 
-if (intent === "get name") {
-  const name = params.name || "คุณ";
-  session.name = name;
-  await saveSession(session);
+ if (intent === "get name") {
+    const name = params.name || "คุณ";
+    session.name = name;
 
-  const levels = ["มัธยมปลาย", "ปวช", "ปวส", "อื่นๆ"];
-  const colors = ["#FFCC80", "#F48FB1", "#BA68C8", "#4FC3F7"];
-  const labels = {
-    "มัธยมปลาย": "ม.ปลาย 🎓",
-    "ปวช": "ปวช 🛠️",
-    "ปวส": "ปวส 🔧",
-    "อื่นๆ": "อื่นๆ 📘"
-  };
-
-  const levelBubbles = levels.map((level, index) => ({
-    type: "bubble",
-    size: "micro",
-    body: {
-      type: "box",
-      layout: "vertical",
-      contents: [
-        {
-          type: "button",
-          style: "primary",
-          color: colors[index],
-          action: {
-            type: "message",
-            label: labels[level],
-            text: level
-          }
-        }
-      ]
-    }
-  }));
-
-  const body = req.body;
-  const replyToken = body.originalDetectIntentRequest?.payload?.data?.replyToken;
-
-  if (!replyToken) {
-    console.error("❌ ไม่พบ replyToken");
     return res.json({
-      fulfillmentText: "เกิดข้อผิดพลาด ไม่สามารถแสดงปุ่มได้ค่ะ"
+      fulfillmentText: `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓`
     });
   }
 
-  // ✅ ส่ง flex ตรงกลับไปเลย (ไม่ต้อง res.json อีกแล้ว)
-  await client.replyMessage(replyToken, [
-    {
-      type: "flex",
-      altText: `👋 สวัสดีค่ะ คุณ${name} กรุณาเลือกระดับการศึกษาของคุณ 🎓`,
-      contents: {
-        type: "carousel",
-        contents: levelBubbles
-      }
-    }
-  ]);
+  // fallback
+  res.json({
+    fulfillmentText: "ขอโทษค่ะ ฉันไม่เข้าใจคำถาม"
+  });
 
-  return res.sendStatus(200); // จบ
-}
 
 if (intent === "educationLevel") {
   const educationLevel = (params.educationLevel || "").toLowerCase();
@@ -431,6 +386,60 @@ app.post('/linewebhook',
           const userMessage = event.message.text;
           const sessionId = event.source.userId || uuid.v4();  // LINE user ID ใช้แทน session
 
+
+app.post('/webhook', async (req, res) => {
+  const event = req.body.events?.[0];
+  if (!event || event.type !== 'message' || event.message.type !== 'text') {
+    return res.sendStatus(200);
+  }
+
+  const userId = event.source.userId;
+  const userText = event.message.text;
+
+  // เรียก Dialogflow
+  const dfResult = await detectIntentText(userId, userText);
+  const intent = dfResult.intent.displayName;
+  const fulfillmentText = dfResult.fulfillmentText;
+
+  if (intent === "get name") {
+    // สร้าง flex message
+    const flexMsg = {
+      type: "flex",
+      altText: `👋 สวัสดีค่ะ คุณ กรุณาเลือกระดับการศึกษาของคุณ 🎓`,
+      contents: {
+        type: "carousel",
+        contents: [
+          {
+            type: "bubble",
+            size: "micro",
+            body: {
+              type: "box",
+              layout: "vertical",
+              contents: [
+                {
+                  type: "button",
+                  style: "primary",
+                  color: "#FFCC80",
+                  action: { type: "message", label: "ม.ปลาย 🎓", text: "มัธยมปลาย" }
+                }
+              ]
+            }
+          },
+          // เพิ่มปุ่มอื่นๆ ได้ตามต้องการ
+        ]
+      }
+    };
+
+    await lineClient.replyMessage(event.replyToken, [flexMsg]); // ← ใส่ใน array!
+  } else {
+    await lineClient.replyMessage(event.replyToken, {
+      type: "text",
+      text: fulfillmentText,
+    });
+  }
+
+  res.sendStatus(200);
+});
 
 if (userMessage === "คำถามที่พบบ่อย") {
     // ส่งเมนู FAQ Flex Message
