@@ -278,45 +278,6 @@ if (intent === "get skills") {
       });
     }
 
-    const abilitiesInputText = abilities.join(", ");
-
-let reply = `🙏 ขอบคุณค่ะคุณ${name || ''} จากข้อมูลที่คุณกรอกมามีดังนี้  \n` +
-  `📘 เกรดเฉลี่ย : ${grade}    \n` +
-  `🧠 ความสามารถหรือความถนัดของคุณ : ${abilitiesInputText}  \n\n` +
-  `เราขอแนะนำคณะและสาขาที่เหมาะสมกับคุณดังนี้ : \n`;
-
-results.forEach((r, i) => {
-  const majorInfo = faculties
-    .find(f => f.name === r.faculty)
-    .majors.find(m => m.name === r.major);
-
-  const requiredGrade = majorInfo.grade !== null ? majorInfo.grade : 'ไม่ระบุ';
-  const allAbilitiesText = majorInfo.ability.join(", ");
-  const matchedAbilitiesText = r.matchedAbilities.join(", ");
-  const quotaText = majorInfo.quota ? `👥 รับจำนวน : ${majorInfo.quota} คน\n` : "";
-  const conditionText = majorInfo.condition ? `📄 คุณสมบัติ : ${majorInfo.condition}\n` : "";
-  const reasonText = majorInfo.reason ? `💡 เหตุผลที่เหมาะสม : ${majorInfo.reason}\n` : "";
-
-  //ทำข้อความอาชีพให้อ่านง่าย (ถ้ามี)
-  let careersText = "";
-  if (majorInfo.careers && majorInfo.careers.length > 0) {
-    careersText = "💼 อาชีพที่เกี่ยวข้อง\n";
-    careersText += majorInfo.careers.map(career => `  • ${career}`).join("\n") + "\n";
-  }
-
-  reply += `\n━━━━━━━━━━━━━━━━━━━━\n` + // เส้นแบ่งก่อนแต่ละอันดับ
-           `🎓 อันดับที่ ${i + 1} ${r.faculty}\n` +
-           `🏫 สาขา : ${r.major}\n` +
-           `📊 เกรดเฉลี่ยขั้นต่ำที่กำหนด : ${requiredGrade}\n` +
-           `🛠️ ทักษะความสามารถ : ${allAbilitiesText}\n` +
-           `✅ ความสามารถของคุณที่ตรงกับสาขา : ${matchedAbilitiesText}\n` +
-           quotaText +
-           conditionText +
-           reasonText +
-           careersText;  // ต่อท้ายด้วยอาชีพ
-});
-
-reply += `\n✨ ขอให้โชคดีกับการเลือกคณะนะคะ!`;
 
 // ✅ เก็บข้อมูลผู้ใช้ด้านบนสุดก่อนเลย และ // เก็บค่าผลลัพธ์ทั้งหมดใน session แบบ array (ไม่รวม quota, gradeRequirement, etc.) 5 ลำดับ
 session.sessionId = sessionId;
