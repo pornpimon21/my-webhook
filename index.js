@@ -381,98 +381,108 @@ app.post('/linewebhook',
           const sessionId = event.source.userId || uuid.v4();  // LINE user ID ใช้แทน session
           const replyToken = event.replyToken;
 
-if (intent === "get name") {
-const flexMsg = {
-  type: "flex",
-  altText: "เลือกระดับการศึกษา",
-  contents: {
-    type: "carousel",
-    contents: [
-      {
-        type: "bubble",
-        body: {
-          type: "box",
-          layout: "vertical",
-          contents: [
-            {
-              type: "button",
-              style: "primary",
-              color: "#FFCC80",
-              action: {
-                type: "message",
-                label: "ม.ปลาย 🎓",
-                text: "มัธยมปลาย"
-              }
-            }
-          ]
-        }
-      },
-      {
-        type: "bubble",
-        body: {
-          type: "box",
-          layout: "vertical",
-          contents: [
-            {
-              type: "button",
-              style: "primary",
-              color: "#F48FB1",
-              action: {
-                type: "message",
-                label: "ปวช 🛠️",
-                text: "ปวช"
-              }
-            }
-          ]
-        }
-      },
-      {
-        type: "bubble",
-        body: {
-          type: "box",
-          layout: "vertical",
-          contents: [
-            {
-              type: "button",
-              style: "primary",
-              color: "#BA68C8",
-              action: {
-                type: "message",
-                label: "ปวส 🔧",
-                text: "ปวส"
-              }
-            }
-          ]
-        }
-      },
-      {
-        type: "bubble",
-        body: {
-          type: "box",
-          layout: "vertical",
-          contents: [
-            {
-              type: "button",
-              style: "primary",
-              color: "#4FC3F7",
-              action: {
-                type: "message",
-                label: "อื่นๆ 📘",
-                text: "อื่นๆ"
-              }
-            }
-          ]
-        }
-      }
-    ]
-  }
-};
+// เรียก Dialogflow หรือฟังก์ชัน detect intent
+const dfResult = await detectIntentText(userId, userMessage);
+const intent = dfResult.intent.displayName;
+const fulfillmentText = dfResult.fulfillmentText;
 
-await client.replyMessage(replyToken, [
-  { type: "text", text: fulfillmentText },
-  flexMsg
-]);
-  }
+if (intent === "get name") {
+  const flexMsg = {
+    type: "flex",
+    altText: "เลือกระดับการศึกษา",
+    contents: {
+      type: "carousel",
+      contents: [
+        {
+          type: "bubble",
+          body: {
+            type: "box",
+            layout: "vertical",
+            contents: [
+              {
+                type: "button",
+                style: "primary",
+                color: "#FFCC80",
+                action: {
+                  type: "message",
+                  label: "ม.ปลาย 🎓",
+                  text: "มัธยมปลาย"
+                }
+              }
+            ]
+          }
+        },
+        {
+          type: "bubble",
+          body: {
+            type: "box",
+            layout: "vertical",
+            contents: [
+              {
+                type: "button",
+                style: "primary",
+                color: "#F48FB1",
+                action: {
+                  type: "message",
+                  label: "ปวช 🛠️",
+                  text: "ปวช"
+                }
+              }
+            ]
+          }
+        },
+        {
+          type: "bubble",
+          body: {
+            type: "box",
+            layout: "vertical",
+            contents: [
+              {
+                type: "button",
+                style: "primary",
+                color: "#BA68C8",
+                action: {
+                  type: "message",
+                  label: "ปวส 🔧",
+                  text: "ปวส"
+                }
+              }
+            ]
+          }
+        },
+        {
+          type: "bubble",
+          body: {
+            type: "box",
+            layout: "vertical",
+            contents: [
+              {
+                type: "button",
+                style: "primary",
+                color: "#4FC3F7",
+                action: {
+                  type: "message",
+                  label: "อื่นๆ 📘",
+                  text: "อื่นๆ"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  };
+
+  await client.replyMessage(replyToken, [
+    { type: "text", text: fulfillmentText },
+    flexMsg
+  ]);
+} else {
+  await client.replyMessage(replyToken, {
+    type: "text",
+    text: fulfillmentText
+  });
+}
      
     if (userMessage === "คำถามที่พบบ่อย") {
     // ส่งเมนู FAQ Flex Message
