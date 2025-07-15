@@ -174,8 +174,10 @@ app.post("/webhook", async (req, res) => {
   }
 
 if (intent === "get name") {
-  const name = parameters.name || "คุณ";
-  return res.json({
+const name = params.name || "คุณ";
+session.name = name;
+await saveSession(session);
+return res.json({
     fulfillmentText: `👋 สวัสดีค่ะ คุณ${name} กรุณาเลือกระดับการศึกษาของคุณ 🎓`
   });
 }
