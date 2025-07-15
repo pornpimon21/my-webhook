@@ -475,12 +475,12 @@ app.post('/linewebhook',
             }
           };
 
-          await lineClient.replyMessage(replyToken, [
+          await client.replyMessage(replyToken, [
             { type: "text", text: fulfillmentText },
             flexMsg
           ]);
         } else {
-          await lineClient.replyMessage(replyToken, {
+          await client.replyMessage(replyToken, {
             type: "text",
             text: fulfillmentText
           });
