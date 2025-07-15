@@ -179,6 +179,12 @@ if (intent === "get name") {
   session.name = name;
   await saveSession(session);
 
+  // 1. ตอบ Dialogflow ก่อน (เพื่อไม่ให้วน)
+  res.json({
+    fulfillmentText: `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓\n(กดจากปุ่มด้านล่างได้เลยค่ะ)`
+  });
+
+  // 2. ส่ง Flex Message ผ่าน LINE Messaging API (หลังจากตอบ Dialogflow แล้ว)
   const levels = ["มัธยมปลาย", "ปวช", "ปวส", "อื่นๆ"];
   const colors = ["#FFCC80", "#F48FB1", "#BA68C8", "#4FC3F7"];
   const labels = {
@@ -199,36 +205,36 @@ if (intent === "get name") {
     }
   }));
 
-  return res.json({
-    fulfillmentMessages: [
-      {
-        platform: "LINE",
-        type: "flex",
-        altText: "เลือกระดับการศึกษา",
-        contents: {
-          type: "bubble",
-          body: {
-            type: "box",
-            layout: "vertical",
-            spacing: "md",
-            contents: [
-              {
-                type: "text",
-                text: `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓`,
-                wrap: true
-              }
-            ]
-          },
-          footer: {
-            type: "box",
-            layout: "vertical",
-            spacing: "sm",
-            contents: buttons
+  const flexMsg = {
+    type: "flex",
+    altText: "เลือกระดับการศึกษา",
+    contents: {
+      type: "bubble",
+      body: {
+        type: "box",
+        layout: "vertical",
+        spacing: "md",
+        contents: [
+          {
+            type: "text",
+            text: `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓`,
+            wrap: true
           }
-        }
+        ]
+      },
+      footer: {
+        type: "box",
+        layout: "vertical",
+        spacing: "sm",
+        contents: buttons
       }
-    ]
-  });
+    }
+  };
+
+  // 👇 safePushMessage = ฟังก์ชันส่งข้อความไปยัง userId (เช่น LINE userId)
+  setTimeout(() => {
+    safePushMessage(sessionId, flexMsg);
+  }, 300); // รอ 0.3 วิ เพื่อให้ Dialogflow ตอบก่อน
 }
 
 if (intent === "educationLevel") {
