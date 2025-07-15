@@ -173,7 +173,6 @@ app.post("/webhook", async (req, res) => {
     });
   }
 
-
 if (intent === "get name") {
   const name = params.name || "คุณ";
   session.name = name;
@@ -188,58 +187,52 @@ if (intent === "get name") {
     "อื่นๆ": "อื่นๆ 📘"
   };
 
-  const buttons = levels.map((level, index) => ({
-    type: "button",
-    style: "primary",
-    color: colors[index],
-    action: {
-      type: "message",
-      label: labels[level],
-      text: level
+  const levelBubbles = levels.map((level, index) => ({
+    type: "bubble",
+    size: "micro",
+    body: {
+      type: "box",
+      layout: "vertical",
+      contents: [
+        {
+          type: "button",
+          style: "primary",
+          color: colors[index],
+          action: {
+            type: "message",
+            label: labels[level],
+            text: level
+          }
+        }
+      ]
     }
   }));
 
-  const flexMsg = {
-    type: "flex",
-    altText: "เลือกระดับการศึกษา",
-    contents: {
-      type: "bubble",
-      body: {
-        type: "box",
-        layout: "vertical",
-        spacing: "md",
-        contents: [
-          {
-            type: "text",
-            text: `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓`,
-            wrap: true
-          }
-        ]
-      },
-      footer: {
-        type: "box",
-        layout: "vertical",
-        spacing: "sm",
-        contents: buttons
-      }
-    }
-  };
+  const replyToken = body.originalDetectIntentRequest?.payload?.data?.replyToken;
 
- // ✅ ดึง replyToken
-  const replyToken = req.body.originalDetectIntentRequest?.payload?.data?.replyToken;
   if (!replyToken) {
     console.error("❌ ไม่พบ replyToken");
-    return;
+    return res.json({
+      fulfillmentText: "เกิดข้อผิดพลาด ไม่สามารถแสดงปุ่มได้ค่ะ"
+    });
   }
 
-  // ✅ ตอบ Flex กลับผ่าน replyMessage (ไม่วน, ฟรี)
-  await client.replyMessage(replyToken, [flexMsg]);
+  // ✅ ส่ง flex ตรงกลับไปเลย (ไม่ต้อง res.json อีกแล้ว)
+  await client.replyMessage(replyToken, [
+    {
+      type: "flex",
+      altText: `👋 สวัสดีค่ะ คุณ${name} กรุณาเลือกระดับการศึกษาของคุณ 🎓`,
+      contents: {
+        type: "carousel",
+        contents: levelBubbles
+      }
+    }
+  ]);
 
-  // ✅ ไม่ต้องใช้ res.json() แล้ว
-  return;
+  return res.sendStatus(200); // จบ
+}
 
-  
-}if (intent === "educationLevel") {
+if (intent === "educationLevel") {
   const educationLevel = (params.educationLevel || "").toLowerCase();
   session.educationLevel = educationLevel;
   await saveSession(session);
