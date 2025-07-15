@@ -173,20 +173,12 @@ app.post("/webhook", async (req, res) => {
     });
   }
 
- if (intent === "get name") {
-    const name = params.name || "คุณ";
-    session.name = name;
-
-    return res.json({
-      fulfillmentText: `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓`
-    });
-  }
-
-  // fallback
-  res.json({
-    fulfillmentText: "ขอโทษค่ะ ฉันไม่เข้าใจคำถาม"
+if (intent === "get name") {
+  const name = parameters.name || "คุณ";
+  return res.json({
+    fulfillmentText: `👋 สวัสดีค่ะ คุณ${name} กรุณาเลือกระดับการศึกษาของคุณ 🎓`
   });
-
+}
 
 if (intent === "educationLevel") {
   const educationLevel = (params.educationLevel || "").toLowerCase();
@@ -385,63 +377,116 @@ app.post('/linewebhook',
           const userId = event.source.userId;
           const userMessage = event.message.text;
           const sessionId = event.source.userId || uuid.v4();  // LINE user ID ใช้แทน session
+          const replyToken = event.replyToken;
 
+ // เรียก Dialogflow
+        const dfResult = await detectIntentText(userId, userMessage);
+        const intent = dfResult.intent.displayName;
+        const fulfillmentText = dfResult.fulfillmentText;
 
-app.post('/webhook', async (req, res) => {
-  const event = req.body.events?.[0];
-  if (!event || event.type !== 'message' || event.message.type !== 'text') {
-    return res.sendStatus(200);
-  }
-
-  const userId = event.source.userId;
-  const userText = event.message.text;
-
-  // เรียก Dialogflow
-  const dfResult = await detectIntentText(userId, userText);
-  const intent = dfResult.intent.displayName;
-  const fulfillmentText = dfResult.fulfillmentText;
-
-  if (intent === "get name") {
-    // สร้าง flex message
-    const flexMsg = {
-      type: "flex",
-      altText: `👋 สวัสดีค่ะ คุณ กรุณาเลือกระดับการศึกษาของคุณ 🎓`,
-      contents: {
-        type: "carousel",
-        contents: [
-          {
-            type: "bubble",
-            size: "micro",
-            body: {
-              type: "box",
-              layout: "vertical",
+        if (intent === "get name") {
+          const flexMsg = {
+            type: "flex",
+            altText: "เลือกระดับการศึกษา",
+            contents: {
+              type: "carousel",
               contents: [
                 {
-                  type: "button",
-                  style: "primary",
-                  color: "#FFCC80",
-                  action: { type: "message", label: "ม.ปลาย 🎓", text: "มัธยมปลาย" }
+                  type: "bubble",
+                  size: "micro",
+                  body: {
+                    type: "box",
+                    layout: "vertical",
+                    contents: [
+                      {
+                        type: "button",
+                        style: "primary",
+                        color: "#FFCC80",
+                        action: {
+                          type: "message",
+                          label: "ม.ปลาย 🎓",
+                          text: "มัธยมปลาย"
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  type: "bubble",
+                  size: "micro",
+                  body: {
+                    type: "box",
+                    layout: "vertical",
+                    contents: [
+                      {
+                        type: "button",
+                        style: "primary",
+                        color: "#F48FB1",
+                        action: {
+                          type: "message",
+                          label: "ปวช 🛠️",
+                          text: "ปวช"
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  type: "bubble",
+                  size: "micro",
+                  body: {
+                    type: "box",
+                    layout: "vertical",
+                    contents: [
+                      {
+                        type: "button",
+                        style: "primary",
+                        color: "#BA68C8",
+                        action: {
+                          type: "message",
+                          label: "ปวส 🔧",
+                          text: "ปวส"
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  type: "bubble",
+                  size: "micro",
+                  body: {
+                    type: "box",
+                    layout: "vertical",
+                    contents: [
+                      {
+                        type: "button",
+                        style: "primary",
+                        color: "#4FC3F7",
+                        action: {
+                          type: "message",
+                          label: "อื่นๆ 📘",
+                          text: "อื่นๆ"
+                        }
+                      }
+                    ]
+                  }
                 }
               ]
             }
-          },
-          // เพิ่มปุ่มอื่นๆ ได้ตามต้องการ
-        ]
-      }
-    };
+          };
 
-    await lineClient.replyMessage(event.replyToken, [flexMsg]); // ← ใส่ใน array!
-  } else {
-    await lineClient.replyMessage(event.replyToken, {
-      type: "text",
-      text: fulfillmentText,
-    });
-  }
-
-  res.sendStatus(200);
-});
-
-if (userMessage === "คำถามที่พบบ่อย") {
+          await lineClient.replyMessage(replyToken, [
+            { type: "text", text: fulfillmentText },
+            flexMsg
+          ]);
+        } else {
+          await lineClient.replyMessage(replyToken, {
+            type: "text",
+            text: fulfillmentText
+          });
+        }
+    
+    if (userMessage === "คำถามที่พบบ่อย") {
     // ส่งเมนู FAQ Flex Message
     await client.replyMessage(event.replyToken, faqFlex);
     return;
