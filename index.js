@@ -145,7 +145,7 @@ async function updateSession(sessionId, data) {
 app.use('/webhook', express.json());
 app.post("/webhook", async (req, res) => {
   const eventId = req.body.originalDetectIntentRequest?.payload?.data?.webhookEventId;
-
+  
   if (eventId) {
     try {
       const exists = await EventLog.findOne({ eventId });
@@ -179,50 +179,22 @@ if (intent === "get name") {
   session.name = name;
   await saveSession(session);
 
-  const quickReplyItems = [
-    {
-      type: "action",
-      action: {
-        type: "message",
-        label: "ม.ปลาย 🎓",
-        text: "มัธยมปลาย"
+  return res.json({
+    fulfillmentMessages: [
+      {
+        platform: "LINE",
+        quickReplies: {
+          title: `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓`,
+          quickReplies: [
+            "มัธยมปลาย",
+            "ปวช",
+            "ปวส",
+            "อื่นๆ"
+          ]
+        }
       }
-    },
-    {
-      type: "action",
-      action: {
-        type: "message",
-        label: "ปวช 🛠️",
-        text: "ปวช"
-      }
-    },
-    {
-      type: "action",
-      action: {
-        type: "message",
-        label: "ปวส 🔧",
-        text: "ปวส"
-      }
-    },
-    {
-      type: "action",
-      action: {
-        type: "message",
-        label: "อื่นๆ 📘",
-        text: "อื่นๆ"
-      }
-    }
-  ];
-
-  await client.replyMessage(event.replyToken, {
-    type: "text",
-    text: `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓`,
-    quickReply: {
-      items: quickReplyItems
-    }
+    ]
   });
-
-  return;
 }
 
 if (intent === "educationLevel") {
