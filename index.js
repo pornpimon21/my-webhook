@@ -179,48 +179,56 @@ if (intent === "get name") {
   session.name = name;
   await saveSession(session);
 
-  const levels = ["มัธยมปลาย", "ปวช", "ปวส", "อื่นๆ"];
-  const colors = ["#FFCC80", "#F48FB1", "#BA68C8", "#4FC3F7"];
-  const labels = {
-    "มัธยมปลาย": "ม.ปลาย 🎓",
-    "ปวช": "ปวช 🛠️",
-    "ปวส": "ปวส 🔧",
-    "อื่นๆ": "อื่นๆ 📘"
-  };
-
-  const levelBubbles = levels.map((level, index) => ({
-    type: "bubble",
-    size: "micro",
-    body: {
-      type: "box",
-      layout: "vertical",
-      contents: [
-        {
-          type: "button",
-          style: "primary",
-          color: colors[index],
-          action: {
-            type: "message",
-            label: labels[level],
-            text: level
-          }
-        }
-      ]
-    }
-  }));
-
-  // ตอบกลับเป็น Flex message โดยใช้ reply (ไม่ใช้ push)
-  return res.json({
-    payload: {
-      line: {
-        type: "flex",
-        altText: `👋 สวัสดีค่ะ คุณ${name}\nกรุณาเลือกระดับการศึกษาของคุณ 🎓`,
-        contents: {
-          type: "carousel",
-          contents: levelBubbles
-        }
+  const quickReplyItems = [
+    {
+      type: "action",
+      action: {
+        type: "message",
+        label: "ม.ปลาย 🎓",
+        text: "มัธยมปลาย"
+      }
+    },
+    {
+      type: "action",
+      action: {
+        type: "message",
+        label: "ปวช 🛠️",
+        text: "ปวช"
+      }
+    },
+    {
+      type: "action",
+      action: {
+        type: "message",
+        label: "ปวส 🔧",
+        text: "ปวส"
+      }
+    },
+    {
+      type: "action",
+      action: {
+        type: "message",
+        label: "อื่นๆ 📘",
+        text: "อื่นๆ"
       }
     }
+  ];
+
+  return res.json({
+    fulfillmentMessages: [
+      {
+        platform: "LINE",
+        type: "text",
+        text: {
+          text: [
+            `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓`
+          ]
+        },
+        quickReplies: {
+          items: quickReplyItems
+        }
+      }
+    ]
   });
 }
 
@@ -1450,21 +1458,20 @@ const majorName = rec.major || "";
   };
 });
 
-// 1. ส่งข้อความแนะนำก่อน
-await client.replyMessage(event.replyToken, {
-  type: 'text',
-  text: introText
-});
-
-// 2. ใช้ pushMessage เพื่อแสดง bubble carousel (ทั้งหมด)
-await client.pushMessage(event.source.userId, {
-  type: "flex",
-  altText: "ผลลัพธ์แนะนำคณะและสาขา",
-  contents: {
-    type: "carousel",
-    contents: bubbles
+await client.replyMessage(event.replyToken, [
+  {
+    type: 'text',
+    text: introText
+  },
+  {
+    type: 'flex',
+    altText: 'ผลลัพธ์แนะนำคณะและสาขา',
+    contents: {
+      type: 'carousel',
+      contents: bubbles // ← array of bubble objects
+    }
   }
-});  
+]);
   return;  // หยุดโค้ดตรงนี้เพื่อไม่ส่งข้อความอื่นซ้ำ
             } else {
               // กรณี session ไม่มี recommendations
