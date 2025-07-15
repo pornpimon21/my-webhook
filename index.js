@@ -179,18 +179,46 @@ if (intent === "get name") {
   session.name = name;
   await saveSession(session);
 
+  const levels = ["มัธยมปลาย", "ปวช", "ปวส", "อื่นๆ"];
+  const colors = ["#FFCC80", "#F48FB1", "#BA68C8", "#4FC3F7"];
+  const labels = {
+    "มัธยมปลาย": "ม.ปลาย 🎓",
+    "ปวช": "ปวช 🛠️",
+    "ปวส": "ปวส 🔧",
+    "อื่นๆ": "อื่นๆ 📘"
+  };
+  const levelBubbles = levels.map((level, index) => ({
+    type: "button",
+    style: "primary",
+    color: colors[index],
+    action: {
+      type: "message",
+      label: labels[level],
+      text: level
+    }
+  }));
+
   return res.json({
     fulfillmentMessages: [
       {
         platform: "LINE",
-        quickReplies: {
-          title: `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓`,
-          quickReplies: [
-            "มัธยมปลาย",
-            "ปวช",
-            "ปวส",
-            "อื่นๆ"
-          ]
+        type: "flex",
+        altText: "เลือกระดับการศึกษา",
+        contents: {
+          type: "bubble",
+          body: {
+            type: "box",
+            layout: "vertical",
+            spacing: "md",
+            contents: [
+              {
+                type: "text",
+                text: `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓`,
+                wrap: true
+              },
+              ...levelBubbles
+            ]
+          }
         }
       }
     ]
