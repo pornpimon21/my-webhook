@@ -167,26 +167,24 @@ app.post("/webhook", async (req, res) => {
    if (!session) session = { userId: sessionId };
 
 
-if (intent === "welcome") {
-  // ตั้ง context ใน response
-  return res.json({
-    fulfillmentText: "🌟 สวัสดีค่ะ!\nยินดีต้อนรับสู่ระบบแนะนำคณะและสาขา 🎓\n\nเราพร้อมช่วยคุณค้นหาคณะที่เหมาะสมที่สุด\nเพื่อเริ่มต้น กรุณาพิมพ์ \"ชื่อของคุณ\" เข้ามาก่อนนะคะ 😊",
-    outputContexts: [
-      {
+
+  if (intent === "welcome") {
+    return res.json({
+      fulfillmentText: "🌟 สวัสดีค่ะ!\nยินดีต้อนรับสู่ระบบแนะนำคณะและสาขา 🎓\n\nเราพร้อมช่วยคุณค้นหาคณะที่เหมาะสมที่สุด\nเพื่อเริ่มต้น กรุณาพิมพ์ \"ชื่อของคุณ\" เข้ามาก่อนนะคะ 😊",
+      outputContexts: [{
         name: `${sessionFull}/contexts/ask_name`,
         lifespanCount: 2
-      },
-    ],
-  });
-}
+      }]
+
+    });
+  }
 
 if (intent === "get name") {
-  // รับชื่อเฉพาะตอนมี context awaiting_name
-  const name = params.name || "คุณ";
-  session.name = name;
-  await saveSession(session);
-  return res.json({
-    fulfillmentText: `👋 สวัสดีค่ะ คุณ${name} กรุณาเลือกระดับการศึกษาของคุณ 🎓`,
+const name = params.name || "คุณ";
+session.name = name;
+await saveSession(session);
+return res.json({
+    fulfillmentText: `👋 สวัสดีค่ะ คุณ${name} กรุณาเลือกระดับการศึกษาของคุณ 🎓`
   });
 }
 
@@ -387,193 +385,105 @@ app.post('/linewebhook',
           const userId = event.source.userId;
           const userMessage = event.message.text;
           const sessionId = event.source.userId || uuid.v4();  // LINE user ID ใช้แทน session
+          const replyToken = event.replyToken;
 
+// เรียก Dialogflow
+const dfResult = await detectIntentText(userId, userMessage);
+const intent = dfResult.intent.displayName;
+const fulfillmentText = dfResult.fulfillmentText;
 
-const replyToken = event.replyToken;
-
-const flexMsg = {
-  type: "flex",
-  altText: "เลือกระดับการศึกษา",
-  contents: {
-    type: "carousel",
-    contents: [
-      {
-        type: "bubble",
-        size: "micro",
-        body: {
-          type: "box",
-          layout: "vertical",
-          contents: [
-            {
-              type: "text",
-              text: "ม.ปลาย",
-              weight: "bold",
-              size: "sm",
-              wrap: true,
-              align: "center"
-            }
-          ],
-          paddingAll: "10px",
-          spacing: "sm"
-        },
-        footer: {
-          type: "box",
-          layout: "vertical",
-          contents: [
-            {
-              type: "button",
-              style: "primary",
-              color: "#FFCC80",
-              action: {
-                type: "message",
-                label: "ม.ปลาย 🎓",
-                text: "มัธยมปลาย"
+if (intent === "get name") {
+  const flexMsg = {
+    type: "flex",
+    altText: "เลือกระดับการศึกษา",
+    contents: {
+      type: "carousel",
+      contents: [
+        {
+          type: "bubble",
+          body: {
+            type: "box",
+            layout: "vertical",
+            contents: [
+              {
+                type: "button",
+                style: "primary",
+                color: "#FFCC80",
+                action: {
+                  type: "message",
+                  label: "ม.ปลาย 🎓",
+                  text: "มัธยมปลาย"
+                }
               }
-            }
-          ],
-          paddingAll: "10px",
-          spacing: "sm"
-        }
-      },
-      {
-        type: "bubble",
-        size: "micro",
-        body: {
-          type: "box",
-          layout: "vertical",
-          contents: [
-            {
-              type: "text",
-              text: "ปวช",
-              weight: "bold",
-              size: "sm",
-              wrap: true,
-              align: "center"
-            }
-          ],
-          paddingAll: "10px",
-          spacing: "sm"
+            ]
+          }
         },
-        footer: {
-          type: "box",
-          layout: "vertical",
-          contents: [
-            {
-              type: "button",
-              style: "primary",
-              color: "#F48FB1",
-              action: {
-                type: "message",
-                label: "ปวช 🛠️",
-                text: "ปวช"
+        {
+          type: "bubble",
+          body: {
+            type: "box",
+            layout: "vertical",
+            contents: [
+              {
+                type: "button",
+                style: "primary",
+                color: "#F48FB1",
+                action: {
+                  type: "message",
+                  label: "ปวช 🛠️",
+                  text: "ปวช"
+                }
               }
-            }
-          ],
-          paddingAll: "10px",
-          spacing: "sm"
-        }
-      },
-      {
-        type: "bubble",
-        size: "micro",
-        body: {
-          type: "box",
-          layout: "vertical",
-          contents: [
-            {
-              type: "text",
-              text: "ปวส",
-              weight: "bold",
-              size: "sm",
-              wrap: true,
-              align: "center"
-            }
-          ],
-          paddingAll: "10px",
-          spacing: "sm"
+            ]
+          }
         },
-        footer: {
-          type: "box",
-          layout: "vertical",
-          contents: [
-            {
-              type: "button",
-              style: "primary",
-              color: "#BA68C8",
-              action: {
-                type: "message",
-                label: "ปวส 🔧",
-                text: "ปวส"
+        {
+          type: "bubble",
+          body: {
+            type: "box",
+            layout: "vertical",
+            contents: [
+              {
+                type: "button",
+                style: "primary",
+                color: "#BA68C8",
+                action: {
+                  type: "message",
+                  label: "ปวส 🔧",
+                  text: "ปวส"
+                }
               }
-            }
-          ],
-          paddingAll: "10px",
-          spacing: "sm"
-        }
-      },
-      {
-        type: "bubble",
-        size: "micro",
-        body: {
-          type: "box",
-          layout: "vertical",
-          contents: [
-            {
-              type: "text",
-              text: "อื่นๆ",
-              weight: "bold",
-              size: "sm",
-              wrap: true,
-              align: "center"
-            }
-          ],
-          paddingAll: "10px",
-          spacing: "sm"
+            ]
+          }
         },
-        footer: {
-          type: "box",
-          layout: "vertical",
-          contents: [
-            {
-              type: "button",
-              style: "primary",
-              color: "#4FC3F7",
-              action: {
-                type: "message",
-                label: "อื่นๆ 📘",
-                text: "อื่นๆ"
+        {
+          type: "bubble",
+          body: {
+            type: "box",
+            layout: "vertical",
+            contents: [
+              {
+                type: "button",
+                style: "primary",
+                color: "#4FC3F7",
+                action: {
+                  type: "message",
+                  label: "อื่นๆ 📘",
+                  text: "อื่นๆ"
+                }
               }
-            }
-          ],
-          paddingAll: "10px",
-          spacing: "sm"
+            ]
+          }
         }
-      }
-    ]
-  }
-};
+      ]
+    }
+  };
 
-await client.replyMessage(replyToken, [
-  { type: "text", text: fulfillmentText },
-  flexMsg
-]);
-
-
-
-    if (userMessage === "คำถามที่พบบ่อย") {
-    // ส่งเมนู FAQ Flex Message
-    await client.replyMessage(event.replyToken, faqFlex);
-    return;
-  }
-
-  if (faqs[userMessage]) {
-    // ส่งคำตอบ FAQ ตามคำถามที่ผู้ใช้เลือก
-    await client.replyMessage(event.replyToken, {
-      type: "text",
-      text: faqs[userMessage],
-    });
-    return;
-  }
+  await client.replyMessage(replyToken, [
+    { type: "text", text: fulfillmentText },
+    flexMsg
+  ]);
+}      
 
 if (userMessage === "คำกิจกรรมที่ระบบเข้าใจ") {
   const categorizedActivityFlex = {
