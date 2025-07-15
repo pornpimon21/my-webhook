@@ -225,13 +225,21 @@ if (intent === "get name") {
     }
   };
 
-  // ✅ ตอบกลับผู้ใช้ผ่าน LINE SDK → ไม่ใช้ res.json() แล้ว
-  await client.replyMessage(replyToken, flexMsg); // <<== ฟรี และไม่วน
+ // ✅ ดึง replyToken
+  const replyToken = req.body.originalDetectIntentRequest?.payload?.data?.replyToken;
+  if (!replyToken) {
+    console.error("❌ ไม่พบ replyToken");
+    return;
+  }
 
-  return; // หยุดไม่ให้ส่ง response ต่อไป
-}
+  // ✅ ตอบ Flex กลับผ่าน replyMessage (ไม่วน, ฟรี)
+  await client.replyMessage(replyToken, [flexMsg]);
 
-if (intent === "educationLevel") {
+  // ✅ ไม่ต้องใช้ res.json() แล้ว
+  return;
+
+  
+}if (intent === "educationLevel") {
   const educationLevel = (params.educationLevel || "").toLowerCase();
   session.educationLevel = educationLevel;
   await saveSession(session);
