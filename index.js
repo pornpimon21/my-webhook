@@ -187,15 +187,23 @@ if (intent === "get name") {
     "ปวส": "ปวส 🔧",
     "อื่นๆ": "อื่นๆ 📘"
   };
-  const levelBubbles = levels.map((level, index) => ({
-    type: "button",
-    style: "primary",
-    color: colors[index],
-    action: {
-      type: "message",
-      label: labels[level],
-      text: level
-    }
+
+  const levelButtons = levels.map((level, index) => ({
+    type: "box",
+    layout: "vertical",
+    margin: "sm",
+    contents: [
+      {
+        type: "button",
+        style: "primary",
+        color: colors[index],
+        action: {
+          type: "message",
+          label: labels[level],
+          text: level
+        }
+      }
+    ]
   }));
 
   return res.json({
@@ -216,7 +224,7 @@ if (intent === "get name") {
                 text: `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓`,
                 wrap: true
               },
-              ...levelBubbles
+              ...levelButtons
             ]
           }
         }
