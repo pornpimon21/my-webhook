@@ -477,16 +477,15 @@ app.post('/linewebhook',
             }
           };
 
-          await client.replyMessage(replyToken, [
-            { type: "text", text: fulfillmentText },
-            flexMsg
-          ]);
-        } else {
-          await client.replyMessage(replyToken, {
-            type: "text",
-            text: fulfillmentText
-          });
-        }
+    await client.replyMessage(replyToken, [
+  { type: "text", text: fulfillmentText },
+  {
+    type: "flex",
+    altText: "เลือกระดับการศึกษา",
+    contents: flexMsg.contents
+  }
+  ]);
+  }
     
     if (userMessage === "คำถามที่พบบ่อย") {
     // ส่งเมนู FAQ Flex Message
@@ -1514,14 +1513,21 @@ const majorName = rec.major || "";
     }
   };
 });
-await client.replyMessage(event.replyToken, {
-  type: 'flex',
-  altText: 'ผลลัพธ์แนะนำคณะและสาขา',
-  contents: {
-    type: 'carousel',
-    contents: bubbles
+
+await client.replyMessage(event.replyToken, [
+  {
+    type: 'text',
+    text: introText
+  },
+  {
+    type: 'flex',
+    altText: 'ผลลัพธ์แนะนำคณะและสาขา',
+    contents: {
+      type: 'carousel',
+      contents: bubbles // ← array of bubble objects
+    }
   }
-});
+]);
   return;  // หยุดโค้ดตรงนี้เพื่อไม่ส่งข้อความอื่นซ้ำ
             } else {
               // กรณี session ไม่มี recommendations
