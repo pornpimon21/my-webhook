@@ -188,22 +188,15 @@ if (intent === "get name") {
     "อื่นๆ": "อื่นๆ 📘"
   };
 
-  const levelButtons = levels.map((level, index) => ({
-    type: "box",
-    layout: "vertical",
-    margin: "sm",
-    contents: [
-      {
-        type: "button",
-        style: "primary",
-        color: colors[index],
-        action: {
-          type: "message",
-          label: labels[level],
-          text: level
-        }
-      }
-    ]
+  const buttons = levels.map((level, index) => ({
+    type: "button",
+    style: "primary",
+    color: colors[index],
+    action: {
+      type: "message",
+      label: labels[level],
+      text: level
+    }
   }));
 
   return res.json({
@@ -223,9 +216,14 @@ if (intent === "get name") {
                 type: "text",
                 text: `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓`,
                 wrap: true
-              },
-              ...levelButtons
+              }
             ]
+          },
+          footer: {
+            type: "box",
+            layout: "vertical",
+            spacing: "sm",
+            contents: buttons
           }
         }
       }
