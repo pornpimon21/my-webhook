@@ -380,8 +380,8 @@ app.post('/linewebhook',
           const userMessage = event.message.text;
           const sessionId = event.source.userId || uuid.v4();  // LINE user ID ใช้แทน session
           const replyToken = event.replyToken;
-
-// เรียก Dialogflow หรือฟังก์ชัน detect intent
+          
+// เรียก Dialogflow
 const dfResult = await detectIntentText(userId, userMessage);
 const intent = dfResult.intent.displayName;
 const fulfillmentText = dfResult.fulfillmentText;
@@ -477,13 +477,7 @@ if (intent === "get name") {
     { type: "text", text: fulfillmentText },
     flexMsg
   ]);
-} else {
-  await client.replyMessage(replyToken, {
-    type: "text",
-    text: fulfillmentText
-  });
-}
-     
+}      
     if (userMessage === "คำถามที่พบบ่อย") {
     // ส่งเมนู FAQ Flex Message
     await client.replyMessage(event.replyToken, faqFlex);
