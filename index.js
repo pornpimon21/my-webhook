@@ -179,54 +179,49 @@ if (intent === "get name") {
   session.name = name;
   await saveSession(session);
 
-const levels = ["มัธยมปลาย", "ปวช", "ปวส", "อื่นๆ"];
-const colors = ["#FFCC80", "#F48FB1", "#BA68C8", "#4FC3F7"];
-const labels = {
-  "มัธยมปลาย": "ม.ปลาย 🎓",
-  "ปวช": "ปวช 🛠️",
-  "ปวส": "ปวส 🔧",
-  "อื่นๆ": "อื่นๆ 📘"
-};
-const levelBubbles = levels.map((level, index) => ({
-  type: "bubble",
-  size: "micro",
-  body: {
-    type: "box",
-    layout: "vertical",
-    contents: [
-      {
-        type: "button",
-        style: "primary",
-        color: colors[index],
-        action: {
-          type: "message",
-          label: labels[level],
-          text: level
+  const levels = ["มัธยมปลาย", "ปวช", "ปวส", "อื่นๆ"];
+  const colors = ["#FFCC80", "#F48FB1", "#BA68C8", "#4FC3F7"];
+  const labels = {
+    "มัธยมปลาย": "ม.ปลาย 🎓",
+    "ปวช": "ปวช 🛠️",
+    "ปวส": "ปวส 🔧",
+    "อื่นๆ": "อื่นๆ 📘"
+  };
+
+  const levelBubbles = levels.map((level, index) => ({
+    type: "bubble",
+    size: "micro",
+    body: {
+      type: "box",
+      layout: "vertical",
+      contents: [
+        {
+          type: "button",
+          style: "primary",
+          color: colors[index],
+          action: {
+            type: "message",
+            label: labels[level],
+            text: level
+          }
+        }
+      ]
+    }
+  }));
+
+  // ตอบกลับเป็น Flex message โดยใช้ reply (ไม่ใช้ push)
+  return res.json({
+    payload: {
+      line: {
+        type: "flex",
+        altText: `👋 สวัสดีค่ะ คุณ${name}\nกรุณาเลือกระดับการศึกษาของคุณ 🎓`,
+        contents: {
+          type: "carousel",
+          contents: levelBubbles
         }
       }
-    ]
-  }
-}));
-// 1. ส่งข้อความตอบกลับ Dialogflow ก่อน
-res.json({
-fulfillmentText: `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓\n👇 เลือกจากปุ่มด้านล่างได้เลยค่ะ`
-});
-
-// 2. หน่วงเวลาเล็กน้อยก่อน push message (เพื่อให้ข้อความขึ้นก่อน)
-setTimeout(() => {
-  client.pushMessage(sessionId, {
-    type: "flex",
-    altText: "เลือกระดับการศึกษา",
-    contents: {
-      type: "carousel",
-      contents: levelBubbles
     }
-  }).catch((err) => {
-    console.error("Push message error:", err);
   });
-}, 1500); // ✅ รอ 300 มิลลิวินาที
-
-return;
 }
 
 if (intent === "educationLevel") {
