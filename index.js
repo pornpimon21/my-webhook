@@ -382,12 +382,14 @@ app.post('/linewebhook',
           const replyToken = event.replyToken;
 
 if (intent === "get name") {
-  const flexMsg = {
+const flexMsg = {
+  type: "flex",
+  altText: "เลือกระดับการศึกษา",
+  contents: {
     type: "carousel",
     contents: [
       {
         type: "bubble",
-        size: "micro",
         body: {
           type: "box",
           layout: "vertical",
@@ -407,7 +409,6 @@ if (intent === "get name") {
       },
       {
         type: "bubble",
-        size: "micro",
         body: {
           type: "box",
           layout: "vertical",
@@ -427,7 +428,6 @@ if (intent === "get name") {
       },
       {
         type: "bubble",
-        size: "micro",
         body: {
           type: "box",
           layout: "vertical",
@@ -447,7 +447,6 @@ if (intent === "get name") {
       },
       {
         type: "bubble",
-        size: "micro",
         body: {
           type: "box",
           layout: "vertical",
@@ -466,18 +465,15 @@ if (intent === "get name") {
         }
       }
     ]
-  };
+  }
+};
 
-  await client.replyMessage(replyToken, [
-    { type: "text", text: fulfillmentText },
-    {
-      type: "flex",
-      altText: "เลือกระดับการศึกษา",
-      contents: flexMsg
-    }
-  ]);
-}
-    
+await client.replyMessage(replyToken, [
+  { type: "text", text: fulfillmentText },
+  flexMsg
+]);
+  }
+     
     if (userMessage === "คำถามที่พบบ่อย") {
     // ส่งเมนู FAQ Flex Message
     await client.replyMessage(event.replyToken, faqFlex);
