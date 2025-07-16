@@ -382,54 +382,55 @@ app.post('/linewebhook',
           const userMessage = event.message.text;
           const sessionId = event.source.userId || uuid.v4();  // LINE user ID ใช้แทน session
           
-          const session = await getSession(userId);
-        // เช็คว่าระบบรอส่งปุ่มระดับการศึกษาไหม
-        if (session.awaitingEducation) {
-          // ปิด flag เพื่อไม่ส่งซ้ำ
-          session.awaitingEducation = false;
-          await saveSession(userId, session);
+const session = await getSession(userId) || {};
+if (session.awaitingEducation === true) {
+  session.awaitingEducation = false;
+  await saveSession(userId, session);
 
-          // สร้าง Flex bubbles ปุ่มระดับการศึกษา
-          const levels = ["มัธยมปลาย", "ปวช", "ปวส", "อื่นๆ"];
-          const colors = ["#FFCC80", "#F48FB1", "#BA68C8", "#4FC3F7"];
-          const labels = {
-            "มัธยมปลาย": "ม.ปลาย 🎓",
-            "ปวช": "ปวช 🛠️",
-            "ปวส": "ปวส 🔧",
-            "อื่นๆ": "อื่นๆ 📘"
-          };
+  const levels = ["มัธยมปลาย", "ปวช", "ปวส", "อื่นๆ"];
+  const colors = ["#FFCC80", "#F48FB1", "#BA68C8", "#4FC3F7"];
+  const labels = {
+    "มัธยมปลาย": "ม.ปลาย 🎓",
+    "ปวช": "ปวช 🛠️",
+    "ปวส": "ปวส 🔧",
+    "อื่นๆ": "อื่นๆ 📘"
+  };
 
-          const levelBubbles = levels.map((level, index) => ({
-            type: "bubble",
-            size: "micro",
-            body: {
-              type: "box",
-              layout: "vertical",
-              contents: [
-                {
-                  type: "button",
-                  style: "primary",
-                  color: colors[index],
-                  action: {
-                    type: "message",
-                    label: labels[level],
-                    text: level
-                  }
-                }
-              ]
-            }
-          }));
+  const levelBubbles = levels.map((level, index) => ({
+    type: "bubble",
+    size: "micro",
+    body: {
+      type: "box",
+      layout: "vertical",
+      contents: [
+        {
+          type: "button",
+          style: "primary",
+          color: colors[index],
+          action: {
+            type: "message",
+            label: labels[level],
+            text: level
+          }
+        }
+      ]
+    }
+  }));
 
-          // ส่ง Flex Message ตอบกลับผู้ใช้
-          await client.replyMessage(event.replyToken, {
-            type: "flex",
-            altText: "เลือกระดับการศึกษา",
-            contents: {
-              type: "carousel",
-              contents: levelBubbles
-            }
-          });
-   }
+  try {
+    await client.replyMessage(event.replyToken, {
+      type: "flex",
+      altText: "เลือกระดับการศึกษา",
+      contents: {
+        type: "carousel",
+        contents: levelBubbles
+      }
+    });
+    console.log("ส่ง Flex message สำเร็จ");
+  } catch (error) {
+    console.error("ส่ง Flex message ผิดพลาด:", error);
+  }
+}
 
 if (userMessage === "คำถามที่พบบ่อย") {
     // ส่งเมนู FAQ Flex Message
