@@ -145,7 +145,7 @@ async function updateSession(sessionId, data) {
 app.use('/webhook', express.json());
 app.post("/webhook", async (req, res) => {
   const eventId = req.body.originalDetectIntentRequest?.payload?.data?.webhookEventId;
-  
+
   if (eventId) {
     try {
       const exists = await EventLog.findOne({ eventId });
@@ -167,24 +167,20 @@ app.post("/webhook", async (req, res) => {
    if (!session) session = { userId: sessionId };
 
 
-
   if (intent === "welcome") {
     return res.json({
-      fulfillmentText: "🌟 สวัสดีค่ะ!\nยินดีต้อนรับสู่ระบบแนะนำคณะและสาขา 🎓\n\nเราพร้อมช่วยคุณค้นหาคณะที่เหมาะสมที่สุด\nเพื่อเริ่มต้น กรุณาพิมพ์ \"ชื่อของคุณ\" เข้ามาก่อนนะคะ 😊",
-      outputContexts: [{
-        name: `${sessionFull}/contexts/ask_name`,
-        lifespanCount: 2
-      }]
-
+      fulfillmentText: "🌟 สวัสดีค่ะ!\nยินดีต้อนรับสู่ระบบแนะนำคณะและสาขา 🎓\n\nเราพร้อมช่วยคุณค้นหาคณะที่เหมาะสมที่สุด\nเพื่อเริ่มต้น กรุณาพิมพ์ \"ชื่อของคุณ\" เข้ามาก่อนนะคะ 😊"
     });
   }
 
 if (intent === "get name") {
-const name = params.name || "คุณ";
-session.name = name;
-await saveSession(session);
-return res.json({
-    fulfillmentText: `👋 สวัสดีค่ะ คุณ${name} กรุณาเลือกระดับการศึกษาของคุณ 🎓`
+  const name = params.name || "คุณ";
+  session.name = name;
+  await saveSession(session);
+
+  // ตอบกลับ Dialogflow ด้วยข้อความ (ไม่มี Flex)
+  res.json({
+    fulfillmentText: `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓\n👇 เลือกจากปุ่มในแชทได้เลยค่ะ`
   });
 }
 
@@ -385,105 +381,68 @@ app.post('/linewebhook',
           const userId = event.source.userId;
           const userMessage = event.message.text;
           const sessionId = event.source.userId || uuid.v4();  // LINE user ID ใช้แทน session
-          const replyToken = event.replyToken;
 
-// เรียก Dialogflow
-const dfResult = await detectIntentText(userId, userMessage);
-const intent = dfResult.intent.displayName;
-const fulfillmentText = dfResult.fulfillmentText;
 
-if (intent === "get name") {
-  const flexMsg = {
-    type: "flex",
-    altText: "เลือกระดับการศึกษา",
-    contents: {
-      type: "carousel",
+if (intent === "get name" && contextHas(event, "ask_name")) {
+  const levels = ["มัธยมปลาย", "ปวช", "ปวส", "อื่นๆ"];
+  const colors = ["#FFCC80", "#F48FB1", "#BA68C8", "#4FC3F7"];
+  const labels = {
+    "มัธยมปลาย": "ม.ปลาย 🎓",
+    "ปวช": "ปวช 🛠️",
+    "ปวส": "ปวส 🔧",
+    "อื่นๆ": "อื่นๆ 📘"
+  };
+
+  const levelBubbles = levels.map((level, index) => ({
+    type: "bubble",
+    size: "micro",
+    body: {
+      type: "box",
+      layout: "vertical",
       contents: [
         {
-          type: "bubble",
-          body: {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              {
-                type: "button",
-                style: "primary",
-                color: "#FFCC80",
-                action: {
-                  type: "message",
-                  label: "ม.ปลาย 🎓",
-                  text: "มัธยมปลาย"
-                }
-              }
-            ]
-          }
-        },
-        {
-          type: "bubble",
-          body: {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              {
-                type: "button",
-                style: "primary",
-                color: "#F48FB1",
-                action: {
-                  type: "message",
-                  label: "ปวช 🛠️",
-                  text: "ปวช"
-                }
-              }
-            ]
-          }
-        },
-        {
-          type: "bubble",
-          body: {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              {
-                type: "button",
-                style: "primary",
-                color: "#BA68C8",
-                action: {
-                  type: "message",
-                  label: "ปวส 🔧",
-                  text: "ปวส"
-                }
-              }
-            ]
-          }
-        },
-        {
-          type: "bubble",
-          body: {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              {
-                type: "button",
-                style: "primary",
-                color: "#4FC3F7",
-                action: {
-                  type: "message",
-                  label: "อื่นๆ 📘",
-                  text: "อื่นๆ"
-                }
-              }
-            ]
+          type: "button",
+          style: "primary",
+          color: colors[index],
+          action: {
+            type: "message",
+            label: labels[level],
+            text: level
           }
         }
       ]
     }
-  };
+  }));
 
-  await client.replyMessage(replyToken, [
-    { type: "text", text: fulfillmentText },
-    flexMsg
-  ]);
-}      
+  // ✅ ส่งปุ่มใน LINE ด้วย replyMessage (ไม่มี push)
+  await client.replyMessage(event.replyToken, {
+    type: "flex",
+    altText: "เลือกระดับการศึกษา",
+    contents: {
+      type: "carousel",
+      contents: levelBubbles
+    }
+  });
+
+  return;
+}
+
+
+
+if (userMessage === "คำถามที่พบบ่อย") {
+    // ส่งเมนู FAQ Flex Message
+    await client.replyMessage(event.replyToken, faqFlex);
+    return;
+  }
+
+  if (faqs[userMessage]) {
+    // ส่งคำตอบ FAQ ตามคำถามที่ผู้ใช้เลือก
+    await client.replyMessage(event.replyToken, {
+      type: "text",
+      text: faqs[userMessage],
+    });
+    return;
+  }
 
 if (userMessage === "คำกิจกรรมที่ระบบเข้าใจ") {
   const categorizedActivityFlex = {
@@ -789,7 +748,7 @@ if (userSessions[userId]) {
 }
 
 
-if (userMessage === 'เริ่มแนะนำคณะและสาขาใหม่') {
+if (userMessage === 'เริ่มแนะนำใหม่') {
   let session = await Session.findOne({ sessionId: sessionId });
 
   if (session && session.name && session.grade && session.educationLevel) {
@@ -1490,7 +1449,7 @@ const majorName = rec.major || "";
       action: {
         type: "message",
         label: "เริ่มใหม่",
-        text: "เริ่มแนะนำคณะและสาขาใหม่"
+        text: "เริ่มแนะนำใหม่"
       }        }
       ]
     }
@@ -1499,17 +1458,17 @@ const majorName = rec.major || "";
 
 await client.replyMessage(event.replyToken, [
   {
-    type: 'text',
+    type: "text",
     text: introText
   },
   {
-    type: 'flex',
-    altText: 'ผลลัพธ์แนะนำคณะและสาขา',
+    type: "flex",
+    altText: "ผลลัพธ์แนะนำคณะและสาขา",
     contents: {
-      type: 'carousel',
-      contents: bubbles // ← array of bubble objects
-    }
-  }
+      type: "carousel",
+      contents: bubbles
+    },
+  },
 ]);
   return;  // หยุดโค้ดตรงนี้เพื่อไม่ส่งข้อความอื่นซ้ำ
             } else {
