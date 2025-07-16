@@ -177,11 +177,11 @@ if (intent === "get name") {
   const name = params.name || "คุณ";
   session.name = name;
   await saveSession(session);
+// ส่งข้อความให้ Dialogflow แสดงก่อน (ข้อความธรรมดา)
     return res.json({
-      fulfillmentText: `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓\n👇 เลือกจากปุ่มในแชทได้เลยค่ะ`
-  });
-}
-
+      fulfillmentText: `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓\n👇 เลือกจากปุ่มด้านล่างได้เลยค่ะ`
+    });
+  }
 
 if (intent === "educationLevel") {
   const educationLevel = (params.educationLevel || "").toLowerCase();
@@ -380,30 +380,57 @@ app.post('/linewebhook',
           const userId = event.source.userId;
           const userMessage = event.message.text;
           const sessionId = event.source.userId || uuid.v4();  // LINE user ID ใช้แทน session
- 
-// 2. เรียก Dialogflow เพื่อวิเคราะห์ intent
+
+ // 2. เรียก Dialogflow เพื่อวิเคราะห์ intent
 const dfResult = await detectIntentText(userId, userMessage); // <-- ต้องมี
 const intent = dfResult.intent.displayName;
-const params = dfResult.parameters;          
+const params = dfResult.parameters;
+
 if (intent === "get name") {
   const name = params.name || "คุณ";
-  const quickReplyItems = [
-    { type: "action", action: { type: "message", label: "ม.ปลาย 🎓", text: "มัธยมปลาย" } },
-    { type: "action", action: { type: "message", label: "ปวช 🛠️", text: "ปวช" } },
-    { type: "action", action: { type: "message", label: "ปวส 🔧", text: "ปวส" } },
-    { type: "action", action: { type: "message", label: "อื่นๆ 📘", text: "อื่นๆ" } }
-  ];
 
-  await client.replyMessage(event.replyToken, {
-    type: "text",
-    text: `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓`,
-    quickReply: {
-      items: quickReplyItems
+  const levels = ["มัธยมปลาย", "ปวช", "ปวส", "อื่นๆ"];
+  const colors = ["#FFCC80", "#F48FB1", "#BA68C8", "#4FC3F7"];
+  const labels = {
+    "มัธยมปลาย": "ม.ปลาย 🎓",
+    "ปวช": "ปวช 🛠️",
+    "ปวส": "ปวส 🔧",
+    "อื่นๆ": "อื่นๆ 📘"
+  };
+
+  const bubbles = levels.map((level, i) => ({
+    type: "bubble",
+    size: "micro",
+    body: {
+      type: "box",
+      layout: "vertical",
+      contents: [
+        {
+          type: "button",
+          style: "primary",
+          color: colors[i],
+          action: {
+            type: "message",
+            label: labels[level],
+            text: level
+          }
+        }
+      ]
     }
-  });
+  }));
 
-  return res.sendStatus(200);
-}          
+await client.replyMessage(event.replyToken, {
+  type: "flex",
+  altText: `👋 สวัสดีค่ะ คุณ${name} กรุณาเลือกระดับการศึกษา`,
+  contents: {
+    type: "carousel",
+    contents: bubbles
+  }
+});
+
+  // ❌ อย่าใช้ res.json(...) ต่อ เพราะตอบ LINE ไปแล้ว
+  return;
+}
 
 if (userMessage === "คำถามที่พบบ่อย") {
     // ส่งเมนู FAQ Flex Message
@@ -1446,7 +1473,7 @@ await client.replyMessage(event.replyToken, [
     },
   },
 ]);
-  return;  // หยุดโค้ดตรงนี้เพื่อไม่ส่งข้อความอื่นซ้ำ
+  return;   return;  // หยุดโค้ดตรงนี้เพื่อไม่ส่งข้อความอื่นซ้ำ
             } else {
               // กรณี session ไม่มี recommendations
               await client.replyMessage(event.replyToken, {
