@@ -176,8 +176,8 @@ app.post("/webhook", async (req, res) => {
 if (intent === "get name") {
   const name = params.name || "คุณ";
   session.name = name;
-  session.awaitingEducation = true; // ✅ บอกว่าเราจะส่งปุ่มต่อ
-  await saveSession(session);
+  session.awaitingEducation = true; // บอกว่ารอส่งปุ่ม
+  await saveSession(userId, session); // ใส่ userId ด้วย
 
   return res.json({
     fulfillmentText: `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓\n👇 (กรุณารอสักครู่ ระบบจะส่งปุ่มให้ทาง LINE)`
