@@ -179,11 +179,15 @@ app.post("/webhook", async (req, res) => {
   }
 
 if (intent === "get name") {
-  // เก็บชื่อใน session เฉย ๆ
-  session.name = params.name || "คุณ";
+  let name = params.name;
+
+  if (typeof name === "object" && name.name) {
+    name = name.name;  // ดึงค่าชื่อจริง ๆ ออกมา
+  }
+
+  session.name = name || "คุณ";
   await saveSession(session);
 
-  // ส่ง response ว่าง ๆ กลับไปเพื่อไม่ให้เกิด error
   return res.json({ fulfillmentText: "" });
 }
 
