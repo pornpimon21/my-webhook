@@ -387,6 +387,9 @@ const params = dfResult.parameters;
 const name = params.name || "คุณ";
 
 if (intent === "get name") {
+  // กำหนดชื่อ ถ้ายังไม่มีให้เป็น "คุณ"
+  const name = params.name && params.name.trim() !== "" ? params.name : "คุณ";
+
   // สร้าง flex message
   const levels = ["มัธยมปลาย", "ปวช", "ปวส", "อื่นๆ"];
   const colors = ["#FFCC80", "#F48FB1", "#BA68C8", "#4FC3F7"];
@@ -398,20 +401,23 @@ if (intent === "get name") {
   };
   const levelBubbles = levels.map((level, index) => ({
     type: "bubble",
-    size: "micro",
+    // ลบ size หรือเปลี่ยนเป็น kilo/mega
+    // size: "kilo",
     body: {
       type: "box",
       layout: "vertical",
-      contents: [{
-        type: "button",
-        style: "primary",
-        color: colors[index],
-        action: {
-          type: "message",
-          label: labels[level],
-          text: level
+      contents: [
+        {
+          type: "button",
+          style: "primary",
+          color: colors[index],
+          action: {
+            type: "message",
+            label: labels[level],
+            text: level
+          }
         }
-      }]
+      ]
     }
   }));
 
@@ -429,7 +435,8 @@ if (intent === "get name") {
       }
     }
   ]);
-   return;
+
+  return;
 }
 
 
