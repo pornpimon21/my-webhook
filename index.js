@@ -177,11 +177,12 @@ if (intent === "get name") {
   const name = params.name || "คุณ";
   session.name = name;
   await saveSession(session);
-// ส่งข้อความให้ Dialogflow แสดงก่อน (ข้อความธรรมดา)
-    return res.json({
-      fulfillmentText: `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓\n👇 เลือกจากปุ่มด้านล่างได้เลยค่ะ`
-    });
-  }
+
+  // ส่งข้อความกลับ Dialogflow เท่านั้น
+  res.json({
+    fulfillmentText: `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓\n👇 เลือกจากปุ่มด้านล่างได้เลยค่ะ`
+  });
+}
 
 if (intent === "educationLevel") {
   const educationLevel = (params.educationLevel || "").toLowerCase();
@@ -381,57 +382,58 @@ app.post('/linewebhook',
           const userMessage = event.message.text;
           const sessionId = event.source.userId || uuid.v4();  // LINE user ID ใช้แทน session
 
- // 2. เรียก Dialogflow เพื่อวิเคราะห์ intent
-const dfResult = await detectIntentText(userId, userMessage); // <-- ต้องมี
-const intent = dfResult.intent.displayName;
-const params = dfResult.parameters;
+ // ส่งข้อความไปให้ Dialogflow API เพื่อ get intent, parameters
+      const dialogflowResponse = await sendToDialogflow(event.message.text, event.source.userId);
 
-if (intent === "get name") {
-  const name = params.name || "คุณ";
+      if (dialogflowResponse.intent === "get name") {
+        const name = dialogflowResponse.parameters.name || "คุณ";
+        const levels = ["มัธยมปลาย", "ปวช", "ปวส", "อื่นๆ"];
+        const colors = ["#FFCC80", "#F48FB1", "#BA68C8", "#4FC3F7"];
+        const labels = {
+          "มัธยมปลาย": "ม.ปลาย 🎓",
+          "ปวช": "ปวช 🛠️",
+          "ปวส": "ปวส 🔧",
+          "อื่นๆ": "อื่นๆ 📘"
+        };
 
-  const levels = ["มัธยมปลาย", "ปวช", "ปวส", "อื่นๆ"];
-  const colors = ["#FFCC80", "#F48FB1", "#BA68C8", "#4FC3F7"];
-  const labels = {
-    "มัธยมปลาย": "ม.ปลาย 🎓",
-    "ปวช": "ปวช 🛠️",
-    "ปวส": "ปวส 🔧",
-    "อื่นๆ": "อื่นๆ 📘"
-  };
-
-  const bubbles = levels.map((level, i) => ({
-    type: "bubble",
-    size: "micro",
-    body: {
-      type: "box",
-      layout: "vertical",
-      contents: [
-        {
-          type: "button",
-          style: "primary",
-          color: colors[i],
-          action: {
-            type: "message",
-            label: labels[level],
-            text: level
+        const levelBubbles = levels.map((level, index) => ({
+          type: "bubble",
+          size: "micro",
+          body: {
+            type: "box",
+            layout: "vertical",
+            contents: [
+              {
+                type: "button",
+                style: "primary",
+                color: colors[index],
+                action: {
+                  type: "message",
+                  label: labels[level],
+                  text: level
+                }
+              }
+            ]
           }
-        }
-      ]
-    }
-  }));
+        }));
 
-await client.replyMessage(event.replyToken, {
-  type: "flex",
-  altText: `👋 สวัสดีค่ะ คุณ${name} กรุณาเลือกระดับการศึกษา`,
-  contents: {
-    type: "carousel",
-    contents: bubbles
-  }
-});
-
-  // ❌ อย่าใช้ res.json(...) ต่อ เพราะตอบ LINE ไปแล้ว
-  return;
-}
-
+        // ส่ง reply message แสดงปุ่มใน LINE
+        await client.replyMessage(event.replyToken, [
+          {
+            type: "text",
+            text: `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓\n👇 เลือกจากปุ่มด้านล่างได้เลยค่ะ`
+          },
+          {
+            type: "flex",
+            altText: "เลือกระดับการศึกษา",
+            contents: {
+              type: "carousel",
+              contents: levelBubbles
+            }
+          }
+        ]);
+      }
+      
 if (userMessage === "คำถามที่พบบ่อย") {
     // ส่งเมนู FAQ Flex Message
     await client.replyMessage(event.replyToken, faqFlex);
@@ -1473,7 +1475,7 @@ await client.replyMessage(event.replyToken, [
     },
   },
 ]);
-  return;   return;  // หยุดโค้ดตรงนี้เพื่อไม่ส่งข้อความอื่นซ้ำ
+  return;  // หยุดโค้ดตรงนี้เพื่อไม่ส่งข้อความอื่นซ้ำ
             } else {
               // กรณี session ไม่มี recommendations
               await client.replyMessage(event.replyToken, {
