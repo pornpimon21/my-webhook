@@ -169,27 +169,19 @@ app.post("/webhook", async (req, res) => {
 
   if (intent === "welcome") {
     return res.json({
-      fulfillmentText: "🌟 สวัสดีค่ะ!\nยินดีต้อนรับสู่ระบบแนะนำคณะและสาขา 🎓\n\nเราพร้อมช่วยคุณค้นหาคณะที่เหมาะสมที่สุด\nเพื่อเริ่มต้น กรุณาพิมพ์ \"ชื่อของคุณ\" เข้ามาก่อนนะคะ 😊",
-        outputContexts: [{
-        name: `${sessionFull}/contexts/ask_name`,
-        lifespanCount: 2
-      }]
-
+      fulfillmentText: "🌟 สวัสดีค่ะ!\nยินดีต้อนรับสู่ระบบแนะนำคณะและสาขา 🎓\n\nเราพร้อมช่วยคุณค้นหาคณะที่เหมาะสมที่สุด\nเพื่อเริ่มต้น กรุณาพิมพ์ \"ชื่อของคุณ\" เข้ามาก่อนนะคะ 😊"
     });
   }
 
 if (intent === "get name") {
-  let name = params.name;
+    const name = params.name || "คุณ";
+    session.name = name;
+    await saveSession(session);
 
-  if (typeof name === "object" && name.name) {
-    name = name.name;  // ดึงค่าชื่อจริง ๆ ออกมา
+    return res.json({
+      fulfillmentText: `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓\n👇 เลือกจากปุ่มด้านล่างได้เลยค่ะ`
+    });
   }
-
-  session.name = name || "คุณ";
-  await saveSession(session);
-
-  return res.json({ fulfillmentText: "" });
-}
 
 if (intent === "educationLevel") {
   const educationLevel = (params.educationLevel || "").toLowerCase();
@@ -389,59 +381,65 @@ app.post('/linewebhook',
           const userMessage = event.message.text;
           const sessionId = event.source.userId || uuid.v4();  // LINE user ID ใช้แทน session
 
-const dfResult = await detectIntentText(userId, userMessage);
-const intent = dfResult.intent.displayName;
-const params = dfResult.parameters;
+    // เรียก Dialogflow detectIntent
+      const dfResult = await detectIntentText(userId, userMessage);
+      const intent = dfResult.intent.displayName;
+      const params = dfResult.parameters;
+      
+      // ดึง session หรือสร้างใหม่
+      const session = await loadSession(userId) || {};
+      
+      if (intent === "get name") {
+        const name = params.name || "คุณ";
+        session.name = name;
+        await saveSession(session);
 
-if (intent === "get name") {
-  const name = params.name || "คุณ";
-
-  const levels = ["มัธยมปลาย", "ปวช", "ปวส", "อื่นๆ"];
-  const colors = ["#FFCC80", "#F48FB1", "#BA68C8", "#4FC3F7"];
-  const labels = {
-    "มัธยมปลาย": "ม.ปลาย 🎓",
-    "ปวช": "ปวช 🛠️",
-    "ปวส": "ปวส 🔧",
-    "อื่นๆ": "อื่นๆ 📘"
-  };
-
-  const levelBubbles = levels.map((level, index) => ({
-    type: "bubble",
-    size: "micro",
-    body: {
-      type: "box",
-      layout: "vertical",
-      contents: [
-        {
-          type: "button",
-          style: "primary",
-          color: colors[index],
-          action: {
-            type: "message",
-            label: labels[level],
-            text: level
+        // สร้าง bubble flex message
+        const levels = ["มัธยมปลาย", "ปวช", "ปวส", "อื่นๆ"];
+        const colors = ["#FFCC80", "#F48FB1", "#BA68C8", "#4FC3F7"];
+        const labels = {
+          "มัธยมปลาย": "ม.ปลาย 🎓",
+          "ปวช": "ปวช 🛠️",
+          "ปวส": "ปวส 🔧",
+          "อื่นๆ": "อื่นๆ 📘"
+        };
+        const levelBubbles = levels.map((level, index) => ({
+          type: "bubble",
+          size: "micro",
+          body: {
+            type: "box",
+            layout: "vertical",
+            contents: [
+              {
+                type: "button",
+                style: "primary",
+                color: colors[index],
+                action: {
+                  type: "message",
+                  label: labels[level],
+                  text: level
+                }
+              }
+            ]
           }
-        }
-      ]
-    }
-  }));
+        }));
 
-  await client.replyMessage(event.replyToken, [
-    {
-      type: "text",
-      text: `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓\n👇 เลือกจากปุ่มด้านล่างได้เลยค่ะ`
-    },
-    {
-      type: "flex",
-      altText: "เลือกระดับการศึกษา",
-      contents: {
-        type: "carousel",
-        contents: levelBubbles
-      }
-    }
-  ]);
-
-  return; // ✅ หยุดตรงนี้ ไม่ต้องไปให้ Dialogflow Webhook ทำซ้ำ
+        // ส่งข้อความตอบกลับ 2 ชิ้นพร้อมกัน
+        await client.replyMessage(event.replyToken, [
+          {
+            type: "text",
+            text: `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓\n👇 เลือกจากปุ่มด้านล่างได้เลยค่ะ`
+          },
+          {
+            type: "flex",
+            altText: "เลือกระดับการศึกษา",
+            contents: {
+              type: "carousel",
+              contents: levelBubbles
+            }
+          }
+       ])
+ return;  // หยุดตรงนี้
 }
 
 if (userMessage === "คำถามที่พบบ่อย") {
@@ -1486,7 +1484,7 @@ await client.replyMessage(event.replyToken, [
   },
 ]);
   return;  // หยุดโค้ดตรงนี้เพื่อไม่ส่งข้อความอื่นซ้ำ
-            } else {
+              } else {
               // กรณี session ไม่มี recommendations
               await client.replyMessage(event.replyToken, {
                 type: "text",
