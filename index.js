@@ -178,10 +178,66 @@ if (intent === "get name") {
   session.name = name;
   await saveSession(session);
 
-  // ตอบกลับ Dialogflow ด้วยข้อความ (ไม่มี Flex)
+  // 1. สร้างตัวเลือกแบบ Quick Replies
+  const quickReplies = {
+    items: [
+      {
+        type: "action",
+        action: {
+          type: "message",
+          label: "ม.ปลาย 🎓",
+          text: "มัธยมปลาย"
+        }
+      },
+      {
+        type: "action",
+        action: {
+          type: "message",
+          label: "ปวช 🛠️",
+          text: "ปวช"
+        }
+      },
+      {
+        type: "action",
+        action: {
+          type: "message",
+          label: "ปวส 🔧",
+          text: "ปวส"
+        }
+      },
+      {
+        type: "action",
+        action: {
+          type: "message",
+          label: "อื่นๆ 📘",
+          text: "อื่นๆ"
+        }
+      }
+    ]
+  };
+
+  // 2. ส่งข้อความพร้อม Quick Replies ผ่าน Dialogflow
   res.json({
-    fulfillmentText: `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓\n👇 เลือกจากปุ่มในแชทได้เลยค่ะ`
+    fulfillmentMessages: [
+      {
+        text: {
+          text: [
+            `👋 สวัสดีค่ะ คุณ${name}`,
+            "📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓",
+            "👇 กดเลือกได้เลย!"
+          ]
+        }
+      },
+      {
+        payload: {
+          line: {
+            quickReply: quickReplies // ส่ง Quick Replies ตรงนี้
+          }
+        }
+      }
+    ]
   });
+  return;
 }
 
 if (intent === "educationLevel") {
@@ -381,61 +437,6 @@ app.post('/linewebhook',
           const userId = event.source.userId;
           const userMessage = event.message.text;
           const sessionId = event.source.userId || uuid.v4();  // LINE user ID ใช้แทน session
-
-
-// เรียก Dialogflow
-const dfResult = await detectIntentText(userId, userMessage);
-
-// ตรวจ intent จาก Dialogflow
-const intent = dfResult.intent.displayName;
-const fulfillmentText = dfResult.fulfillmentText || "กรุณาเลือกระดับการศึกษา";
-
-if (intent === "get name" && contextHas(event, "ask_name")) {
-  const levels = ["มัธยมปลาย", "ปวช", "ปวส", "อื่นๆ"];
-  const colors = ["#FFCC80", "#F48FB1", "#BA68C8", "#4FC3F7"];
-  const labels = {
-    "มัธยมปลาย": "ม.ปลาย 🎓",
-    "ปวช": "ปวช 🛠️",
-    "ปวส": "ปวส 🔧",
-    "อื่นๆ": "อื่นๆ 📘"
-  };
-
-  const levelBubbles = levels.map((level, index) => ({
-    type: "bubble",
-    size: "micro",
-    body: {
-      type: "box",
-      layout: "vertical",
-      contents: [
-        {
-          type: "button",
-          style: "primary",
-          color: colors[index],
-          action: {
-            type: "message",
-            label: labels[level],
-            text: level
-          }
-        }
-      ]
-    }
-  }));
-
-  // ส่งข้อความ text + flex carousel ใน replyMessage เดียวกัน
-  await client.replyMessage(event.replyToken, [
-    { type: "text", text: fulfillmentText },
-    {
-      type: "flex",
-      altText: "เลือกระดับการศึกษา",
-      contents: {
-        type: "carousel",
-        contents: levelBubbles
-      }
-    }
-  ]);
-
-  return;
-}
 
 
 if (userMessage === "คำถามที่พบบ่อย") {
