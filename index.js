@@ -176,12 +176,56 @@ app.post("/webhook", async (req, res) => {
 if (intent === "get name") {
   const name = params.name || "คุณ";
   session.name = name;
-  session.awaitingEducation = true; // บอกว่ารอส่งปุ่ม
-  await saveSession(userId, session); // ใส่ userId ด้วย
+  await saveSession(session);
 
-  return res.json({
-    fulfillmentText: `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓\n👇 (กรุณารอสักครู่ ระบบจะส่งปุ่มให้ทาง LINE)`
+const levels = ["มัธยมปลาย", "ปวช", "ปวส", "อื่นๆ"];
+const colors = ["#FFCC80", "#F48FB1", "#BA68C8", "#4FC3F7"];
+const labels = {
+  "มัธยมปลาย": "ม.ปลาย 🎓",
+  "ปวช": "ปวช 🛠️",
+  "ปวส": "ปวส 🔧",
+  "อื่นๆ": "อื่นๆ 📘"
+};
+const levelBubbles = levels.map((level, index) => ({
+  type: "bubble",
+  size: "micro",
+  body: {
+    type: "box",
+    layout: "vertical",
+    contents: [
+      {
+        type: "button",
+        style: "primary",
+        color: colors[index],
+        action: {
+          type: "message",
+          label: labels[level],
+          text: level
+        }
+      }
+    ]
+  }
+}));
+// 1. ส่งข้อความตอบกลับ Dialogflow ก่อน
+res.json({
+fulfillmentText: `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓\n👇 เลือกจากปุ่มด้านล่างได้เลยค่ะ`
+});
+
+// 2. หน่วงเวลาเล็กน้อยก่อน push message (เพื่อให้ข้อความขึ้นก่อน)
+setTimeout(() => {
+  client.pushMessage(sessionId, {
+    type: "flex",
+    altText: "เลือกระดับการศึกษา",
+    contents: {
+      type: "carousel",
+      contents: levelBubbles
+    }
+  }).catch((err) => {
+    console.error("Push message error:", err);
   });
+}, 300); // ✅ รอ 300 มิลลิวินาที
+
+return;
 }
 
 if (intent === "educationLevel") {
@@ -381,56 +425,7 @@ app.post('/linewebhook',
           const userId = event.source.userId;
           const userMessage = event.message.text;
           const sessionId = event.source.userId || uuid.v4();  // LINE user ID ใช้แทน session
-          
-const session = await getSession(userId) || {};
-if (session.awaitingEducation === true) {
-  session.awaitingEducation = false;
-  await saveSession(userId, session);
 
-  const levels = ["มัธยมปลาย", "ปวช", "ปวส", "อื่นๆ"];
-  const colors = ["#FFCC80", "#F48FB1", "#BA68C8", "#4FC3F7"];
-  const labels = {
-    "มัธยมปลาย": "ม.ปลาย 🎓",
-    "ปวช": "ปวช 🛠️",
-    "ปวส": "ปวส 🔧",
-    "อื่นๆ": "อื่นๆ 📘"
-  };
-
-  const levelBubbles = levels.map((level, index) => ({
-    type: "bubble",
-    size: "micro",
-    body: {
-      type: "box",
-      layout: "vertical",
-      contents: [
-        {
-          type: "button",
-          style: "primary",
-          color: colors[index],
-          action: {
-            type: "message",
-            label: labels[level],
-            text: level
-          }
-        }
-      ]
-    }
-  }));
-
-  try {
-    await client.replyMessage(event.replyToken, {
-      type: "flex",
-      altText: "เลือกระดับการศึกษา",
-      contents: {
-        type: "carousel",
-        contents: levelBubbles
-      }
-    });
-    console.log("ส่ง Flex message สำเร็จ");
-  } catch (error) {
-    console.error("ส่ง Flex message ผิดพลาด:", error);
-  }
-}
 
 if (userMessage === "คำถามที่พบบ่อย") {
     // ส่งเมนู FAQ Flex Message
@@ -1473,8 +1468,8 @@ await client.replyMessage(event.replyToken, [
     },
   },
 ]);
-  return;  // หยุดโค้ดตรงนี้เพื่อไม่ส่งข้อความอื่นซ้ำ  return;  // หยุดโค้ดตรงนี้เพื่อไม่ส่งข้อความอื่นซ้ำ
-            } else {
+  return;  // หยุดโค้ดตรงนี้เพื่อไม่ส่งข้อความอื่นซ้ำ
+              } else {
               // กรณี session ไม่มี recommendations
               await client.replyMessage(event.replyToken, {
                 type: "text",
