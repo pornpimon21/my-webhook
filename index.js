@@ -174,14 +174,15 @@ app.post("/webhook", async (req, res) => {
   }
 
 if (intent === "get name") {
-    const name = params.name || "คุณ";
-    session.name = name;
-    await saveSession(session);
+  const name = params.name?.trim() || "คุณ"; // ป้องกันค่าว่าง
+  session.name = name;
+  await saveSession(session);
 
-    return res.json({
-      fulfillmentText: `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓\n👇 เลือกจากปุ่มด้านล่างได้เลยค่ะ`
-    });
-  }
+  return res.json({
+    fulfillmentText: `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓\n👇 กรุณาพิมพ์ระดับการศึกษาของคุณ เช่น มัธยมปลาย, ปวช, ปวส หรือ อื่นๆ ค่ะ`
+  });
+}
+
 
 if (intent === "educationLevel") {
   const educationLevel = (params.educationLevel || "").toLowerCase();
@@ -381,16 +382,18 @@ app.post('/linewebhook',
           const userMessage = event.message.text;
           const sessionId = event.source.userId || uuid.v4();  // LINE user ID ใช้แทน session
 
+
 const dfResult = await detectIntentText(userId, userMessage);
 const intent = dfResult.intent.displayName;
-const params = dfResult.parameters;
-const name = params.name || "คุณ";
+const fulfillmentText = dfResult.fulfillmentText || "ขอโทษค่ะ ฉันยังไม่เข้าใจ";
 
+await client.replyMessage(event.replyToken, {
+  type: "text",
+  text: fulfillmentText
+});
+
+// ถ้า intent เป็น get name ให้ส่ง Flex message ปุ่มสีๆ เพิ่ม
 if (intent === "get name") {
-  // กำหนดชื่อ ถ้ายังไม่มีให้เป็น "คุณ"
-  const name = params.name && params.name.trim() !== "" ? params.name : "คุณ";
-
-  // สร้าง flex message
   const levels = ["มัธยมปลาย", "ปวช", "ปวส", "อื่นๆ"];
   const colors = ["#FFCC80", "#F48FB1", "#BA68C8", "#4FC3F7"];
   const labels = {
@@ -399,10 +402,9 @@ if (intent === "get name") {
     "ปวส": "ปวส 🔧",
     "อื่นๆ": "อื่นๆ 📘"
   };
+
   const levelBubbles = levels.map((level, index) => ({
     type: "bubble",
-    // ลบ size หรือเปลี่ยนเป็น kilo/mega
-    // size: "kilo",
     body: {
       type: "box",
       layout: "vertical",
@@ -421,24 +423,18 @@ if (intent === "get name") {
     }
   }));
 
-  await client.replyMessage(event.replyToken, [
-    {
-      type: "text",
-      text: `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓\n👇 เลือกจากปุ่มด้านล่างได้เลยค่ะ`
-    },
-    {
-      type: "flex",
-      altText: "เลือกระดับการศึกษา",
-      contents: {
-        type: "carousel",
-        contents: levelBubbles
-      }
+await client.replyMessage(event.replyToken, [
+  {
+    type: "flex",
+    altText: "เลือกระดับการศึกษา",
+    contents: {
+      type: "carousel",
+      contents: levelBubbles
     }
-  ]);
-
+  }
+]);
   return;
 }
-
 
 if (userMessage === "คำถามที่พบบ่อย") {
     // ส่งเมนู FAQ Flex Message
