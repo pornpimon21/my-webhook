@@ -173,6 +173,16 @@ app.post("/webhook", async (req, res) => {
     });
   }
 
+if (intent === "get name") {
+  const name = params.name || "คุณ";
+  session.name = name;
+  session.awaitingEducation = true; // ✅ บอกว่าเราจะส่งปุ่มต่อ
+  await saveSession(session);
+
+  return res.json({
+    fulfillmentText: `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓\n👇 (กรุณารอสักครู่ ระบบจะส่งปุ่มให้ทาง LINE)`
+  });
+}
 
 if (intent === "educationLevel") {
   const educationLevel = (params.educationLevel || "").toLowerCase();
@@ -371,66 +381,55 @@ app.post('/linewebhook',
           const userId = event.source.userId;
           const userMessage = event.message.text;
           const sessionId = event.source.userId || uuid.v4();  // LINE user ID ใช้แทน session
+          
+          const session = await getSession(userId);
+        // เช็คว่าระบบรอส่งปุ่มระดับการศึกษาไหม
+        if (session.awaitingEducation) {
+          // ปิด flag เพื่อไม่ส่งซ้ำ
+          session.awaitingEducation = false;
+          await saveSession(userId, session);
 
+          // สร้าง Flex bubbles ปุ่มระดับการศึกษา
+          const levels = ["มัธยมปลาย", "ปวช", "ปวส", "อื่นๆ"];
+          const colors = ["#FFCC80", "#F48FB1", "#BA68C8", "#4FC3F7"];
+          const labels = {
+            "มัธยมปลาย": "ม.ปลาย 🎓",
+            "ปวช": "ปวช 🛠️",
+            "ปวส": "ปวส 🔧",
+            "อื่นๆ": "อื่นๆ 📘"
+          };
 
-const dfResult = await detectIntentText(userId, userMessage);
-const intent = dfResult.intent.displayName;
-const fulfillmentText = dfResult.fulfillmentText || "ขอโทษค่ะ ฉันยังไม่เข้าใจ";
+          const levelBubbles = levels.map((level, index) => ({
+            type: "bubble",
+            size: "micro",
+            body: {
+              type: "box",
+              layout: "vertical",
+              contents: [
+                {
+                  type: "button",
+                  style: "primary",
+                  color: colors[index],
+                  action: {
+                    type: "message",
+                    label: labels[level],
+                    text: level
+                  }
+                }
+              ]
+            }
+          }));
 
-await client.replyMessage(event.replyToken, {
-  type: "text",
-  text: fulfillmentText
-});
-
-// ถ้า intent เป็น get name ให้ส่ง Flex message ปุ่มสีๆ เพิ่ม
-if (intent === "get name") {
-  const levels = ["มัธยมปลาย", "ปวช", "ปวส", "อื่นๆ"];
-  const colors = ["#FFCC80", "#F48FB1", "#BA68C8", "#4FC3F7"];
-  const labels = {
-    "มัธยมปลาย": "ม.ปลาย 🎓",
-    "ปวช": "ปวช 🛠️",
-    "ปวส": "ปวส 🔧",
-    "อื่นๆ": "อื่นๆ 📘"
-  };
-
-  const levelBubbles = levels.map((level, index) => ({
-    type: "bubble",
-    body: {
-      type: "box",
-      layout: "vertical",
-      contents: [
-        {
-          type: "button",
-          style: "primary",
-          color: colors[index],
-          action: {
-            type: "message",
-            label: labels[level],
-            text: level
-          }
-        }
-      ]
-    }
-  }));
-
-  await client.replyMessage(event.replyToken, [
-    {
-      type: "text",
-      text: `👋 สวัสดีค่ะ คุณ${params.name || "คุณ"}\nกรุณาเลือกระดับการศึกษาของคุณค่ะ`
-    },
-    {
-      type: "flex",
-      altText: "เลือกระดับการศึกษา",
-      contents: {
-        type: "carousel",
-        contents: levelBubbles
-      }
-    }
-  ]);
-
-  return;
-}
-
+          // ส่ง Flex Message ตอบกลับผู้ใช้
+          await client.replyMessage(event.replyToken, {
+            type: "flex",
+            altText: "เลือกระดับการศึกษา",
+            contents: {
+              type: "carousel",
+              contents: levelBubbles
+            }
+          });
+   }
 
 if (userMessage === "คำถามที่พบบ่อย") {
     // ส่งเมนู FAQ Flex Message
@@ -1473,8 +1472,8 @@ await client.replyMessage(event.replyToken, [
     },
   },
 ]);
-  return;  // หยุดโค้ดตรงนี้เพื่อไม่ส่งข้อความอื่นซ้ำ
-              } else {
+  return;  // หยุดโค้ดตรงนี้เพื่อไม่ส่งข้อความอื่นซ้ำ  return;  // หยุดโค้ดตรงนี้เพื่อไม่ส่งข้อความอื่นซ้ำ
+            } else {
               // กรณี session ไม่มี recommendations
               await client.replyMessage(event.replyToken, {
                 type: "text",
