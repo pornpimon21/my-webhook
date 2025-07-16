@@ -382,12 +382,13 @@ app.post('/linewebhook',
           const userMessage = event.message.text;
           const sessionId = event.source.userId || uuid.v4();  // LINE user ID ใช้แทน session
 
- // ส่งข้อความไปให้ Dialogflow API เพื่อ get intent, parameters
-      const dialogflowResponse = await sendToDialogflow(event.message.text, event.source.userId);
-
-      if (dialogflowResponse.intent === "get name") {
-        const name = dialogflowResponse.parameters.name || "คุณ";
-        const levels = ["มัธยมปลาย", "ปวช", "ปวส", "อื่นๆ"];
+// 2. เรียก Dialogflow เพื่อวิเคราะห์ intent
+const dfResult = await detectIntentText(userId, userMessage); // <-- ต้องมี
+const intent = dfResult.intent.displayName;
+const params = dfResult.parameters;      
+if (intent === "get name") {
+  const name = params.name || "คุณ";
+          const levels = ["มัธยมปลาย", "ปวช", "ปวส", "อื่นๆ"];
         const colors = ["#FFCC80", "#F48FB1", "#BA68C8", "#4FC3F7"];
         const labels = {
           "มัธยมปลาย": "ม.ปลาย 🎓",
@@ -433,7 +434,7 @@ app.post('/linewebhook',
           }
         ]);
       }
-      
+
 if (userMessage === "คำถามที่พบบ่อย") {
     // ส่งเมนู FAQ Flex Message
     await client.replyMessage(event.replyToken, faqFlex);
