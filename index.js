@@ -380,39 +380,31 @@ app.post('/linewebhook',
           const userId = event.source.userId;
           const userMessage = event.message.text;
           const sessionId = event.source.userId || uuid.v4();  // LINE user ID ใช้แทน session
-        
-        // เรียก Dialogflow detectIntent (ฟังก์ชันนี้ต้องเขียนเอง)
-        const dfResult = await detectIntentText(userId, userMessage);
+ 
+// 2. เรียก Dialogflow เพื่อวิเคราะห์ intent
+const dfResult = await detectIntentText(userId, userMessage); // <-- ต้องมี
+const intent = dfResult.intent.displayName;
+const params = dfResult.parameters;          
+if (intent === "get name") {
+  const name = params.name || "คุณ";
+  const quickReplyItems = [
+    { type: "action", action: { type: "message", label: "ม.ปลาย 🎓", text: "มัธยมปลาย" } },
+    { type: "action", action: { type: "message", label: "ปวช 🛠️", text: "ปวช" } },
+    { type: "action", action: { type: "message", label: "ปวส 🔧", text: "ปวส" } },
+    { type: "action", action: { type: "message", label: "อื่นๆ 📘", text: "อื่นๆ" } }
+  ];
 
-        const intent = dfResult.intent.displayName;
-        const fulfillmentText = dfResult.fulfillmentText;
-        const params = dfResult.parameters;
+  await client.replyMessage(event.replyToken, {
+    type: "text",
+    text: `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓`,
+    quickReply: {
+      items: quickReplyItems
+    }
+  });
 
-        if (intent === "get name") {
-          const name = params.name || "คุณ";
-          const quickReplyItems = [
-            { type: "action", action: { type: "message", label: "ม.ปลาย 🎓", text: "มัธยมปลาย" } },
-            { type: "action", action: { type: "message", label: "ปวช 🛠️", text: "ปวช" } },
-            { type: "action", action: { type: "message", label: "ปวส 🔧", text: "ปวส" } },
-            { type: "action", action: { type: "message", label: "อื่นๆ 📘", text: "อื่นๆ" } },
-          ];
+  return res.sendStatus(200);
+}          
 
-          await client.replyMessage(event.replyToken, {
-            type: "text",
-            text: `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓\n👇 เลือกจากปุ่มด้านล่างได้เลยค่ะ`,
-            quickReply: {
-              items: quickReplyItems
-            }
-          });
-        } else {
-          // กรณี intent อื่นๆ ส่งข้อความ fulfillmentText ธรรมดา
-          await client.replyMessage(event.replyToken, {
-            type: "text",
-            text: fulfillmentText
-          });
-       }
-
-      
 if (userMessage === "คำถามที่พบบ่อย") {
     // ส่งเมนู FAQ Flex Message
     await client.replyMessage(event.replyToken, faqFlex);
