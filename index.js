@@ -388,6 +388,8 @@ const dfResult = await detectIntentText(userId, userMessage);
 
 // ตรวจ intent จาก Dialogflow
 const intent = dfResult.intent.displayName;
+const fulfillmentText = dfResult.fulfillmentText || "กรุณาเลือกระดับการศึกษา";
+
 if (intent === "get name" && contextHas(event, "ask_name")) {
   const levels = ["มัธยมปลาย", "ปวช", "ปวส", "อื่นๆ"];
   const colors = ["#FFCC80", "#F48FB1", "#BA68C8", "#4FC3F7"];
@@ -419,19 +421,21 @@ if (intent === "get name" && contextHas(event, "ask_name")) {
     }
   }));
 
-  // ✅ ส่งปุ่มใน LINE ด้วย replyMessage (ไม่มี push)
-  await client.replyMessage(event.replyToken, {
-    type: "flex",
-    altText: "เลือกระดับการศึกษา",
-    contents: {
-      type: "carousel",
-      contents: levelBubbles
+  // ส่งข้อความ text + flex carousel ใน replyMessage เดียวกัน
+  await client.replyMessage(event.replyToken, [
+    { type: "text", text: fulfillmentText },
+    {
+      type: "flex",
+      altText: "เลือกระดับการศึกษา",
+      contents: {
+        type: "carousel",
+        contents: levelBubbles
+      }
     }
-  });
+  ]);
 
   return;
 }
-
 
 
 if (userMessage === "คำถามที่พบบ่อย") {
