@@ -173,16 +173,6 @@ app.post("/webhook", async (req, res) => {
     });
   }
 
-if (intent === "get name") {
-  const name = params.name?.trim() || "คุณ"; // ป้องกันค่าว่าง
-  session.name = name;
-  await saveSession(session);
-
-  return res.json({
-    fulfillmentText: `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓\n👇 กรุณาพิมพ์ระดับการศึกษาของคุณ เช่น มัธยมปลาย, ปวช, ปวส หรือ อื่นๆ ค่ะ`
-  });
-}
-
 
 if (intent === "educationLevel") {
   const educationLevel = (params.educationLevel || "").toLowerCase();
@@ -423,18 +413,24 @@ if (intent === "get name") {
     }
   }));
 
-await client.replyMessage(event.replyToken, [
-  {
-    type: "flex",
-    altText: "เลือกระดับการศึกษา",
-    contents: {
-      type: "carousel",
-      contents: levelBubbles
+  await client.replyMessage(event.replyToken, [
+    {
+      type: "text",
+      text: `👋 สวัสดีค่ะ คุณ${params.name || "คุณ"}\nกรุณาเลือกระดับการศึกษาของคุณค่ะ`
+    },
+    {
+      type: "flex",
+      altText: "เลือกระดับการศึกษา",
+      contents: {
+        type: "carousel",
+        contents: levelBubbles
+      }
     }
-  }
-]);
+  ]);
+
   return;
 }
+
 
 if (userMessage === "คำถามที่พบบ่อย") {
     // ส่งเมนู FAQ Flex Message
