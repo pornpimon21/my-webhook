@@ -381,66 +381,57 @@ app.post('/linewebhook',
           const userMessage = event.message.text;
           const sessionId = event.source.userId || uuid.v4();  // LINE user ID ใช้แทน session
 
-    // เรียก Dialogflow detectIntent
-      const dfResult = await detectIntentText(userId, userMessage);
-      const intent = dfResult.intent.displayName;
-      const params = dfResult.parameters;
-      
-      // ดึง session หรือสร้างใหม่
-      const session = await loadSession(userId) || {};
-      
-      if (intent === "get name") {
-        const name = params.name || "คุณ";
-        session.name = name;
-        await saveSession(session);
+const dfResult = await detectIntentText(userId, userMessage);
+const intent = dfResult.intent.displayName;
+const params = dfResult.parameters;
+const name = params.name || "คุณ";
 
-        // สร้าง bubble flex message
-        const levels = ["มัธยมปลาย", "ปวช", "ปวส", "อื่นๆ"];
-        const colors = ["#FFCC80", "#F48FB1", "#BA68C8", "#4FC3F7"];
-        const labels = {
-          "มัธยมปลาย": "ม.ปลาย 🎓",
-          "ปวช": "ปวช 🛠️",
-          "ปวส": "ปวส 🔧",
-          "อื่นๆ": "อื่นๆ 📘"
-        };
-        const levelBubbles = levels.map((level, index) => ({
-          type: "bubble",
-          size: "micro",
-          body: {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              {
-                type: "button",
-                style: "primary",
-                color: colors[index],
-                action: {
-                  type: "message",
-                  label: labels[level],
-                  text: level
-                }
-              }
-            ]
-          }
-        }));
+if (intent === "get name") {
+  // สร้าง flex message
+  const levels = ["มัธยมปลาย", "ปวช", "ปวส", "อื่นๆ"];
+  const colors = ["#FFCC80", "#F48FB1", "#BA68C8", "#4FC3F7"];
+  const labels = {
+    "มัธยมปลาย": "ม.ปลาย 🎓",
+    "ปวช": "ปวช 🛠️",
+    "ปวส": "ปวส 🔧",
+    "อื่นๆ": "อื่นๆ 📘"
+  };
+  const levelBubbles = levels.map((level, index) => ({
+    type: "bubble",
+    size: "micro",
+    body: {
+      type: "box",
+      layout: "vertical",
+      contents: [{
+        type: "button",
+        style: "primary",
+        color: colors[index],
+        action: {
+          type: "message",
+          label: labels[level],
+          text: level
+        }
+      }]
+    }
+  }));
 
-        // ส่งข้อความตอบกลับ 2 ชิ้นพร้อมกัน
-        await client.replyMessage(event.replyToken, [
-          {
-            type: "text",
-            text: `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓\n👇 เลือกจากปุ่มด้านล่างได้เลยค่ะ`
-          },
-          {
-            type: "flex",
-            altText: "เลือกระดับการศึกษา",
-            contents: {
-              type: "carousel",
-              contents: levelBubbles
-            }
-          }
-       ])
- return;  // หยุดตรงนี้
+  await client.replyMessage(event.replyToken, [
+    {
+      type: "text",
+      text: `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓\n👇 เลือกจากปุ่มด้านล่างได้เลยค่ะ`
+    },
+    {
+      type: "flex",
+      altText: "เลือกระดับการศึกษา",
+      contents: {
+        type: "carousel",
+        contents: levelBubbles
+      }
+    }
+  ]);
+   return;
 }
+
 
 if (userMessage === "คำถามที่พบบ่อย") {
     // ส่งเมนู FAQ Flex Message
