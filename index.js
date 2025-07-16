@@ -174,14 +174,12 @@ app.post("/webhook", async (req, res) => {
   }
 
 if (intent === "get name") {
-  const name = params.name || "คุณ";
-  session.name = name;
+  // เก็บชื่อใน session เฉย ๆ
+  session.name = params.name || "คุณ";
   await saveSession(session);
 
-  // ส่งข้อความกลับ Dialogflow เท่านั้น
-  res.json({
-    fulfillmentText: `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓\n👇 เลือกจากปุ่มด้านล่างได้เลยค่ะ`
-  });
+  // ส่ง response ว่าง ๆ กลับไปเพื่อไม่ให้เกิด error
+  return res.json({ fulfillmentText: "" });
 }
 
 if (intent === "educationLevel") {
@@ -382,58 +380,60 @@ app.post('/linewebhook',
           const userMessage = event.message.text;
           const sessionId = event.source.userId || uuid.v4();  // LINE user ID ใช้แทน session
 
-// 2. เรียก Dialogflow เพื่อวิเคราะห์ intent
-const dfResult = await detectIntentText(userId, userMessage); // <-- ต้องมี
+const dfResult = await detectIntentText(userId, userMessage);
 const intent = dfResult.intent.displayName;
-const params = dfResult.parameters;      
+const params = dfResult.parameters;
+
 if (intent === "get name") {
   const name = params.name || "คุณ";
-          const levels = ["มัธยมปลาย", "ปวช", "ปวส", "อื่นๆ"];
-        const colors = ["#FFCC80", "#F48FB1", "#BA68C8", "#4FC3F7"];
-        const labels = {
-          "มัธยมปลาย": "ม.ปลาย 🎓",
-          "ปวช": "ปวช 🛠️",
-          "ปวส": "ปวส 🔧",
-          "อื่นๆ": "อื่นๆ 📘"
-        };
 
-        const levelBubbles = levels.map((level, index) => ({
-          type: "bubble",
-          size: "micro",
-          body: {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              {
-                type: "button",
-                style: "primary",
-                color: colors[index],
-                action: {
-                  type: "message",
-                  label: labels[level],
-                  text: level
-                }
-              }
-            ]
-          }
-        }));
+  const levels = ["มัธยมปลาย", "ปวช", "ปวส", "อื่นๆ"];
+  const colors = ["#FFCC80", "#F48FB1", "#BA68C8", "#4FC3F7"];
+  const labels = {
+    "มัธยมปลาย": "ม.ปลาย 🎓",
+    "ปวช": "ปวช 🛠️",
+    "ปวส": "ปวส 🔧",
+    "อื่นๆ": "อื่นๆ 📘"
+  };
 
-        // ส่ง reply message แสดงปุ่มใน LINE
-        await client.replyMessage(event.replyToken, [
-          {
-            type: "text",
-            text: `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓\n👇 เลือกจากปุ่มด้านล่างได้เลยค่ะ`
-          },
-          {
-            type: "flex",
-            altText: "เลือกระดับการศึกษา",
-            contents: {
-              type: "carousel",
-              contents: levelBubbles
-            }
+  const levelBubbles = levels.map((level, index) => ({
+    type: "bubble",
+    size: "micro",
+    body: {
+      type: "box",
+      layout: "vertical",
+      contents: [
+        {
+          type: "button",
+          style: "primary",
+          color: colors[index],
+          action: {
+            type: "message",
+            label: labels[level],
+            text: level
           }
-        ]);
+        }
+      ]
+    }
+  }));
+
+  await client.replyMessage(event.replyToken, [
+    {
+      type: "text",
+      text: `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓\n👇 เลือกจากปุ่มด้านล่างได้เลยค่ะ`
+    },
+    {
+      type: "flex",
+      altText: "เลือกระดับการศึกษา",
+      contents: {
+        type: "carousel",
+        contents: levelBubbles
       }
+    }
+  ]);
+
+  return; // ✅ หยุดตรงนี้ ไม่ต้องไปให้ Dialogflow Webhook ทำซ้ำ
+}
 
 if (userMessage === "คำถามที่พบบ่อย") {
     // ส่งเมนู FAQ Flex Message
