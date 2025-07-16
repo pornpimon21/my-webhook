@@ -383,6 +383,11 @@ app.post('/linewebhook',
           const sessionId = event.source.userId || uuid.v4();  // LINE user ID ใช้แทน session
 
 
+// เรียก Dialogflow
+const dfResult = await detectIntentText(userId, userMessage);
+
+// ตรวจ intent จาก Dialogflow
+const intent = dfResult.intent.displayName;
 if (intent === "get name" && contextHas(event, "ask_name")) {
   const levels = ["มัธยมปลาย", "ปวช", "ปวส", "อื่นๆ"];
   const colors = ["#FFCC80", "#F48FB1", "#BA68C8", "#4FC3F7"];
