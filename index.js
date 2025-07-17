@@ -63,25 +63,30 @@ async function detectIntentText(sessionId, text, languageCode = 'th') {
 }
 
 
-// ฟังก์ชันเปรียบเทียบความใกล้เคียง
-function findClosestAbility(userInput, thresholdRatio = 0.5) {
+const levenshtein = require('fast-levenshtein');
+
+// ฟังก์ชันเปรียบเทียบความใกล้เคียงของคำเดียว
+function findClosestAbility(userInput, faculties, thresholdRatio = 0.5) {
   userInput = userInput.trim().toLowerCase();
-  const allAbilities = [...new Set(faculties.flatMap(f => f.majors.flatMap(m => m.ability)))].map(a => a.trim().toLowerCase());
+
+  const allAbilities = [...new Set(
+    faculties.flatMap(f => f.majors.flatMap(m => m.ability))
+  )].map(a => a.trim().toLowerCase());
 
   if (allAbilities.includes(userInput)) return userInput;
 
-  // 🔍 เช็คคำที่ขึ้นต้นด้วย (prefix match) เช่น "คณิต" = "คณิตศาสตร์"
+  // Prefix match
   const prefixMatch = allAbilities.find(a => a.startsWith(userInput));
   if (prefixMatch) return prefixMatch;
 
-  // 🔍 หรือคำที่ userInput อยู่ในความสามารถ (partial match)
+  // Partial match
   const partialMatch = allAbilities.find(a => a.includes(userInput));
   if (partialMatch) return partialMatch;
 
-  // 🧠 กำหนด threshold แบบ dynamic จากความยาว input
+  // Levenshtein match
   const threshold = Math.ceil(userInput.length * thresholdRatio);
-
   let closest = null, minDist = Infinity;
+
   for (const ability of allAbilities) {
     const dist = levenshtein.get(userInput, ability);
     if (dist < minDist) {
@@ -92,6 +97,24 @@ function findClosestAbility(userInput, thresholdRatio = 0.5) {
 
   return minDist <= threshold ? closest : null;
 }
+
+// ฟังก์ชันรับข้อความจากผู้ใช้ และคืนค่าความสามารถที่ใกล้เคียงทั้งหมด
+function findAllClosestAbilities(input, faculties) {
+  if (!input || !faculties) return [];
+
+  const words = input.split(/[ ,;.\n]+/).map(w => w.trim()).filter(Boolean);
+
+  const matches = words
+    .map(word => findClosestAbility(word, faculties))
+    .filter(Boolean);
+
+  return [...new Set(matches)];
+}
+
+module.exports = {
+  findClosestAbility,
+  findAllClosestAbilities
+};
 
 //จับคู่คณะและสาขา
 function findMatchingMajors(grade, abilities, educationLevel) {
