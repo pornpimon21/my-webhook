@@ -63,8 +63,6 @@ async function detectIntentText(sessionId, text, languageCode = 'th') {
 }
 
 
-const levenshtein = require('fast-levenshtein');
-
 // ฟังก์ชันเปรียบเทียบความใกล้เคียงของคำเดียว
 function findClosestAbility(userInput, faculties, thresholdRatio = 0.5) {
   userInput = userInput.trim().toLowerCase();
