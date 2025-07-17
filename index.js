@@ -773,7 +773,7 @@ if (userMessage === 'เริ่มแนะนำใหม่') {
   }
 }
 
-if (userMessage.startsWith("🗂️ แผนการเรียน")) {
+if (userMessage.startsWith("📚 แผนการเรียน")) {
   const lines = userMessage.split("\n");
   const facultyName = lines[1].replace("🏛️ คณะ : ", "").trim();
   const majorName = lines[2].replace("📘 สาขา : ", "").trim();
@@ -801,7 +801,7 @@ if (userMessage.startsWith("🗂️ แผนการเรียน")) {
   }
 
 
-  if (userMessage.startsWith("📚 แผนการเรียน")) {
+  if (userMessage.startsWith("🗂️ แผนการเรียน")) {
   const lines = userMessage.split("\n");
   const facultyName = lines[1].replace("🏛️ คณะ : ", "").trim();
   const majorName = lines[2].replace("📘 สาขา : ", "").trim();
