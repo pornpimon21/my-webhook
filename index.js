@@ -922,6 +922,7 @@ if (userMessage === 'ค้นหาข้อมูล') {
   return;
 }
 
+
 const majorEmojiMap = {
   "คอมพิวเตอร์": "💻",
   "วิศวกรรม": "⚙️",
@@ -943,190 +944,70 @@ function chunkArray(array, size = 12) {
   return result;
 }
 
-// ตรวจสอบข้อความดูเพิ่มเติม:คณะ:หน้า
-const moreMatch = userMessage.match(/^ดูเพิ่มเติม:(.+):(\d+)$/);
-
-if (moreMatch) {
-  const facultyName = moreMatch[1];
-  const page = parseInt(moreMatch[2]);
-  const selectedFaculty = faculties.find(f => f.name === facultyName);
-
-  if (!selectedFaculty) {
-    await client.replyMessage(event.replyToken, {
-      type: "text",
-      text: `ไม่พบคณะ "${facultyName}" ค่ะ`
-    });
-    return;
-  }
-
-  // สร้าง bubbles ของสาขาทั้งหมด
-  const majorBubbles = selectedFaculty.majors.map((major, index) => {
-    let emoji = "";
-    for (const key in majorEmojiMap) {
-      if (major.name.includes(key)) {
-        emoji = majorEmojiMap[key];
-        break;
-      }
-    }
-    return {
-      type: "bubble",
-      size: "micro",
-      body: {
-        type: "box",
-        layout: "vertical",
-        contents: [
-          {
-            type: "text",
-            text: major.name,
-            weight: "bold",
-            size: "sm",
-            wrap: true,
-            align: "center"
-          }
-        ],
-        paddingAll: "10px",
-        spacing: "sm"
-      },
-      footer: {
-        type: "box",
-        layout: "vertical",
-        contents: [
-          {
-            type: "button",
-            style: "primary",
-            color: index % 2 === 0 ? "#FFA500" : "#FFD700",
-            action: {
-              type: "message",
-              label: emoji || "เลือก",
-              text: major.name
-            }
-          }
-        ],
-        paddingAll: "10px",
-        spacing: "sm"
-      }
-    };
-  });
-
-  const chunks = chunkArray(majorBubbles, 12);
-
-  if (page > chunks.length || page < 1) {
-    await client.replyMessage(event.replyToken, {
-      type: "text",
-      text: "ไม่มีหน้านี้ค่ะ"
-    });
-    return;
-  }
-
-  const pageBubbles = [...chunks[page - 1]];
-
-  // เพิ่มปุ่มดูเพิ่มเติมถ้ามีหน้าถัดไป
-  if (page < chunks.length) {
-    pageBubbles.push({
-      type: "bubble",
-      size: "micro",
-      body: {
-        type: "box",
-        layout: "vertical",
-        contents: [
-          {
-            type: "text",
-            text: "➡️ ดูเพิ่มเติม",
-            align: "center",
-            wrap: true,
-            weight: "bold"
-          }
-        ]
-      },
-      footer: {
-        type: "box",
-        layout: "vertical",
-        contents: [
-          {
-            type: "button",
-            style: "secondary",
-            action: {
-              type: "message",
-              label: "ดูเพิ่มเติม",
-              text: `ดูเพิ่มเติม:${facultyName}:${page + 1}`
-            }
-          }
-        ]
-      }
-    });
-  }
-
+const selectedFaculty = faculties.find(f => f.name === userMessage);
+if (!selectedFaculty) {
+  // ส่งข้อความว่าไม่พบคณะ
   await client.replyMessage(event.replyToken, {
-    type: "flex",
-    altText: `เลือกสาขาใน "${facultyName}" (หน้า ${page})`,
-    contents: {
-      type: "carousel",
-      contents: pageBubbles
-    }
+    type: "text",
+    text: `ไม่พบคณะ "${userMessage}" ครับ`
   });
-
   return;
 }
 
-// STEP 2: เลือกคณะ -> แสดง Flex Message เลือกสาขา
-const selectedFaculty = faculties.find(f => f.name === userMessage);
-if (selectedFaculty) {
-  const majorBubbles = selectedFaculty.majors.map((major, index) => {
-    // หา emoji ตามชื่อสาขา (ตรวจสอบว่า major.name มีคำใดใน map หรือไม่)
-    let emoji = "";
-    for (const key in majorEmojiMap) {
-      if (major.name.includes(key)) {
-        emoji = majorEmojiMap[key];
-        break;  // หยุดที่ตัวแรกที่เจอ
-      }
+// สร้าง bubbles สำหรับสาขาทั้งหมด
+const majorBubbles = selectedFaculty.majors.map((major, index) => {
+  let emoji = "";
+  for (const key in majorEmojiMap) {
+    if (major.name.includes(key)) {
+      emoji = majorEmojiMap[key];
+      break;
     }
+  }
+  return {
+    type: "bubble",
+    size: "micro",
+    body: {
+      type: "box",
+      layout: "vertical",
+      contents: [{
+        type: "text",
+        text: major.name,
+        weight: "bold",
+        size: "sm",
+        wrap: true,
+        align: "center"
+      }],
+      paddingAll: "10px",
+      spacing: "sm"
+    },
+    footer: {
+      type: "box",
+      layout: "vertical",
+      contents: [{
+        type: "button",
+        style: "primary",
+        color: index % 2 === 0 ? "#FFA500" : "#FFD700",
+        action: {
+          type: "message",
+          label: emoji || "เลือก",
+          text: major.name
+        }
+      }],
+      paddingAll: "10px",
+      spacing: "sm"
+    }
+  };
+});
 
-    return {
-      type: "bubble",
-      size: "micro",
-      body: {
-        type: "box",
-        layout: "vertical",
-        contents: [
-          {
-            type: "text",
-            text: major.name,  // แสดงชื่อเต็มของสาขา            
-            weight: "bold",
-            size: "sm",
-            wrap: true,
-            align: "center"
-          }
-        ],
-        paddingAll: "10px",
-        spacing: "sm"
-      },
-      footer: {
-        type: "box",
-        layout: "vertical",
-        contents: [
-          {
-            type: "button",
-            style: "primary",
-            color: index % 2 === 0 ? "#FFA500" : "#FFD700",
-            action: {
-              type: "message",
-              label: emoji || "เลือก",
-              text: major.name
-            }
-          }
-        ],
-        paddingAll: "10px",
-        spacing: "sm"
-      }
-    };
-  });
+if (selectedFaculty.name === "คณะครุศาสตร์" && majorBubbles.length > 12) {
+  // กรณีคณะครุศาสตร์ที่มีเกิน 12 สาขา: แบ่งหน้า และเพิ่มปุ่มดูเพิ่มเติม
 
-  const chunks = chunkArray(majorBubbles, 12);  // ตัดชุดละ 12
+  // เริ่มจากหน้าแรก (page 1)
   const page = 1;
+  const chunks = chunkArray(majorBubbles, 12);
+  const pageBubbles = [...chunks[page - 1]];
 
-  const pageBubbles = [...chunks[0]];
-
-  // ➕ เพิ่มปุ่มดูเพิ่มเติม ถ้ามีหน้าต่อไป
+  // ถ้ามีหน้าถัดไป ให้เพิ่ม bubble ปุ่มดูเพิ่มเติม
   if (chunks.length > 1) {
     pageBubbles.push({
       type: "bubble",
@@ -1160,15 +1041,29 @@ if (selectedFaculty) {
 
   await client.replyMessage(event.replyToken, {
     type: "flex",
-    altText: `เลือกสาขาใน "${selectedFaculty.name}"`,
+    altText: `เลือกสาขาใน "${selectedFaculty.name}" (หน้า ${page})`,
     contents: {
       type: "carousel",
       contents: pageBubbles
     }
   });
   return;
-}
+} 
 
+
+else {
+  // กรณีคณะอื่นที่สาขาน้อยกว่า 12 หรือคณะครุศาสตร์ไม่เกิน 12 สาขา: แสดงทั้งหมดในหน้าเดียว
+
+  await client.replyMessage(event.replyToken, {
+    type: "flex",
+    altText: `เลือกสาขาใน "${selectedFaculty.name}"`,
+    contents: {
+      type: "carousel",
+      contents: majorBubbles
+    }
+  });
+  return;
+}
 
 // STEP 3: เลือกสาขา
 let matchedMajor, matchedFaculty;
