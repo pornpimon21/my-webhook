@@ -935,16 +935,24 @@ const majorEmojiMap = {
   "กฎหมาย": "⚖️",
 };
 
+// ฟังก์ชันช่วยแบ่ง array เป็นกลุ่มละ size (10)
+function chunkArray(array, size) {
+  const result = [];
+  for (let i = 0; i < array.length; i += size) {
+    result.push(array.slice(i, i + size));
+  }
+  return result;
+}
+
 // STEP 2: เลือกคณะ -> แสดง Flex Message เลือกสาขา
 const selectedFaculty = faculties.find(f => f.name === userMessage);
 if (selectedFaculty) {
   const majorBubbles = selectedFaculty.majors.map((major, index) => {
-    // หา emoji ตามชื่อสาขา (ตรวจสอบว่า major.name มีคำใดใน map หรือไม่)
     let emoji = "";
     for (const key in majorEmojiMap) {
       if (major.name.includes(key)) {
         emoji = majorEmojiMap[key];
-        break;  // หยุดที่ตัวแรกที่เจอ
+        break;
       }
     }
 
@@ -957,7 +965,7 @@ if (selectedFaculty) {
         contents: [
           {
             type: "text",
-            text: major.name,  // แสดงชื่อเต็มของสาขา            
+            text: major.name,
             weight: "bold",
             size: "sm",
             wrap: true,
@@ -988,13 +996,13 @@ if (selectedFaculty) {
     };
   });
 
-  // แบ่ง bubbles เป็นกลุ่มละ 10
+  // แบ่ง bubbles เป็นกลุ่มละ 10 bubbles (ตาม limit ของ LINE)
   const bubbleChunks = chunkArray(majorBubbles, 10);
 
   // สร้าง Flex Messages หลายๆ ชุด ตามจำนวนกลุ่ม
-  const flexMessages = bubbleChunks.map(chunk => ({
+  const flexMessages = bubbleChunks.map((chunk, i) => ({
     type: "flex",
-    altText: `กรุณาเลือกสาขาใน "${selectedFaculty.name}"`,
+    altText: `กรุณาเลือกสาขาใน "${selectedFaculty.name}" (หน้าที่ ${i + 1}/${bubbleChunks.length})`,
     contents: {
       type: "carousel",
       contents: chunk
@@ -1004,7 +1012,7 @@ if (selectedFaculty) {
   await client.replyMessage(event.replyToken, [
     {
       type: 'text',
-      text: `🎓 กรุณาเลือกสาขาที่สนใจใน\n"${selectedFaculty.name}" ด้านล่างนี้ค่ะ 😊`
+      text: `🎓 กรุณาเลือกสาขาที่สนใจใน\n"${selectedFaculty.name}" ด้านล่างนี้ค่ะ 😊\n(แสดงทั้งหมด ${selectedFaculty.majors.length} สาขา)`
     },
     ...flexMessages
   ]);
