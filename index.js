@@ -922,20 +922,8 @@ if (userMessage === 'ค้นหาข้อมูล') {
   return;
 }
 
-const majorEmojiMap = {
-  "คอมพิวเตอร์": "💻",
-  "วิศวกรรม": "⚙️",
-  "การแพทย์": "🏥",
-  "บริหารธุรกิจ": "💼",
-  "ศิลปกรรมศาสตร์": "🎨",
-  "การศึกษา": "📚",
-  "สังคมศาสตร์": "🌍",
-  "ภาษาไทย": "🗣️",
-  "วิทยาศาสตร์ทั่วไป": "🔬",
-  "กฎหมาย": "⚖️",
-};
 
-// ฟังก์ชันแบ่ง array เป็นกลุ่มย่อย ไม่เกิน size ต่อกลุ่ม
+// ฟังก์ชันแบ่ง array เป็นกลุ่มย่อยละไม่เกิน 12
 function chunkArray(array, size = 12) {
   const result = [];
   for (let i = 0; i < array.length; i += size) {
@@ -944,10 +932,26 @@ function chunkArray(array, size = 12) {
   return result;
 }
 
-// ฟังก์ชันสร้าง bubbles ของสาขา พร้อมปุ่มดูเพิ่มเติมถ้ามีหน้าอื่น
-function createMajorBubbles(selectedFaculty, page = 1) {
-  const majors = selectedFaculty.majors;
-  const majorBubbles = majors.map((major, index) => {
+// ฟังก์ชันสร้าง Flex Message สำหรับสาขา
+function createMajorFlexMessage(faculty, page = 1) {
+  const majorEmojiMap = {
+    "คอมพิวเตอร์": "💻",
+    "วิศวกรรม": "⚙️",
+    "การแพทย์": "🏥",
+    "บริหารธุรกิจ": "💼",
+    "ศิลปกรรมศาสตร์": "🎨",
+    "การศึกษา": "📚",
+    "สังคมศาสตร์": "🌍",
+    "ภาษาไทย": "🗣️",
+    "วิทยาศาสตร์ทั่วไป": "🔬",
+    "กฎหมาย": "⚖️",
+  };
+
+  const chunks = chunkArray(faculty.majors, 12);
+  const majors = chunks[page - 1];
+  if (!majors) return null;
+
+  const bubbles = majors.map((major, index) => {
     let emoji = "";
     for (const key in majorEmojiMap) {
       if (major.name.includes(key)) {
@@ -996,17 +1000,8 @@ function createMajorBubbles(selectedFaculty, page = 1) {
     };
   });
 
-  const chunks = chunkArray(majorBubbles, 12);
-  const pageIndex = page - 1;
-
-  if (pageIndex >= chunks.length) {
-    return null; // หน้าเกินจำนวน
-  }
-
-  const bubbles = [...chunks[pageIndex]];
-
-  // ถ้ามีหน้าถัดไป ให้เพิ่ม bubble ดูเพิ่มเติม
-  if (pageIndex < chunks.length - 1) {
+  // ถ้ามีหน้าถัดไป ให้เพิ่มปุ่ม "ดูเพิ่มเติม"
+  if (page < chunks.length) {
     bubbles.push({
       type: "bubble",
       size: "micro",
@@ -1018,11 +1013,9 @@ function createMajorBubbles(selectedFaculty, page = 1) {
             type: "text",
             text: "➡️ ดูเพิ่มเติม",
             align: "center",
-            weight: "bold",
-            wrap: true
+            weight: "bold"
           }
-        ],
-        paddingAll: "10px"
+        ]
       },
       footer: {
         type: "box",
@@ -1034,18 +1027,17 @@ function createMajorBubbles(selectedFaculty, page = 1) {
             action: {
               type: "message",
               label: "ดูเพิ่มเติม",
-              text: `ดูเพิ่มเติม:${selectedFaculty.name}:${page + 1}`
+              text: `ดูเพิ่มเติม:${faculty.name}:${page + 1}`
             }
           }
-        ],
-        paddingAll: "10px"
+        ]
       }
     });
   }
 
   return {
     type: "flex",
-    altText: `เลือกสาขาใน "${selectedFaculty.name}" หน้า ${page}`,
+    altText: `เลือกสาขาใน "${faculty.name}" หน้า ${page}`,
     contents: {
       type: "carousel",
       contents: bubbles
@@ -1053,61 +1045,40 @@ function createMajorBubbles(selectedFaculty, page = 1) {
   };
 }
 
-// ใน event handler ตรงที่รับข้อความ
-async function handleUserMessage(event) {
-  const userMessage = event.message.text;
-
-  // เช็คว่า user กดดูเพิ่มเติมหรือยัง
-  if (userMessage.startsWith("ดูเพิ่มเติม:")) {
-    // รูปแบบข้อความ: ดูเพิ่มเติม:{ชื่อคณะ}:{เลขหน้า}
-    const parts = userMessage.split(":");
-    const facultyName = parts[1];
-    const page = parseInt(parts[2], 10);
-
-    const selectedFaculty = faculties.find(f => f.name === facultyName);
-    if (!selectedFaculty) {
+// STEP 2: ตรวจสอบว่าเป็น "ดูเพิ่มเติม:{ชื่อคณะ}:{หน้าที่}"
+if (userMessage.startsWith("ดูเพิ่มเติม:")) {
+  const [, facultyName, pageStr] = userMessage.split(":");
+  const page = parseInt(pageStr);
+  const faculty = faculties.find(f => f.name === facultyName);
+  if (faculty) {
+    const flexMsg = createMajorFlexMessage(faculty, page);
+    if (flexMsg) {
+      await client.replyMessage(event.replyToken, flexMsg);
+    } else {
       await client.replyMessage(event.replyToken, {
         type: "text",
-        text: "ไม่พบคณะที่เลือกค่ะ"
+        text: "ไม่พบข้อมูลเพิ่มเติมแล้วค่ะ 😊"
       });
-      return;
-    }
-
-    const flexMessage = createMajorBubbles(selectedFaculty, page);
-    if (!flexMessage) {
-      await client.replyMessage(event.replyToken, {
-        type: "text",
-        text: "ไม่มีหน้าสำหรับแสดงเพิ่มเติมค่ะ"
-      });
-      return;
-    }
-
-    await client.replyMessage(event.replyToken, flexMessage);
-    return;
-  }
-
-  // กรณีปกติ เลือกคณะ
-  const selectedFaculty = faculties.find(f => f.name === userMessage);
-  if (selectedFaculty) {
-    // ส่งข้อความแนะนำก่อน
-    await client.replyMessage(event.replyToken, {
-      type: "text",
-      text: `🎓 กรุณาเลือกสาขาที่สนใจใน\n"${selectedFaculty.name}" ด้านล่างนี้ค่ะ 😊`
-    });
-
-    // ส่งหน้าแรกของสาขาวิชา
-    const flexMessage = createMajorBubbles(selectedFaculty, 1);
-    if (flexMessage) {
-      await client.pushMessage(event.source.userId, flexMessage);
     }
     return;
   }
+}
 
-  // กรณีข้อความอื่นๆ ...
+// STEP 3: ถ้าผู้ใช้พิมพ์ชื่อคณะ (เช่น "คณะครุศาสตร์")
+const selectedFaculty = faculties.find(f => f.name === userMessage);
+if (selectedFaculty) {
+  // ตอบข้อความแนะนำก่อน
   await client.replyMessage(event.replyToken, {
     type: "text",
-    text: "ข้อความไม่ตรงกับคณะหรือคำสั่งที่รองรับ"
+    text: `🎓 กรุณาเลือกสาขาที่สนใจใน "${selectedFaculty.name}" ด้านล่างนี้ค่ะ 😊`
   });
+
+  // สร้าง Flex และส่งสาขาในหน้าที่ 1
+  const flexMsg = createMajorFlexMessage(selectedFaculty, 1);
+  if (flexMsg) {
+    await client.pushMessage(event.source.userId, flexMsg);
+  }
+  return;
 }
 
 // STEP 3: เลือกสาขา
