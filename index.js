@@ -223,7 +223,7 @@ setTimeout(() => {
   }).catch((err) => {
     console.error("Push message error:", err);
   });
-}, 300); // ✅ รอ 300 มิลลิวินาที
+}, 500); // ✅ รอ 500 มิลลิวินาที
 
 return;
 }
@@ -935,16 +935,38 @@ const majorEmojiMap = {
   "กฎหมาย": "⚖️",
 };
 
+// ฟังก์ชันแบ่ง array เป็นกลุ่มย่อยละไม่เกิน 12
+function chunkArray(array, size = 12) {
+  const result = [];
+  for (let i = 0; i < array.length; i += size) {
+    result.push(array.slice(i, i + size));
+  }
+  return result;
+}
+
 // STEP 2: เลือกคณะ -> แสดง Flex Message เลือกสาขา
 const selectedFaculty = faculties.find(f => f.name === userMessage);
 if (selectedFaculty) {
+  const majorEmojiMap = {
+    "คอมพิวเตอร์": "💻",
+    "วิศวกรรม": "⚙️",
+    "การแพทย์": "🏥",
+    "บริหารธุรกิจ": "💼",
+    "ศิลปกรรมศาสตร์": "🎨",
+    "การศึกษา": "📚",
+    "สังคมศาสตร์": "🌍",
+    "ภาษาไทย": "🗣️",
+    "วิทยาศาสตร์ทั่วไป": "🔬",
+    "กฎหมาย": "⚖️",
+  };
+
+  // สร้าง bubbles สำหรับสาขา
   const majorBubbles = selectedFaculty.majors.map((major, index) => {
-    // หา emoji ตามชื่อสาขา (ตรวจสอบว่า major.name มีคำใดใน map หรือไม่)
     let emoji = "";
     for (const key in majorEmojiMap) {
       if (major.name.includes(key)) {
         emoji = majorEmojiMap[key];
-        break;  // หยุดที่ตัวแรกที่เจอ
+        break;
       }
     }
 
@@ -957,7 +979,7 @@ if (selectedFaculty) {
         contents: [
           {
             type: "text",
-            text: major.name,  // แสดงชื่อเต็มของสาขา            
+            text: major.name,
             weight: "bold",
             size: "sm",
             wrap: true,
@@ -977,7 +999,7 @@ if (selectedFaculty) {
             color: index % 2 === 0 ? "#FFA500" : "#FFD700",
             action: {
               type: "message",
-              label: emoji,
+              label: emoji || "เลือก",
               text: major.name
             }
           }
@@ -988,20 +1010,26 @@ if (selectedFaculty) {
     };
   });
 
-  await client.replyMessage(event.replyToken, [
-    {
-      type: 'text',
-      text: `🎓 กรุณาเลือกสาขาที่สนใจใน\n"${selectedFaculty.name}" ด้านล่างนี้ค่ะ 😊`
-    },
-    {
+  const chunks = chunkArray(majorBubbles, 12); // แบ่งชุดละไม่เกิน 12 bubble
+
+  // ส่งข้อความแนะนำรอบแรกผ่าน replyMessage (ได้แค่ 1 ครั้งต่อ event)
+  await client.replyMessage(event.replyToken, {
+    type: "text",
+    text: `🎓 กรุณาเลือกสาขาที่สนใจใน\n"${selectedFaculty.name}" ด้านล่างนี้ค่ะ 😊`
+  });
+
+  // ส่ง Flex Message แต่ละกลุ่มต่อด้วย pushMessage
+  for (const chunk of chunks) {
+    await client.pushMessage(event.source.userId, {
       type: "flex",
-      altText: `กรุณาเลือกสาขาใน "${selectedFaculty.name}"`,
+      altText: `เลือกสาขาใน "${selectedFaculty.name}"`,
       contents: {
         type: "carousel",
-        contents: majorBubbles
+        contents: chunk
       }
-    }
-  ]);
+    });
+  }
+
   return;
 }
 
