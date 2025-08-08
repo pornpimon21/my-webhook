@@ -936,6 +936,7 @@ const majorEmojiMap = {
   "กฎหมาย": "⚖️",
 };
 
+// ฟังก์ชันแบ่ง array เป็นกลุ่มย่อยละไม่เกิน 12
 function chunkArray(array, size = 12) {
   const result = [];
   for (let i = 0; i < array.length; i += size) {
@@ -944,9 +945,112 @@ function chunkArray(array, size = 12) {
   return result;
 }
 
+// STEP 1: ถ้าข้อความเป็น "ดูเพิ่มเติม:{คณะ}:{page}"
+const moreMatch = userMessage.match(/^ดูเพิ่มเติม:(.*):(\d+)$/);
+if (moreMatch) {
+  const facultyName = moreMatch[1];
+  const page = parseInt(moreMatch[2]);
+
+  const selectedFaculty = faculties.find(f => f.name === facultyName);
+  if (!selectedFaculty) {
+    await client.replyMessage(event.replyToken, {
+      type: "text",
+      text: `ไม่พบคณะ "${facultyName}" ครับ`
+    });
+    return;
+  }
+
+  const majorBubbles = selectedFaculty.majors.map((major, index) => {
+    let emoji = "";
+    for (const key in majorEmojiMap) {
+      if (major.name.includes(key)) {
+        emoji = majorEmojiMap[key];
+        break;
+      }
+    }
+
+    return {
+      type: "bubble",
+      size: "micro",
+      body: {
+        type: "box",
+        layout: "vertical",
+        contents: [{
+          type: "text",
+          text: major.name,
+          weight: "bold",
+          size: "sm",
+          wrap: true,
+          align: "center"
+        }],
+        paddingAll: "10px"
+      },
+      footer: {
+        type: "box",
+        layout: "vertical",
+        contents: [{
+          type: "button",
+          style: "primary",
+          color: index % 2 === 0 ? "#FFA500" : "#FFD700",
+          action: {
+            type: "message",
+            label: emoji || "เลือก",
+            text: major.name
+          }
+        }],
+        paddingAll: "10px"
+      }
+    };
+  });
+
+  const chunks = chunkArray(majorBubbles, 12);
+  const pageBubbles = [...chunks[page - 1]];
+
+  if (page < chunks.length) {
+    pageBubbles.push({
+      type: "bubble",
+      size: "micro",
+      body: {
+        type: "box",
+        layout: "vertical",
+        contents: [{
+          type: "text",
+          text: "➡️ ดูเพิ่มเติม",
+          align: "center",
+          wrap: true,
+          weight: "bold"
+        }]
+      },
+      footer: {
+        type: "box",
+        layout: "vertical",
+        contents: [{
+          type: "button",
+          style: "secondary",
+          action: {
+            type: "message",
+            label: "ดูเพิ่มเติม",
+            text: `ดูเพิ่มเติม:${facultyName}:${page + 1}`
+          }
+        }]
+      }
+    });
+  }
+
+  await client.replyMessage(event.replyToken, {
+    type: "flex",
+    altText: `เลือกสาขาใน "${facultyName}" (หน้า ${page})`,
+    contents: {
+      type: "carousel",
+      contents: pageBubbles
+    }
+  });
+  return;
+}
+
+// STEP 2: ถ้า user พิมพ์ชื่อคณะ
 const selectedFaculty = faculties.find(f => f.name === userMessage);
 if (!selectedFaculty) {
-  // ส่งข้อความว่าไม่พบคณะ
   await client.replyMessage(event.replyToken, {
     type: "text",
     text: `ไม่พบคณะ "${userMessage}" ครับ`
@@ -954,7 +1058,6 @@ if (!selectedFaculty) {
   return;
 }
 
-// สร้าง bubbles สำหรับสาขาทั้งหมด
 const majorBubbles = selectedFaculty.majors.map((major, index) => {
   let emoji = "";
   for (const key in majorEmojiMap) {
@@ -963,6 +1066,7 @@ const majorBubbles = selectedFaculty.majors.map((major, index) => {
       break;
     }
   }
+
   return {
     type: "bubble",
     size: "micro",
@@ -977,8 +1081,7 @@ const majorBubbles = selectedFaculty.majors.map((major, index) => {
         wrap: true,
         align: "center"
       }],
-      paddingAll: "10px",
-      spacing: "sm"
+      paddingAll: "10px"
     },
     footer: {
       type: "box",
@@ -993,21 +1096,16 @@ const majorBubbles = selectedFaculty.majors.map((major, index) => {
           text: major.name
         }
       }],
-      paddingAll: "10px",
-      spacing: "sm"
+      paddingAll: "10px"
     }
   };
 });
 
 if (selectedFaculty.name === "คณะครุศาสตร์" && majorBubbles.length > 12) {
-  // กรณีคณะครุศาสตร์ที่มีเกิน 12 สาขา: แบ่งหน้า และเพิ่มปุ่มดูเพิ่มเติม
-
-  // เริ่มจากหน้าแรก (page 1)
   const page = 1;
   const chunks = chunkArray(majorBubbles, 12);
-  const pageBubbles = [...chunks[page - 1]];
+  const pageBubbles = [...chunks[0]];
 
-  // ถ้ามีหน้าถัดไป ให้เพิ่ม bubble ปุ่มดูเพิ่มเติม
   if (chunks.length > 1) {
     pageBubbles.push({
       type: "bubble",
@@ -1048,12 +1146,8 @@ if (selectedFaculty.name === "คณะครุศาสตร์" && majorBubb
     }
   });
   return;
-} 
-
-
-else {
-  // กรณีคณะอื่นที่สาขาน้อยกว่า 12 หรือคณะครุศาสตร์ไม่เกิน 12 สาขา: แสดงทั้งหมดในหน้าเดียว
-
+} else {
+  // คณะอื่น หรือ ครุศาสตร์ที่ไม่เกิน 12
   await client.replyMessage(event.replyToken, {
     type: "flex",
     altText: `เลือกสาขาใน "${selectedFaculty.name}"`,
@@ -1064,6 +1158,7 @@ else {
   });
   return;
 }
+
 
 // STEP 3: เลือกสาขา
 let matchedMajor, matchedFaculty;
