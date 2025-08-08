@@ -923,8 +923,8 @@ if (userMessage === 'ค้นหาข้อมูล') {
 }
 
 
-// ฟังก์ชันแบ่ง array เป็นกลุ่มย่อยละไม่เกิน 11
-function chunkArray(array, size = 11) {
+// ฟังก์ชันแบ่ง array เป็นกลุ่มย่อยละไม่เกิน 10
+function chunkArray(array, size = 10) {
   const result = [];
   for (let i = 0; i < array.length; i += size) {
     result.push(array.slice(i, i + size));
@@ -947,7 +947,7 @@ function createMajorFlexMessage(faculty, page = 1) {
     "กฎหมาย": "⚖️",
   };
 
-  const chunks = chunkArray(faculty.majors, 11);
+  const chunks = chunkArray(faculty.majors, 10);
   const majors = chunks[page - 1];
   if (!majors) return null;
 
@@ -1027,7 +1027,7 @@ function createMajorFlexMessage(faculty, page = 1) {
             action: {
               type: "message",
               label: "ดูเพิ่มเติม",
-              text: `ดูเพิ่มเติม:${faculty.name}:${page + 1}`
+              text: `➡️ ดูเพิ่มเติม : หน้า ${page + 1} ของ 🎓 ${faculty.name}`
             }
           }
         ]
@@ -1046,9 +1046,11 @@ function createMajorFlexMessage(faculty, page = 1) {
 }
 
 // STEP 2: ตรวจสอบว่าเป็น "ดูเพิ่มเติม:{ชื่อคณะ}:{หน้าที่}"
-if (userMessage.startsWith("ดูเพิ่มเติม:")) {
-  const [, facultyName, pageStr] = userMessage.split(":");
-  const page = parseInt(pageStr);
+const regex = /^➡️ ดูเพิ่มเติม : หน้า (\d+) ของ 🎓 (.+)$/;
+const match = userMessage.match(regex);
+if (match) {
+  const page = parseInt(match[1]);
+  const facultyName = match[2];
   const faculty = faculties.find(f => f.name === facultyName);
   if (faculty) {
     const flexMsg = createMajorFlexMessage(faculty, page);
@@ -1059,7 +1061,7 @@ if (userMessage.startsWith("ดูเพิ่มเติม:")) {
         type: "text",
         text: "ไม่พบข้อมูลเพิ่มเติมแล้วค่ะ 😊"
       });
-    }
+    }    
     return;
   }
 }
