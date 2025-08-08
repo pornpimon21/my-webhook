@@ -923,8 +923,8 @@ if (userMessage === 'ค้นหาข้อมูล') {
 }
 
 
-// ฟังก์ชันแบ่ง array เป็นกลุ่มย่อยละไม่เกิน 12
-function chunkArray(array, size = 12) {
+// ฟังก์ชันแบ่ง array เป็นกลุ่มย่อยละไม่เกิน 11
+function chunkArray(array, size = 11) {
   const result = [];
   for (let i = 0; i < array.length; i += size) {
     result.push(array.slice(i, i + size));
@@ -947,7 +947,7 @@ function createMajorFlexMessage(faculty, page = 1) {
     "กฎหมาย": "⚖️",
   };
 
-  const chunks = chunkArray(faculty.majors, 12);
+  const chunks = chunkArray(faculty.majors, 11);
   const majors = chunks[page - 1];
   if (!majors) return null;
 
