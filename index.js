@@ -346,7 +346,7 @@ results.forEach((r, i) => {
   //ทำข้อความอาชีพให้อ่านง่าย (ถ้ามี)
   let careersText = "";
   if (majorInfo.careers && majorInfo.careers.length > 0) {
-    careersText = "💼 อาชีพที่เกี่ยวข้อง\n";
+    careersText = "💼 อาชีพหลังเรียนจบ\n";
     careersText += majorInfo.careers.map(career => `  • ${career}`).join("\n") + "\n";
   }
 
@@ -1162,7 +1162,7 @@ if (matchedMajor) {
         { type: "text", text: conditionText, size: "sm", wrap: true },
 
         // อาชีพ
-        { type: "text", text: "🎯 อาชีพที่เกี่ยวข้อง", size: "sm", weight: "bold", margin: "md" },
+        { type: "text", text: "🎯 อาชีพหลังเรียนจบ", size: "sm", weight: "bold", margin: "md" },
         ...careersContents,
 
         // ช่องทางติดตามข่าวสาร
@@ -1445,7 +1445,7 @@ const majorName = rec.major || "";
         },
         {
           type: "text",
-          text: "💼 อาชีพที่เกี่ยวข้อง",
+          text: "💼 อาชีพหลังเรียนจบ",
           weight: "bold",
           margin: "md",
           size: "sm"
