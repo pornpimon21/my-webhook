@@ -863,8 +863,8 @@ const safeText = (text) => {
 const safeArray = (arr) =>
   Array.isArray(arr) && arr.length > 0 ? arr : ['ไม่ระบุ'];
 
-// STEP 1: คำสั่ง "ค้นหาข้อมูล" -> แสดง Flex Message เลือกคณะ
-if (userMessage === 'ค้นหาข้อมูล') {
+// STEP 1: คำสั่ง "ค้นหาคณะสาขา" -> แสดง Flex Message เลือกคณะ
+if (userMessage === 'ค้นหาคณะสาขา') {
   // สร้าง bubbles สำหรับคณะ (ปุ่มสีสลับฟ้า/ชมพู)
   const facultyBubbles = faculties.map((faculty, index) => ({
     type: "bubble",
@@ -1267,7 +1267,7 @@ if (matchedMajor) {
           action: {
             type: "message",
             label: "เริ่มใหม่",
-            text: "ค้นหาข้อมูล"
+            text: "ค้นหาคณะสาขา"
           }
         }
       ]
