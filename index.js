@@ -969,7 +969,7 @@ function createMajorFlexMessage(faculty, page = 1) {
         contents: [
           {
             type: "text",
-            text: major.name,
+            text: `${emoji ? emoji + " " : ""}${major.name}`,
             weight: "bold",
             size: "sm",
             wrap: true,
@@ -986,10 +986,10 @@ function createMajorFlexMessage(faculty, page = 1) {
           {
             type: "button",
             style: "primary",
-            color: index % 2 === 0 ? "#FFA500" : "#FFD700",
+            color: index % 2 === 0 ? "#FFA500" : "#32CD32",
             action: {
               type: "message",
-              label: emoji || "เลือก",
+              label: "เลือก 📖",
               text: major.name
             }
           }
