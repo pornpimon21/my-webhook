@@ -1154,11 +1154,11 @@ if (matchedMajor) {
         { type: "text", text: abilityText, size: "sm", wrap: true },
 
         // จำนวนที่รับ
-        { type: "text", text: "🧠 รับจำนวน", size: "sm", weight: "bold", margin: "md" },
+        { type: "text", text: "✍️ รับจำนวน", size: "sm", weight: "bold", margin: "md" },
         { type: "text", text: quotaText, size: "sm", wrap: true },
 
         // คุณสมบัติ
-        { type: "text", text: "📌 เงื่อนไข", size: "sm", weight: "bold", margin: "md" },
+        { type: "text", text: "📝 คุณสมบัติ", size: "sm", weight: "bold", margin: "md" },
         { type: "text", text: conditionText, size: "sm", wrap: true },
 
         // อาชีพ
