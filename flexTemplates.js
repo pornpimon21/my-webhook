@@ -50,7 +50,7 @@ function createPlanCard(facultyName, majorName, rec) {
     },
     footer: {
       type: "box",
-      layout: "horizontal",
+      layout: "vertical",
       spacing: "sm",
       contents: [
         {
@@ -62,24 +62,31 @@ function createPlanCard(facultyName, majorName, rec) {
           margin: "md"
         },
         {
-          type: "button",
-          action: {
-            type: "uri",
-            label: "🔗 ดูแผนการเรียนฉบับเต็ม (PDF)",
-            uri: rec.studyPlanPdf || "https://example.com/default.pdf"
-          },
-          style: "primary",
-          color: "#4A90E2"
-        },
-        {
-          type: "button",
-          action: {
-            type: "uri",
-            label: "🔗 ดูแผนการเรียนแบบภาพ (Info)",
-            uri: rec.studyPlanInfoImg || "https://example.com/default_info.png"
-          },
-          style: "secondary",
-          color: "#27AE60"
+          type: "box",
+          layout: "horizontal",
+          spacing: "sm",
+          contents: [
+            {
+              type: "button",
+              action: {
+                type: "uri",
+                label: "🔗 ดูแผนการเรียนฉบับเต็ม (PDF)",
+                uri: rec.studyPlanPdf || "https://example.com/default.pdf"
+              },
+              style: "primary",
+              color: "#4A90E2"
+            },
+            {
+              type: "button",
+              action: {
+                type: "postback",
+                label: "🔗 ดูแผนการเรียนแบบภาพ (Info)",
+                data: `action=showInfo&major=${majorName}`
+              },
+              style: "secondary",
+              color: "#27AE60"
+            }
+          ]
         }
       ]
     }
