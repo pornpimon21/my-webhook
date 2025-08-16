@@ -22,6 +22,7 @@ const sessionSchema = new mongoose.Schema({
       // เพิ่มข้อมูลใหม่
       studyPlan: [String],
       studyPlanPdf: String,
+      studyPlanInfoImg: String,
       website: String,
       majorsFacebook: String,
       facultyFacebook: String,

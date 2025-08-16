@@ -391,6 +391,7 @@ session.recommendations = results.map((r, i) => {
     // เพิ่มข้อมูลใหม่จาก majorInfo
     studyPlan: majorInfo.studyPlan,
     studyPlanPdf: majorInfo.studyPlanPdf,
+    studyPlanInfoImg: majorInfo.studyPlanInfoImg,
     website: majorInfo.website,
     majorsFacebook: majorInfo.majorsFacebook,
     facultyFacebook: majorInfo.facultyFacebook,
