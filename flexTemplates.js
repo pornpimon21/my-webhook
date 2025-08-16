@@ -55,7 +55,7 @@ function createPlanCard(facultyName, majorName, rec) {
       contents: [
         {
           type: "text",
-          text: "📄 เป็นแค่แผนการเรียนแบบสรุปนะคะ 😊",
+          text: "📄 เป็นแค่แผนการเรียนแบบสรุปนะคะ 😊\nดูฉบับเต็มได้ด้านล่าง 👇",
           size: "sm",
           align: "center",
           color: "#888888",
@@ -70,21 +70,21 @@ function createPlanCard(facultyName, majorName, rec) {
               type: "button",
               action: {
                 type: "uri",
-                label: "🔗 ดูแผนการเรียนฉบับเต็ม (PDF)",
+                label: "🔗 PDF",
                 uri: rec.studyPlanPdf || "https://example.com/default.pdf"
               },
               style: "primary",
-              color: "#4A90E2"
+              color: "#800080"
             },
             {
               type: "button",
               action: {
                 type: "postback",
-                label: "🔗 ดูแผนการเรียนแบบภาพ (Info)",
+                label: "📊 Info",
                 data: `action=showInfo&major=${majorName}`
               },
               style: "secondary",
-              color: "#27AE60"
+              color: "#FFB6C1"
             }
           ]
         }
