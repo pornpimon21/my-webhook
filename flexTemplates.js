@@ -93,4 +93,31 @@ function createPlanCard(facultyName, majorName, rec) {
   };
 }
 
-module.exports = { createPlanCard };
+// ----------------- postback handler -----------------
+async function handlePostback(event, client) {
+  if (!event.postback?.data) return;
+
+  if (event.postback.data.startsWith("action=showInfo")) {
+    const params = new URLSearchParams(event.postback.data);
+    const majorName = params.get("major");
+
+    let imgUrl = null;
+    faculties.forEach(f => {
+      f.majors.forEach(m => { 
+        if (m.name === majorName) imgUrl = m.studyPlanInfoImg; 
+      });
+    });
+
+    if (imgUrl) {
+      await client.replyMessage(event.replyToken, {
+        type: "image",
+        originalContentUrl: imgUrl,
+        previewImageUrl: imgUrl
+      });
+    } else {
+      await client.replyMessage(event.replyToken, { type: "text", text: "ไม่พบภาพแผนการเรียน" });
+    }
+  }
+}
+
+module.exports = { createPlanCard, handlePostback };
