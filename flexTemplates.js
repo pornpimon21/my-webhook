@@ -94,7 +94,7 @@ function createPlanCard(facultyName, majorName, rec) {
 }
 
 // ----------------- postback handler -----------------
-async function handlePostback(event, client) {
+async function handlePostback(event, client, faculties) {
   if (!event.postback?.data) return;
 
   if (event.postback.data.startsWith("action=showInfo")) {
