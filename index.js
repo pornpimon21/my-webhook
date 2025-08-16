@@ -422,6 +422,12 @@ app.post('/linewebhook',
       const events = req.body.events;
 
       await Promise.all(events.map(async (event) => {
+        if (event.type === "postback") {
+          console.log("📩 ได้ postback:", event.postback.data);
+          await handlePostback(event, client, faculties);
+          return;
+        }
+
         if (event.type === 'message' && event.message.type === 'text') {
           const userId = event.source.userId;
           const userMessage = event.message.text;
@@ -853,14 +859,7 @@ if (userMessage.startsWith("📚 แผนการเรียน")) {
     });
   
     return;
-  }
-  
-  // ------------------------
-  // จับ postback event ที่เกิดจากปุ่มใน Flex card
-  if (event.type === "postback") {
-    await handlePostback(event, client, faculties); // ต้องส่ง faculties เข้าไปด้วย
-  }
-  
+  }  
 
 // ฟังก์ชันช่วยตรวจสอบข้อความ ให้รองรับทั้ง string และ number
 const safeText = (text) => {
