@@ -55,7 +55,7 @@ function createPlanCard(facultyName, majorName, rec) {
       contents: [
         {
           type: "text",
-          text: "📄 เป็นแค่แผนการเรียนแบบสรุปนะคะ 😊\nดูฉบับเต็มได้ด้านล่าง 👇",
+          text: "📄 ดูแผนการเรียนฉบับเต็มได้ด้านล่าง 👇",
           size: "sm",
           align: "center",
           color: "#888888",
@@ -74,7 +74,7 @@ function createPlanCard(facultyName, majorName, rec) {
                 uri: rec.studyPlanPdf || "https://example.com/default.pdf"
               },
               style: "primary",
-              color: "#800080"
+              color: "#9370DB"
             },
             {
               type: "button",
