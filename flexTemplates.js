@@ -51,29 +51,73 @@ function createPlanCard(facultyName, majorName, rec) {
     footer: {
       type: "box",
       layout: "vertical",
-      spacing: "md",
+      spacing: "sm",
       contents: [
         {
           type: "text",
-          text: "📄 เป็นแค่แผนการเรียนแบบสรุปนะคะ 😊",
+          text: "📄 ดูแผนการเรียนฉบับเต็มได้ด้านล่าง 👇",
           size: "sm",
           align: "center",
           color: "#888888",
           margin: "md"
         },
         {
-          type: "button",
-          action: {
-            type: "uri",
-            label: "🔗 ดูแผนการเรียนฉบับเต็ม (PDF)",
-            uri: rec.studyPlanPdf || "https://example.com/default.pdf"
-          },
-          style: "primary",
-          color: "#4A90E2"
+          type: "box",
+          layout: "horizontal",
+          spacing: "sm",
+          contents: [
+            {
+              type: "button",
+              action: {
+                type: "uri",
+                label: "🔗 PDF",
+                uri: rec.studyPlanPdf || "https://example.com/default.pdf"
+              },
+              style: "primary",
+              color: "#9370DB"
+            },
+            {
+              type: "button",
+              action: {
+                type: "postback",
+                label: "📊 Info",
+                data: `action=showInfo&major=${majorName}`
+              },
+              style: "secondary",
+              color: "#FFB6C1"
+            }
+          ]
         }
       ]
     }
   };
 }
 
-module.exports = { createPlanCard };
+// ----------------- postback handler -----------------
+async function handlePostback(event, client, faculties) {
+  if (!event.postback?.data) return;
+
+  if (event.postback.data.startsWith("action=showInfo")) {
+    const params = new URLSearchParams(event.postback.data);
+    const majorName = params.get("major");
+
+    let imgUrl = null;
+    faculties.forEach(f => {
+      f.majors.forEach(m => { 
+        if (m.name === majorName) imgUrl = m.studyPlanInfoImg; 
+      });
+    });
+
+    if (imgUrl) {
+      await client.replyMessage(event.replyToken, {
+        type: "image",
+        originalContentUrl: imgUrl,
+        previewImageUrl: imgUrl
+      });
+    } else {
+      await client.replyMessage(event.replyToken, { type: "text", text: "ไม่พบภาพแผนการเรียน" });
+    }
+  }
+}
+
+module.exports = { createPlanCard, handlePostback };
