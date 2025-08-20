@@ -12,7 +12,7 @@ const { buildQuestionFlex } = require('./skillsMenu');
 const analyzeAnswers = require('./analyze');
 const questions = require('./questions');
 const { faqFlex, faqs } = require('./faqFlex');
-const { createPlanCard } = require('./flexTemplates');
+const { createPlanCard, handlePostback } = require('./flexTemplates');
 const userSessions = {}; // <== ต้องมีไว้เก็บคำตอบของแต่ละ userId
 
 const app = express();
@@ -391,6 +391,7 @@ session.recommendations = results.map((r, i) => {
     // เพิ่มข้อมูลใหม่จาก majorInfo
     studyPlan: majorInfo.studyPlan,
     studyPlanPdf: majorInfo.studyPlanPdf,
+    studyPlanInfoImg: majorInfo.studyPlanInfoImg,
     website: majorInfo.website,
     majorsFacebook: majorInfo.majorsFacebook,
     facultyFacebook: majorInfo.facultyFacebook,
@@ -421,6 +422,12 @@ app.post('/linewebhook',
       const events = req.body.events;
 
       await Promise.all(events.map(async (event) => {
+        if (event.type === "postback") {
+          console.log("📩 ได้ postback:", event.postback.data);
+          await handlePostback(event, client, faculties);
+          return;
+        }
+
         if (event.type === 'message' && event.message.type === 'text') {
           const userId = event.source.userId;
           const userMessage = event.message.text;
@@ -802,56 +809,57 @@ if (userMessage.startsWith("📚 แผนการเรียน")) {
 
 
   if (userMessage.startsWith("🗂️ แผนการเรียน")) {
-  const lines = userMessage.split("\n");
-  const facultyName = lines[1].replace("🏛️ คณะ : ", "").trim();
-  const majorName = lines[2].replace("📘 สาขา : ", "").trim();
-
-  // หา faculty ในข้อมูล faculties
-  const matchedFaculty = faculties.find(faculty => faculty.name === facultyName);
-  if (!matchedFaculty) {
+    const lines = userMessage.split("\n");
+    const facultyName = lines[1].replace("🏛️ คณะ : ", "").trim();
+    const majorName = lines[2].replace("📘 สาขา : ", "").trim();
+  
+    // หา faculty ในข้อมูล faculties
+    const matchedFaculty = faculties.find(f => f.name === facultyName);
+    if (!matchedFaculty) {
+      await client.replyMessage(event.replyToken, {
+        type: "text",
+        text: "❌ ไม่พบคณะที่ระบุค่ะ"
+      });
+      return;
+    }
+  
+    // หา major ใน faculty
+    const matchedMajor = matchedFaculty.majors.find(m => m.name === majorName);
+    if (!matchedMajor) {
+      await client.replyMessage(event.replyToken, {
+        type: "text",
+        text: "❌ ไม่พบสาขาที่ระบุค่ะ"
+      });
+      return;
+    }
+  
+    // เช็คว่ามีแผนการเรียนไหม
+    if (!matchedMajor.studyPlan || matchedMajor.studyPlan.length === 0) {
+      await client.replyMessage(event.replyToken, {
+        type: "text",
+        text: "❌ ไม่พบข้อมูลแผนการเรียนของสาขานี้ค่ะ"
+      });
+      return;
+    }
+  
+    // สร้าง rec จากข้อมูลใน matchedMajor
+    const rec = {
+      studyPlan: matchedMajor.studyPlan,
+      studyPlanPdf: matchedMajor.studyPlanPdf || null,
+      studyPlanInfoImg: matchedMajor.studyPlanInfoImg || null
+    };
+  
+    // สร้าง Flex card
+    const planCard = createPlanCard(facultyName, majorName, rec);
+  
     await client.replyMessage(event.replyToken, {
-      type: "text",
-      text: "❌ ไม่พบคณะที่ระบุค่ะ"
+      type: "flex",
+      altText: "แผนการเรียน",
+      contents: planCard
     });
+  
     return;
-  }
-
-  // หา major ใน faculty
-  const matchedMajor = matchedFaculty.majors.find(major => major.name === majorName);
-  if (!matchedMajor) {
-    await client.replyMessage(event.replyToken, {
-      type: "text",
-      text: "❌ ไม่พบสาขาที่ระบุค่ะ"
-    });
-    return;
-  }
-
-  // เช็คว่ามีแผนการเรียนไหม
-  if (!matchedMajor.studyPlan || matchedMajor.studyPlan.length === 0) {
-    await client.replyMessage(event.replyToken, {
-      type: "text",
-      text: "❌ ไม่พบข้อมูลแผนการเรียนของสาขานี้ค่ะ"
-    });
-    return;
-  }
-
-  // สร้าง rec จากข้อมูลใน matchedMajor
-  const rec = {
-    studyPlan: matchedMajor.studyPlan,
-    studyPlanPdf: matchedMajor.studyPlanPdf || null
-  };
-
-  const planCard = createPlanCard(facultyName, majorName, rec);
-
-  await client.replyMessage(event.replyToken, {
-    type: "flex",
-    altText: "แผนการเรียน",
-    contents: planCard
-  });
-
-  return;
-}
-
+  }  
 
 // ฟังก์ชันช่วยตรวจสอบข้อความ ให้รองรับทั้ง string และ number
 const safeText = (text) => {
