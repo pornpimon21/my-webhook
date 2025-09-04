@@ -64,38 +64,38 @@ async function detectIntentText(sessionId, text, languageCode = 'th') {
 
 
 // ฟังก์ชันเปรียบเทียบความใกล้เคียง
-function findClosestAbility(userInput, similarityThreshold = 0.7) {
+function findClosestAbility(userInput, similarityThreshold = 0.85) {
+  // แปลงข้อความเป็นตัวพิมพ์เล็ก และตัดช่องว่าง
   userInput = userInput.trim().toLowerCase();
 
-  // สร้าง array ของทุก ability ใน faculties และ majors (ตัดซ้ำ)
+  // รวมทุก ability ของ faculties และ majors (ตัดซ้ำ)
   const allAbilities = [...new Set(
     faculties.flatMap(f => f.majors.flatMap(m => m.ability))
   )].map(a => a.trim().toLowerCase());
 
-  // 1️⃣ ตรวจสอบ exact match ก่อน ถ้าเจอคืนค่าเลย
+  // 1️⃣ exact match ถ้าเจอคืนค่าเลย
   if (allAbilities.includes(userInput)) return userInput;
 
-  // 2️⃣ ตรวจสอบ prefix match (เฉพาะ input ≥ 3 ตัวอักษร)
-  // เช่น user พิมพ์ "คณิต" → match กับ "คณิตศาสตร์"
+  // 2️⃣ prefix match เฉพาะ input ≥ 3 ตัวอักษร
   if (userInput.length >= 3) {
     const prefixMatch = allAbilities.find(a => a.startsWith(userInput));
     if (prefixMatch) return prefixMatch;
   }
 
-  // 3️⃣ ตรวจสอบ similarity ratio (สำหรับพิมพ์ผิดเล็กน้อย)
-  let closest = null;      // ตัวแปรเก็บ ability ที่ใกล้เคียงที่สุด
-  let maxSimilarity = 0;   // ตัวแปรเก็บความคล้ายสูงสุด
+  // 3️⃣ similarity ratio สำหรับพิมพ์ผิดเล็กน้อย
+  let closest = null;
+  let maxSimilarity = 0;
   for (const ability of allAbilities) {
-    const dist = levenshtein.get(userInput, ability);  // นับจำนวนตัวอักษรที่ต่างกัน
-    const similarity = 1 - (dist / Math.max(userInput.length, ability.length)); // คำนวณความคล้ายเป็น ratio
-    if (similarity > maxSimilarity) {
+    const dist = levenshtein.get(userInput, ability);
+    const similarity = 1 - (dist / Math.max(userInput.length, ability.length));
+    // รับเฉพาะ similarity สูงมากๆ
+    if (similarity > maxSimilarity && similarity >= similarityThreshold) {
       maxSimilarity = similarity;
       closest = ability;
     }
   }
 
-  // คืนค่า ability ถ้าความคล้ายมากกว่า threshold
-  return maxSimilarity >= similarityThreshold ? closest : null;
+  return closest; // คืนค่าเฉพาะถ้า similarity สูงพอ
 }
 
 //จับคู่คณะและสาขา
