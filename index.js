@@ -118,14 +118,25 @@ function findMatchingMajors(grade, abilities, educationLevel) {
         major: major.name,
         matchedAbilities,
         condition: major.condition,
+        grade: major.grade
       });
     });
   });
 
-  console.log('Matching majors:', results);  // เพิ่มตรงนี้ดูผลลัพธ์
+console.log('Matching majors:', results);  // เพิ่มตรงนี้ดูผลลัพธ์
 
-  return results.sort((a, b) => b.score - a.score).slice(0, 5);
+return results
+  .sort((a, b) => {
+    if (b.grade === a.grade) {
+      // ถ้า grade เท่ากัน เรียงตามจำนวน abilities ที่ตรง
+      return b.matchedAbilities.length - a.matchedAbilities.length;
+    }
+    // ถ้า grade ไม่เท่ากัน ให้เรียงจาก grade มาก → น้อย
+    return b.grade - a.grade;
+  })
+  .slice(0, 5);
 }
+
 // MongoDB Session Helper
 async function getSession(sessionId) {
   let session = await Session.findOne({ sessionId });
