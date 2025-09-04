@@ -96,7 +96,7 @@ function findClosestAbility(userInput, thresholdRatio = 0.5) {
 //จับคู่คณะและสาขา
 function findMatchingMajors(grade, abilities, educationLevel) {
   let results = [];
-
+// Step 1: filter สาขาที่เข้ากับเกรดและ educationLevel
   faculties.forEach(faculty => {
     faculty.majors.forEach(major => {
       if (grade < major.grade) return;
@@ -125,16 +125,13 @@ function findMatchingMajors(grade, abilities, educationLevel) {
 
 console.log('Matching majors:', results);  // เพิ่มตรงนี้ดูผลลัพธ์
 
-return results
-  .sort((a, b) => {
-    if (b.grade === a.grade) {
-      // ถ้า grade เท่ากัน เรียงตามจำนวน abilities ที่ตรง
-      return b.matchedAbilities.length - a.matchedAbilities.length;
-    }
-    // ถ้า grade ไม่เท่ากัน ให้เรียงจาก grade มาก → น้อย
-    return b.grade - a.grade;
-  })
-  .slice(0, 5);
+// Step 2: คัด Top 5 จากจำนวน abilities ที่ตรงมากที่สุด
+  let topByAbilities = results
+    .sort((a, b) => b.matchedAbilities.length - a.matchedAbilities.length)
+    .slice(0, 5);
+
+  // Step 3: เรียง Top 5 ตาม grade มาก → น้อย
+  return topByAbilities.sort((a, b) => b.grade - a.grade);
 }
 
 // MongoDB Session Helper
