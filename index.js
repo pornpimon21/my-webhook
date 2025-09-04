@@ -102,8 +102,8 @@ function findClosestAbility(userInput, similarityThreshold = 0.85) {
 function findMatchingMajors(grade, abilities, educationLevel) {
   let results = [];
 
- // แปลง abilities ของผู้ใช้เป็นค่าที่แม่นที่สุด
-  const abilities = userAbilities
+  // แปลง abilities ของผู้ใช้เป็นค่าที่แม่นที่สุด
+  const mappedAbilities = abilities
     .map(a => findClosestAbility(a))  // ใช้ฟังก์ชันแม่น ๆ
     .filter(a => a !== null);
 
@@ -115,7 +115,7 @@ function findMatchingMajors(grade, abilities, educationLevel) {
 
       // ตรวจสอบว่า major มี ability ไหนตรงกับ abilities ของผู้ใช้
       const matchedAbilities = major.ability.filter(majorAbility =>
-        abilities.includes(majorAbility.toLowerCase())
+        mappedAbilities.includes(majorAbility.toLowerCase())
       );
 
       if (matchedAbilities.length === 0) return;
