@@ -101,20 +101,22 @@ function findClosestAbility(userInput, similarityThreshold = 0.85) {
 //จับคู่คณะและสาขา
 function findMatchingMajors(grade, abilities, educationLevel) {
   let results = [];
-// Step 1: filter สาขาที่เข้ากับเกรดและ educationLevel
+
+ // แปลง abilities ของผู้ใช้เป็นค่าที่แม่นที่สุด
+  const abilities = userAbilities
+    .map(a => findClosestAbility(a))  // ใช้ฟังก์ชันแม่น ๆ
+    .filter(a => a !== null);
+
   faculties.forEach(faculty => {
     faculty.majors.forEach(major => {
+      // ตรวจสอบเกรดและระดับการศึกษา
       if (grade < major.grade) return;
-
       if (!major.requiredEducation.includes(educationLevel)) return;
 
-      const matchedAbilities = major.ability.filter(majorAbility => {
-        return abilities.some(userAbility => {
-          const dist = levenshtein.get(userAbility, majorAbility);
-          const threshold = Math.ceil(Math.min(userAbility.length, majorAbility.length) / 2);
-          return dist <= threshold;
-        });
-      });
+      // ตรวจสอบว่า major มี ability ไหนตรงกับ abilities ของผู้ใช้
+      const matchedAbilities = major.ability.filter(majorAbility =>
+        abilities.includes(majorAbility.toLowerCase())
+      );
 
       if (matchedAbilities.length === 0) return;
 
@@ -128,14 +130,12 @@ function findMatchingMajors(grade, abilities, educationLevel) {
     });
   });
 
-console.log('Matching majors:', results);  // เพิ่มตรงนี้ดูผลลัพธ์
-
-// Step 2: คัด Top 5 จากจำนวน abilities ที่ตรงมากที่สุด
+  // Top 5 จากจำนวน abilities ที่ตรงมากที่สุด
   let topByAbilities = results
     .sort((a, b) => b.matchedAbilities.length - a.matchedAbilities.length)
     .slice(0, 5);
 
-  // Step 3: เรียง Top 5 ตาม grade มาก → น้อย
+  // เรียง Top 5 ตาม grade มาก → น้อย
   return topByAbilities.sort((a, b) => b.grade - a.grade);
 }
 
