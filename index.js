@@ -64,33 +64,38 @@ async function detectIntentText(sessionId, text, languageCode = 'th') {
 
 
 // ฟังก์ชันเปรียบเทียบความใกล้เคียง
-function findClosestAbility(userInput, thresholdRatio = 0.5) {
+function findClosestAbility(userInput, similarityThreshold = 0.7) {
   userInput = userInput.trim().toLowerCase();
-  const allAbilities = [...new Set(faculties.flatMap(f => f.majors.flatMap(m => m.ability)))].map(a => a.trim().toLowerCase());
 
+  // สร้าง array ของทุก ability ใน faculties และ majors (ตัดซ้ำ)
+  const allAbilities = [...new Set(
+    faculties.flatMap(f => f.majors.flatMap(m => m.ability))
+  )].map(a => a.trim().toLowerCase());
+
+  // 1️⃣ ตรวจสอบ exact match ก่อน ถ้าเจอคืนค่าเลย
   if (allAbilities.includes(userInput)) return userInput;
 
-  // 🔍 เช็คคำที่ขึ้นต้นด้วย (prefix match) เช่น "คณิต" = "คณิตศาสตร์"
-  const prefixMatch = allAbilities.find(a => a.startsWith(userInput));
-  if (prefixMatch) return prefixMatch;
+  // 2️⃣ ตรวจสอบ prefix match (เฉพาะ input ≥ 3 ตัวอักษร)
+  // เช่น user พิมพ์ "คณิต" → match กับ "คณิตศาสตร์"
+  if (userInput.length >= 3) {
+    const prefixMatch = allAbilities.find(a => a.startsWith(userInput));
+    if (prefixMatch) return prefixMatch;
+  }
 
-  // 🔍 หรือคำที่ userInput อยู่ในความสามารถ (partial match)
-  const partialMatch = allAbilities.find(a => a.includes(userInput));
-  if (partialMatch) return partialMatch;
-
-  // 🧠 กำหนด threshold แบบ dynamic จากความยาว input
-  const threshold = Math.ceil(userInput.length * thresholdRatio);
-
-  let closest = null, minDist = Infinity;
+  // 3️⃣ ตรวจสอบ similarity ratio (สำหรับพิมพ์ผิดเล็กน้อย)
+  let closest = null;      // ตัวแปรเก็บ ability ที่ใกล้เคียงที่สุด
+  let maxSimilarity = 0;   // ตัวแปรเก็บความคล้ายสูงสุด
   for (const ability of allAbilities) {
-    const dist = levenshtein.get(userInput, ability);
-    if (dist < minDist) {
-      minDist = dist;
+    const dist = levenshtein.get(userInput, ability);  // นับจำนวนตัวอักษรที่ต่างกัน
+    const similarity = 1 - (dist / Math.max(userInput.length, ability.length)); // คำนวณความคล้ายเป็น ratio
+    if (similarity > maxSimilarity) {
+      maxSimilarity = similarity;
       closest = ability;
     }
   }
 
-  return minDist <= threshold ? closest : null;
+  // คืนค่า ability ถ้าความคล้ายมากกว่า threshold
+  return maxSimilarity >= similarityThreshold ? closest : null;
 }
 
 //จับคู่คณะและสาขา
