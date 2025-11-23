@@ -23,7 +23,7 @@ function createPlanCard(facultyName, majorName, rec) {
         },
         {
           type: "text",
-          text: `📘 สาขา${majorName}`,
+          text: `📘 ${majorName}`,
           size: "md",
           weight: "bold",
           wrap: true

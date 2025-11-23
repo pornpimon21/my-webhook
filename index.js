@@ -1154,7 +1154,7 @@ if (matchedMajor) {
         },
         {
           type: "text",
-          text: `📘 สาขา${safeText(matchedMajor?.name)}`,
+          text: `📘 ${safeText(matchedMajor?.name)}`,
           weight: "bold",
           size: "md",
           wrap: true
@@ -1300,7 +1300,7 @@ console.log("✅ Bubble Payload:", JSON.stringify(bubble, null, 2));
 await client.replyMessage(event.replyToken, [
   {
     type: "text",
-    text: `🔍 รายละเอียดของคณะที่คุณเลือกมีดังนี้ค่ะ\n\n🏫 ${safeText(matchedFaculty?.name)}\n🎓 สาขาวิชา${safeText(matchedMajor?.name)}`
+    text: `🔍 รายละเอียดของคณะที่คุณเลือกมีดังนี้ค่ะ\n\n🏫 ${safeText(matchedFaculty?.name)}\n🎓 ${safeText(matchedMajor?.name)}`
   },
   {
     type: "flex",
@@ -1362,7 +1362,7 @@ const majorName = rec.major || "";
         },
         {
           type: "text",
-          text: `🏫 สาขา${rec.major}`,
+          text: `🏫 ${rec.major}`,
           weight: "bold",
           size: "sm",
           wrap: true
