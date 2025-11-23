@@ -395,11 +395,14 @@ session.recommendations = results.map((r, i) => {
     major: r.major,
     requiredGrade: majorInfo.grade,
     abilities: majorInfo.ability,           // ต้องเป็น array เช่น ['วิเคราะห์', 'สื่อสาร']
-    matchedAbilities: r.matchedAbilities,   // ต้องเป็น array เช่น ['วิเคราะห์']
+    matchedAbilities: r.matchedAbilities,
+    majorDescription: majorInfo.majorDescription,   // ต้องเป็น array เช่น ['วิเคราะห์']
     quota: majorInfo.quota,
     condition: majorInfo.condition,
-    reason: majorInfo.reason,
+    studyDuration: majorInfo.studyDuration,
     careers: majorInfo.careers,
+    tuitionFee: majorInfo.tuitionFee,
+
 
     // เพิ่มข้อมูลใหม่จาก majorInfo
     studyPlan: majorInfo.studyPlan,
@@ -1118,11 +1121,14 @@ for (const faculty of faculties) {
 if (matchedMajor) {
   const gradeText = safeText(matchedMajor?.grade);
   const conditionText = safeText(matchedMajor?.condition);
-  const abilityText = safeArray(matchedMajor?.ability).join(", ");
   const quotaText = safeText(matchedMajor?.quota);
   const careersArray = safeArray(matchedMajor?.careers);
   const facultyName = safeText(matchedFaculty?.name);
   const majorName = safeText(matchedMajor?.name);
+  const majorDescription = safeText(matchedMajor?.majorDescription);
+  const studyDuration = safeText(matchedMajor?.studyDuration);
+  const acquiredSkills = safeText(matchedMajor?.acquiredSkills);
+  const tuitionFee = safeText(matchedMajor?.tuitionFee);
 
   const careersContents = careersArray.map(career => ({
     type: "text",
@@ -1166,22 +1172,34 @@ if (matchedMajor) {
       layout: "vertical",
       spacing: "sm",
       contents: [
+        // เรียนเกี่ยวกับ
+        { type: "text", text: "📊 รายละเอียดการเรียน", size: "sm", weight: "bold", margin: "md" },
+        { type: "text", text: majorDescription, size: "sm", wrap: true },
+
         // เกรดขั้นต่ำ
         { type: "text", text: "📊 เกรดขั้นต่ำ", size: "sm", weight: "bold", margin: "md" },
         { type: "text", text: gradeText, size: "sm", wrap: true },
-
-        // ทักษะความสามารถ
-        { type: "text", text: "🧠 ความสามารถที่ควรมี", size: "sm", weight: "bold", margin: "md" },
-        { type: "text", text: abilityText, size: "sm", wrap: true },
-
-        // จำนวนที่รับ
-        { type: "text", text: "✍️ รับจำนวน", size: "sm", weight: "bold", margin: "md" },
-        { type: "text", text: quotaText, size: "sm", wrap: true },
 
         // คุณสมบัติ
         { type: "text", text: "📝 คุณสมบัติ", size: "sm", weight: "bold", margin: "md" },
         { type: "text", text: conditionText, size: "sm", wrap: true },
 
+        // จำนวนที่รับ
+        { type: "text", text: "✍️ รับจำนวน", size: "sm", weight: "bold", margin: "md" },
+        { type: "text", text: quotaText, size: "sm", wrap: true },
+
+        // ระยะเวลาเรียน
+        { type: "text", text: "✍️ ระยะเวลาเรียน", size: "sm", weight: "bold", margin: "md" },
+        { type: "text", text: studyDuration, size: "sm", wrap: true },
+ 
+        // ทักษะที่จะได้จากการเรียน
+        { type: "text", text: "📊 ทักษะที่จะได้จากการเรียน", size: "sm", weight: "bold", margin: "md" },
+        { type: "text", text: acquiredSkills, size: "sm", wrap: true },
+
+        // ค่าเทอม
+        { type: "text", text: "✍️ ค่าเทอม", size: "sm", weight: "bold", margin: "md" },
+        { type: "text", text: tuitionFee, size: "sm", wrap: true },        
+        
         // อาชีพ
         { type: "text", text: "🎯 เส้นทางอาชีพในอนาคต", size: "sm", weight: "bold", margin: "md" },
         ...careersContents,
@@ -1376,36 +1394,6 @@ const majorName = rec.major || "";
       contents: [
         {
           type: "text",
-          text: "📊 เกรดขั้นต่ำที่กำหนด",
-          size: "sm",
-          weight: "bold",
-          wrap: true,
-          margin: "md"
-        },
-        {
-          type: "text",
-          text: rec.requiredGrade !== null ? `${rec.requiredGrade}` : "ไม่ระบุ",
-          size: "sm",
-          wrap: true,
-          margin: "xs"
-        },
-        {
-          type: "text",
-          text: "🛠️ ทักษะความสามารถ",
-          size: "sm",
-          weight: "bold",
-          wrap: true,
-          margin: "md"
-        },
-        {
-          type: "text",
-          text: rec.abilities?.length > 0 ? `${rec.abilities.join(", ")}` : "ไม่ระบุ",
-          size: "sm",
-          wrap: true,
-          margin: "xs"
-        },
-        {
-          type: "text",
           text: "✅ ความสามารถของคุณที่ตรงกับสาขา",
           size: "sm",
           weight: "bold",
@@ -1421,7 +1409,7 @@ const majorName = rec.major || "";
         },
         {
           type: "text",
-          text: "👥 รับจำนวน",
+          text: "📄 รายละเอียดการเรียน",
           size: "sm",
           weight: "bold",
           wrap: true,
@@ -1429,7 +1417,23 @@ const majorName = rec.major || "";
         },
         {
           type: "text",
-          text: rec.quota ? `${rec.quota} คน` : "ไม่ระบุ",
+          text: rec.majorDescription || "ไม่ระบุ",
+          size: "sm",
+          wrap: true,
+          margin: "xs"
+        },
+
+        {
+          type: "text",
+          text: "📊 เกรดขั้นต่ำที่กำหนด",
+          size: "sm",
+          weight: "bold",
+          wrap: true,
+          margin: "md"
+        },
+        {
+          type: "text",
+          text: rec.requiredGrade !== null ? `${rec.requiredGrade}` : "ไม่ระบุ",
           size: "sm",
           wrap: true,
           margin: "xs"
@@ -1451,7 +1455,7 @@ const majorName = rec.major || "";
         },
         {
           type: "text",
-          text: "💡 เหตุผลที่เหมาะสม",
+          text: "👥 รับจำนวน",
           size: "sm",
           weight: "bold",
           wrap: true,
@@ -1459,11 +1463,57 @@ const majorName = rec.major || "";
         },
         {
           type: "text",
-          text: rec.reason || "ไม่ระบุ",
+          text: rec.quota ? `${rec.quota} คน` : "ไม่ระบุ",
           size: "sm",
           wrap: true,
           margin: "xs"
         },
+        {
+          type: "text",
+          text: "📄 ระยะเวลาเรียน",
+          size: "sm",
+          weight: "bold",
+          wrap: true,
+          margin: "md"
+        },
+        {
+          type: "text",
+          text: rec.studyDuration || "ไม่ระบุ",
+          size: "sm",
+          wrap: true,
+          margin: "xs"
+        },
+        {
+          type: "text",
+          text: "📄 ทักษะที่จะได้จากการเรียน",
+          size: "sm",
+          weight: "bold",
+          wrap: true,
+          margin: "md"
+        },
+        {
+          type: "text",
+          text: rec.acquiredSkills || "ไม่ระบุ",
+          size: "sm",
+          wrap: true,
+          margin: "xs"
+        },
+        {
+          type: "text",
+          text: "📄 ค่าเทอม",
+          size: "sm",
+          weight: "bold",
+          wrap: true,
+          margin: "md"
+        },
+        {
+          type: "text",
+          text: rec.tuitionFee || "ไม่ระบุ",
+          size: "sm",
+          wrap: true,
+          margin: "xs"
+        },
+
         {
           type: "text",
           text: "💼 เส้นทางอาชีพในอนาคต",

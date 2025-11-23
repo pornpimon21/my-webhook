@@ -14,9 +14,12 @@ const sessionSchema = new mongoose.Schema({
       requiredGrade: Number,
       abilities: [String],
       matchedAbilities: [String],
+      majorDescription: String,
       quota: Number,
       condition: String,
-      reason: String,
+      studyDuration: String,
+      acquiredSkills: String,
+      tuitionFee: String,
       careers: [String],
 
       // เพิ่มข้อมูลใหม่
