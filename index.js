@@ -399,10 +399,10 @@ session.recommendations = results.map((r, i) => {
     majorDescription: majorInfo.majorDescription,   // ต้องเป็น array เช่น ['วิเคราะห์']
     quota: majorInfo.quota,
     condition: majorInfo.condition,
+    acquiredSkills: majorInfo.acquiredSkills,
     studyDuration: majorInfo.studyDuration,
     careers: majorInfo.careers,
     tuitionFee: majorInfo.tuitionFee,
-
 
     // เพิ่มข้อมูลใหม่จาก majorInfo
     studyPlan: majorInfo.studyPlan,
