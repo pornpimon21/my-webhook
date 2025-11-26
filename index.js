@@ -1173,7 +1173,7 @@ if (matchedMajor) {
       spacing: "sm",
       contents: [
         // เรียนเกี่ยวกับ
-        { type: "text", text: "📊 รายละเอียดการเรียน", size: "sm", weight: "bold", margin: "md" },
+        { type: "text", text: "📄 รายละเอียดสาขา", size: "sm", weight: "bold", margin: "md" },
         { type: "text", text: majorDescription, size: "sm", wrap: true },
 
         // เกรดขั้นต่ำ
@@ -1189,15 +1189,15 @@ if (matchedMajor) {
         { type: "text", text: quotaText, size: "sm", wrap: true },
 
         // ระยะเวลาเรียน
-        { type: "text", text: "✍️ ระยะเวลาเรียน", size: "sm", weight: "bold", margin: "md" },
+        { type: "text", text: "📆 ระยะเวลาเรียน", size: "sm", weight: "bold", margin: "md" },
         { type: "text", text: studyDuration, size: "sm", wrap: true },
  
         // ทักษะที่จะได้จากการเรียน
-        { type: "text", text: "📊 ทักษะที่จะได้จากการเรียน", size: "sm", weight: "bold", margin: "md" },
+        { type: "text", text: "💡 ทักษะที่จะได้จากการเรียน", size: "sm", weight: "bold", margin: "md" },
         { type: "text", text: acquiredSkills, size: "sm", wrap: true },
 
         // ค่าเทอม
-        { type: "text", text: "✍️ ค่าเทอม", size: "sm", weight: "bold", margin: "md" },
+        { type: "text", text: "💰 ค่าเทอม", size: "sm", weight: "bold", margin: "md" },
         { type: "text", text: tuitionFee, size: "sm", wrap: true },        
         
         // อาชีพ
@@ -1409,7 +1409,7 @@ const majorName = rec.major || "";
         },
         {
           type: "text",
-          text: "📄 รายละเอียดการเรียน",
+          text: "📖 รายละเอียดสาขา",
           size: "sm",
           weight: "bold",
           wrap: true,
@@ -1440,7 +1440,7 @@ const majorName = rec.major || "";
         },
         {
           type: "text",
-          text: "📄 คุณสมบัติ",
+          text: "🛠️ คุณสมบัติ",
           size: "sm",
           weight: "bold",
           wrap: true,
@@ -1463,14 +1463,14 @@ const majorName = rec.major || "";
         },
         {
           type: "text",
-          text: rec.quota ? `${rec.quota} คน` : "ไม่ระบุ",
+          text: rec.quota || "ไม่ระบุ",
           size: "sm",
           wrap: true,
           margin: "xs"
         },
         {
           type: "text",
-          text: "📄 ระยะเวลาเรียน",
+          text: "⏳ ระยะเวลาเรียน",
           size: "sm",
           weight: "bold",
           wrap: true,
@@ -1485,7 +1485,7 @@ const majorName = rec.major || "";
         },
         {
           type: "text",
-          text: "📄 ทักษะที่จะได้จากการเรียน",
+          text: "🚀 ทักษะที่จะได้จากการเรียน",
           size: "sm",
           weight: "bold",
           wrap: true,
@@ -1500,7 +1500,7 @@ const majorName = rec.major || "";
         },
         {
           type: "text",
-          text: "📄 ค่าเทอม",
+          text: "💵 ค่าเทอม",
           size: "sm",
           weight: "bold",
           wrap: true,
