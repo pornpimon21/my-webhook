@@ -15,7 +15,7 @@ const sessionSchema = new mongoose.Schema({
       abilities: [String],
       matchedAbilities: [String],
       majorDescription: String,
-      quota: Number,
+      quota: String,
       condition: String,
       studyDuration: String,
       acquiredSkills: String,
