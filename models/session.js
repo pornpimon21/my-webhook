@@ -1,9 +1,11 @@
-const mongoose = require('mongoose');
+ mongoose = require('mongoose');
 
 const sessionSchema = new mongoose.Schema({
   sessionId: String,
+  name: String,
   grade: Number,
-  interestText: String,
+  educationLevel: String, // ✅ เพิ่มระดับการศึกษา
+  abilitiesInputText: String,
   recommendations: [
     {
       rank: Number,

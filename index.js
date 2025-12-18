@@ -1,40 +1,23 @@
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
-const levenshtein = require('fast-levenshtein');
 const Session = require('./models/session');
 const EventLog = require('./models/eventLog');
 const line = require('@line/bot-sdk');
 const { SessionsClient } = require('@google-cloud/dialogflow');
-const uuid = require('uuid');
 const faculties = require('./facultiesData');
-const { buildQuestionFlex } = require('./skillsMenu');
-const analyzeAnswers = require('./analyze');
-const questions = require('./questions');
-const { faqFlex, faqs } = require('./faqFlex');
-const { createPlanCard, handlePostback } = require('./flexTemplates');
-const userSessions = {}; // <== ต้องมีไว้เก็บคำตอบของแต่ละ userId
-const aiAnalyzeUserText = require('./aiAnalyzer');
+const { Configuration, OpenAIApi } = require("openai");
+
+const configuration = new Configuration({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+const openai = new OpenAIApi(configuration);
 
 const app = express();
+app.use(express.json());
 const PORT = process.env.PORT || 3000;
-//app.use(express.json());
 
 const uri = process.env.MONGODB_URI;
-
-
-const fs = require('fs');
-const path = require('path');
-
-const keyPath = path.join(__dirname, 'dialogflow-key.json');
-if (!fs.existsSync(keyPath) && process.env.GOOGLE_CREDENTIALS_BASE64) {
-  const buffer = Buffer.from(process.env.GOOGLE_CREDENTIALS_BASE64, 'base64');
-  fs.writeFileSync(keyPath, buffer);
-  console.log('✅ Created dialogflow-key.json from base64!');
-}
-process.env.GOOGLE_APPLICATION_CREDENTIALS = keyPath;
-
-
 mongoose.connect(uri)
 .then(() => console.log('✅ MongoDB connected!'))
 .catch(err => console.error('❌ MongoDB connection error:', err));
@@ -47,150 +30,297 @@ const client = new line.Client(lineConfig);
 const projectId = process.env.DIALOGFLOW_PROJECT_ID;
 const sessionClient = new SessionsClient();
 
+// ฟังก์ชัน Dialogflow
 async function detectIntentText(sessionId, text, languageCode = 'th') {
   const sessionPath = sessionClient.projectAgentSessionPath(projectId, sessionId);
   const request = {
     session: sessionPath,
     queryInput: {
-      text: {
-        text,
-        languageCode,
-      },
+      text: { text, languageCode },
     },
   };
-
   const responses = await sessionClient.detectIntent(request);
   return responses[0].queryResult;
 }
 
+// AI แปลงข้อความเป็น abilities array
+async function mapAbilitiesWithAI(userText) {
+  if (!userText) return [];
+  const prompt = `
+  ฉันมีข้อความต่อไปนี้เกี่ยวกับทักษะหรือความสามารถของผู้ใช้:
+  "${userText}"
+  กรุณาแปลงเป็นรายการความสามารถที่สอดคล้องกับฐานข้อมูลของคณะและสาขา
+  โดยแยกเป็น array ของคำภาษาไทย เช่น ["วิเคราะห์", "สื่อสาร", "เขียนโปรแกรม"]
+  อย่าเพิ่มคำอื่นนอกจากสิ่งที่ผู้ใช้พิมพ์
+  `;
+  try {
+    const response = await openai.createChatCompletion({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 150,
+    });
+    const text = response.data.choices[0].message.content;
+    return text
+      .replace(/[\[\]\"]/g, "")
+      .split(/[,\n]/)
+      .map(a => a.trim())
+      .filter(a => a.length > 0);
+  } catch (err) {
+    console.error("AI mapAbilities error:", err);
+    return [];
+  }
+}
 
-// MongoDB Session Helper
+// AI แนะนำ Top 5 พร้อมเหตุผล
+async function generatePersonalizedReplyWithAI(session, topMajors) {
+  const prompt = `
+  คุณคือผู้ช่วยแนะนำคณะและสาขา
+  ผู้ใช้ชื่อ: ${session.name}
+  ระดับการศึกษา: ${session.educationLevel}
+  เกรดเฉลี่ย: ${session.grade}
+  ทักษะ: ${session.abilitiesInputText}
+
+  กรุณาจัดเรียง Top 5 คณะที่เหมาะสมที่สุด พร้อมเหตุผลสั้น ๆ ว่าแต่ละคณะเหมาะกับผู้ใช้
+  ส่งกลับในรูปแบบ array ของ object:
+  [
+    { "rank":1, "faculty":"...", "major":"...", "reason":"..." },
+    ...
+  ]
+  `;
+  try {
+    const response = await openai.createChatCompletion({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 400,
+    });
+    const text = response.data.choices[0].message.content;
+    return JSON.parse(text);
+  } catch (err) {
+    console.error("AI generatePersonalizedReply error:", err);
+    return topMajors.map((r, i) => ({
+      rank: i + 1,
+      faculty: r.faculty,
+      major: r.major,
+      reason: "คณะนี้เหมาะสมกับความสามารถของคุณ",
+    }));
+  }
+}
+
+// ฟังก์ชันจับคู่คณะและสาขา
+function findMatchingMajors(grade, abilities, educationLevel) {
+  const mappedAbilities = abilities.map(a => findClosestAbility(a)).filter(a => a !== null);
+  let results = [];
+
+  faculties.forEach(faculty => {
+    faculty.majors.forEach(major => {
+      if (grade < (major.grade ?? 0)) return;
+      if (!major.requiredEducation.includes(educationLevel)) return;
+
+      const matchedAbilities = major.ability
+        ?.filter(majorAbility => mappedAbilities.includes(majorAbility.toLowerCase()))
+        ?? [];
+      if (matchedAbilities.length === 0) return;
+
+      results.push({
+        faculty: faculty.name,
+        major: major.name,
+        matchedAbilities,
+        condition: major.condition,
+        grade: major.grade ?? 0
+      });
+    });
+  });
+
+  return results
+    .sort((a, b) => b.matchedAbilities.length - a.matchedAbilities.length)
+    .slice(0, 5)
+    .sort((a, b) => b.grade - a.grade);
+}
+
+// MongoDB helpers
 async function getSession(sessionId) {
   let session = await Session.findOne({ sessionId });
   if (!session) session = new Session({ sessionId });
   return session;
 }
-async function saveSession(session) {
-  await session.save();
-}
-
-// ✅ เพิ่มฟังก์ชันอัปเดต session
+async function saveSession(session) { await session.save(); }
 async function updateSession(sessionId, data) {
   return Session.updateOne({ sessionId }, { $set: data }, { upsert: true });
 }
 
-// Webhook Endpoint
-app.use('/webhook', express.json());
+// Webhook
 app.post("/webhook", async (req, res) => {
   const eventId = req.body.originalDetectIntentRequest?.payload?.data?.webhookEventId;
-
   if (eventId) {
     try {
       const exists = await EventLog.findOne({ eventId });
-      if (exists) {
-        return res.status(200).send(); // 🛑 เคยประมวลผลแล้ว
-      }
-      await EventLog.create({ eventId }); // ✅ บันทึกไว้ว่าเคยแล้ว
+      if (exists) return res.status(200).send();
+      await EventLog.create({ eventId });
     } catch (err) {
       console.error("❌ EventLog error:", err.message);
     }
-  }  
-   const intent = req.body.queryResult?.intent?.displayName || "";
-   const params = req.body.queryResult?.parameters || {};
-   const sessionFull = req.body.session || "default-session";
+  }
 
-   const sessionId = sessionFull.split('/').pop();  // ดึงแค่ userId   
-   const session = await getSession(sessionId);
-   session.sessionId = sessionId;  // เซ็ตที่นี่แค่ครั้งเดียว  
-   if (!session) session = { userId: sessionId };
+  const intent = req.body.queryResult?.intent?.displayName || "";
+  const params = req.body.queryResult?.parameters || {};
+  const sessionFull = req.body.session || "default-session";
+  const sessionId = sessionFull.split('/').pop();
 
+  const session = await getSession(sessionId);
+  session.sessionId = sessionId;
 
+  // ====== Welcome ======
   if (intent === "welcome") {
     return res.json({
-      fulfillmentText: "กรุณาพิมพ์อธิบายความสนใจของคุณเช่น สิ่งที่ชอบ ไม่ชอบ หรือกิจกรรมที่สนใจ 😊"
+      fulfillmentText: "🌟 สวัสดีค่ะ!\nยินดีต้อนรับสู่ระบบแนะนำคณะและสาขา 🎓\n\nกรุณาพิมพ์ \"ชื่อของคุณ\" เพื่อเริ่มต้น 😊"
     });
   }
 
-if (intent === "analyze_interest_text") {
+  // ====== Get Name ======
+  if (intent === "get name") {
+    const name = params.name || "คุณ";
+    session.name = name;
+    await saveSession(session);
 
-  const userText = params.interestText;
+    const levels = ["มัธยมปลาย", "ปวช", "ปวส", "อื่นๆ"];
+    const colors = ["#FFCC80", "#F48FB1", "#BA68C8", "#4FC3F7"];
+    const labels = { "มัธยมปลาย":"ม.ปลาย 🎓","ปวช":"ปวช 🛠️","ปวส":"ปวส 🔧","อื่นๆ":"อื่นๆ 📘" };
+    const levelBubbles = levels.map((level, index) => ({
+      type:"bubble", size:"micro",
+      body:{ type:"box", layout:"vertical",
+        contents:[{ type:"button", style:"primary", color:colors[index], action:{ type:"message", label:labels[level], text:level } }] }
+    }));
 
-  if (!userText || userText.length < 10) {
-    return res.json({
-      fulfillmentText: "กรุณาพิมพ์อธิบายความสนใจของคุณสักเล็กน้อยนะคะ 😊"
-    });
+    res.json({ fulfillmentText: `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓\n👇 เลือกจากปุ่มด้านล่างได้เลยค่ะ` });
+
+    setTimeout(() => {
+      client.pushMessage(sessionId, { type:"flex", altText:"เลือกระดับการศึกษา", contents:{ type:"carousel", contents:levelBubbles } })
+        .catch(err => console.error("Push message error:", err));
+    }, 500);
+
+    return;
   }
 
-  // 🔥 เรียก AI
-  const results = aiAnalyzeUserText(userText);
+  // ====== Education Level ======
+  if (intent === "educationLevel") {
+    const educationLevel = (params.educationLevel || "").toLowerCase();
+    session.educationLevel = educationLevel;
+    await saveSession(session);
 
-  if (results.length === 0) {
-    return res.json({
-      fulfillmentText: "AI ยังไม่สามารถวิเคราะห์ความเหมาะสมได้ ลองอธิบายเพิ่มอีกนิดนะคะ 🙏"
-    });
+    if (["มัธยมปลาย","ปวช","ปวส","อื่นๆ"].includes(educationLevel)) {
+      return res.json({
+        fulfillmentText: `🎓 คุณ${session.name || ""} ได้เลือกระดับการศึกษา : ${educationLevel}\n📘 กรุณากรอกเกรดเฉลี่ย (0.0-4.0)`,
+        outputContexts: [{ name: `${sessionFull}/contexts/ask_grad`, lifespanCount: 2 }]
+      });
+    } else {
+      return res.json({
+        fulfillmentText: `⚠️ กรุณาเลือกระดับการศึกษาใหม่ (มัธยมปลาย, ปวช, ปวส, อื่นๆ) 🙇‍♀️`,
+        outputContexts: [{ name: `${sessionFull}/contexts/ask_education`, lifespanCount: 2 }]
+      });
+    }
   }
 
-let reply = `🧠 AI วิเคราะห์จากความสนใจของคุณ\n\n`;
+  // ====== Get Grade ======
+  if (intent === "get grade") {
+    const grade = params.grade;
+    if (typeof grade !== "number" || grade < 0 || grade > 4) {
+      return res.json({ fulfillmentText: "📊 กรุณาระบุเกรดเฉลี่ย 0.0-4.0" });
+    }
+    session.grade = grade;
+    await saveSession(session);
 
-  results.forEach((r, i) => {
-    reply +=
-      `━━━━━━━━━━━━━━━━━━\n` +
-      `🎓 อันดับที่ ${i + 1}\n` +
-      `คณะ: ${r.faculty}\n` +
-      `สาขา: ${r.major}\n` +
-      `เหตุผลที่ AI เลือก:\n` +
-      `• ตรงกับความสนใจ: ${r.matchedKeywords.join(", ")}\n\n`;
-  });
+    const abilityButton = { type:"bubble", size:"micro", body:{ type:"box", layout:"vertical", contents:[{ type:"button", style:"primary", color:"#4FC3F7", action:{ type:"message", label:"ดูคำกิจกรรม", text:"คำกิจกรรมที่ระบบเข้าใจ" } }] } };
 
-  reply += "✨ การวิเคราะห์นี้ใช้ AI ด้านการประมวลผลภาษาธรรมชาติ (NLP)";
+    res.json({
+      fulfillmentText: `🙏 ขอบคุณค่ะ คุณ${session.name || ""}\n📊 เกรดเฉลี่ยของคุณ : ${grade}\n🧠 กรุณาระบุความสามารถหรือความถนัดของคุณ`,
+      outputContexts: [{ name: `${sessionFull}/contexts/ask_skills`, lifespanCount: 2 }]
+    });
 
-// ✅ เก็บข้อมูลผู้ใช้ด้านบนสุดก่อนเลย และ // เก็บค่าผลลัพธ์ทั้งหมดใน session แบบ array (ไม่รวม quota, gradeRequirement, etc.) 5 ลำดับ
-session.sessionId = sessionId;
-session.interestText = userText;
+    setTimeout(() => { client.pushMessage(sessionId, { type:"flex", altText:"ดูคำกิจกรรม", contents:abilityButton }).catch(err => console.error(err)); }, 300);
+    return;
+  }
 
-// แล้วค่อย map results
-session.recommendations = results.map((r, i) => {
-  const majorInfo = faculties
-    .find(f => f.name === r.faculty)
-    .majors.find(m => m.name === r.major);
+  // ====== Get Skills ======
+  if (intent === "get skills") {
+    const userText = params.ability || "";
+    let abilities = await mapAbilitiesWithAI(userText);
+    abilities = abilities.filter(a => a.length > 0);
+    const abilitiesInputText = abilities.join(", ");
+    session.abilitiesInputText = abilitiesInputText;
+    abilities = [...new Set(abilities)];
 
-  return {
-    rank: i + 1,
-    faculty: r.faculty,
-    major: r.major,
-    requiredGrade: majorInfo.grade,
-    abilities: majorInfo.ability,           // ต้องเป็น array เช่น ['วิเคราะห์', 'สื่อสาร']
-    matchedAbilities: r.matchedKeywords,
-    majorDescription: majorInfo.majorDescription,   // ต้องเป็น array เช่น ['วิเคราะห์']
-    quota: majorInfo.quota,
-    condition: majorInfo.condition,
-    acquiredSkills: majorInfo.acquiredSkills,
-    studyDuration: majorInfo.studyDuration,
-    careers: majorInfo.careers,
-    tuitionFee: majorInfo.tuitionFee,
+    const grade = session.grade;
+    const name = session.name || "คุณ";
+    const educationLevel = session.educationLevel;
 
-    // เพิ่มข้อมูลใหม่จาก majorInfo
-    studyPlan: majorInfo.studyPlan,
-    studyPlanPdf: majorInfo.studyPlanPdf,
-    studyPlanInfoImg: majorInfo.studyPlanInfoImg,
-    website: majorInfo.website,
-    majorsFacebook: majorInfo.majorsFacebook,
-    facultyFacebook: majorInfo.facultyFacebook,
-    logoUrl: majorInfo.logoUrl
-  };
+    if (!grade) return res.json({ fulfillmentText:"❗ กรุณาใส่เกรดเฉลี่ยก่อนค่ะ" });
+    if (abilities.length === 0) return res.json({ fulfillmentText:"⚠️ กรุณาระบุความสามารถอย่างน้อย 1 อย่างค่ะ" });
+
+    let validAbilities = new Set();
+    let invalid = [];
+    abilities.forEach(a => { const closest = findClosestAbility(a); closest ? validAbilities.add(closest) : invalid.push(a); });
+    validAbilities = Array.from(validAbilities);
+
+    if (invalid.length > 0) return res.json({ fulfillmentText:`⚠️ ขอโทษค่ะ\nคำว่า "${invalid.join(", ")}" เราไม่เข้าใจ\nกรุณากรอกใหม่อีกครั้ง` });
+
+    const results = findMatchingMajors(grade, validAbilities, educationLevel);
+    if (results.length === 0) return res.json({ fulfillmentText:`❌ ขออภัยค่ะ ${name}\nเราไม่พบคณะที่เหมาะสมกับคุณ 🙇‍♀️` });
+
+    const recommendationsWithReason = await generatePersonalizedReplyWithAI(session, results);
+
+    let reply = `🙏 ขอบคุณค่ะคุณ${name}\n📘 เกรดเฉลี่ย : ${grade}\n🧠 ความสามารถ : ${abilitiesInputText}\n\nเราขอแนะนำคณะและสาขาที่เหมาะสมกับคุณ:\n`;
+
+    results.forEach((r,i) => {
+      const majorInfo = faculties.find(f => f.name === r.faculty)?.majors.find(m => m.name === r.major) || {};
+      const requiredGrade = majorInfo.grade ?? 'ไม่ระบุ';
+      const allAbilitiesText = majorInfo.ability?.join(", ") ?? '';
+      const matchedAbilitiesText = r.matchedAbilities?.join(", ") ?? '';
+      const quotaText = majorInfo.quota ? `👥 รับจำนวน: ${majorInfo.quota} คน\n` : '';
+      const conditionText = majorInfo.condition ? `📄 คุณสมบัติ: ${majorInfo.condition}\n` : '';
+      const reasonText = recommendationsWithReason[i]?.reason ? `💡 เหตุผลที่เหมาะสม: ${recommendationsWithReason[i].reason}\n` : '';
+
+      let careersText = "";
+      if (majorInfo.careers?.length > 0) careersText = "💼 เส้นทางอาชีพในอนาคต\n" + majorInfo.careers.map(c=>`  • ${c}`).join("\n") + "\n";
+
+      reply += `\n━━━━━━━━━━━━━━━━━━━━\n🎓 อันดับที่ ${i+1} ${r.faculty}\n🏫 สาขา: ${r.major}\n📊 เกรดขั้นต่ำ: ${requiredGrade}\n🛠️ ทักษะ: ${allAbilitiesText}\n✅ ความสามารถตรงกับสาขา: ${matchedAbilitiesText}\n${quotaText}${conditionText}${reasonText}${careersText}`;
+    });
+
+    reply += "\n✨ ขอให้โชคดีกับการเลือกคณะนะคะ!";
+
+    session.recommendations = results.map((r,i)=>{
+      const majorInfo = faculties.find(f => f.name === r.faculty)?.majors.find(m => m.name === r.major) || {};
+      return {
+        rank: i+1,
+        faculty: r.faculty,
+        major: r.major,
+        requiredGrade: majorInfo.grade,
+        abilities: majorInfo.ability,
+        matchedAbilities: r.matchedAbilities,
+        majorDescription: majorInfo.majorDescription,
+        quota: majorInfo.quota,
+        condition: majorInfo.condition,
+        acquiredSkills: majorInfo.acquiredSkills,
+        studyDuration: majorInfo.studyDuration,
+        careers: majorInfo.careers,
+        tuitionFee: majorInfo.tuitionFee,
+        studyPlan: majorInfo.studyPlan,
+        studyPlanPdf: majorInfo.studyPlanPdf,
+        studyPlanInfoImg: majorInfo.studyPlanInfoImg,
+        website: majorInfo.website,
+        majorsFacebook: majorInfo.majorsFacebook,
+        facultyFacebook: majorInfo.facultyFacebook,
+        logoUrl: majorInfo.logoUrl
+      };
+    });
+
+    await session.save();
+    return res.json({ fulfillmentText: reply });
+  }
+
+  return res.json({ fulfillmentText:"ขออภัยค่ะ ไม่เข้าใจคำสั่ง\nกรุณาลองใหม่อีกครั้ง 😊" });
 });
 
-// บันทึกลง MongoDB
-await session.save();
-        return res.json({
-      fulfillmentText: reply
-    });
-  }
-
-  return res.json({
-    fulfillmentText: "ขออภัยค่ะ ไม่เข้าใจคำสั่ง\nกรุณาลองใหม่อีกครั้งนะคะ 😊"
-  });
-});
+app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
 
 
 // --- เริ่มเพิ่มโค้ด LINE bot ที่นี่ ---
@@ -1206,8 +1336,10 @@ await client.replyMessage(event.replyToken, [
 
           if (session && session.recommendations && session.recommendations.length > 0) {
           // สร้างข้อความแนะนำก่อน carousel
-          const introText = `🙏 ขอบคุณค่ะ จากข้อมูลที่คุณกรอกมามีดังนี้\n\n` +
-                  `📝 ความสนใจของคุณ: ${session.interestText}\n\n` +
+          const introText = `🙏 ขอบคุณค่ะ คุณ${session.name || ''} จากข้อมูลที่คุณกรอกมามีดังนี้\n\n` +
+                  `🎓 ระดับการศึกษา : ${session.educationLevel || 'ยังไม่ระบุ'}\n` +  // ✅ เพิ่มบรรทัดนี้
+                  `📘 เกรดเฉลี่ย : ${session.grade}\n` +
+                  `🧠 ความสามารถหรือความถนัดของคุณ : ${session.abilitiesInputText}\n\n` +
                   `🎯 เราขอแนะนำคณะและสาขาที่เหมาะสมกับคุณ 5 ลำดับดังนี้ค่ะ 👇`;
               // สร้าง Flex Message carousel
 const bubbles = session.recommendations.map((rec) => {
