@@ -1,32 +1,44 @@
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
+const levenshtein = require('fast-levenshtein');
 const Session = require('./models/session');
 const EventLog = require('./models/eventLog');
 const line = require('@line/bot-sdk');
 const { SessionsClient } = require('@google-cloud/dialogflow');
+const uuid = require('uuid');
 const faculties = require('./facultiesData');
-const { Configuration, OpenAIApi } = require("openai");
+const { buildQuestionFlex } = require('./skillsMenu');
+const analyzeAnswers = require('./analyze');
+const questions = require('./questions');
+const { faqFlex, faqs } = require('./faqFlex');
+const { createPlanCard, handlePostback } = require('./flexTemplates');
+const userSessions = {}; // <== ต้องมีไว้เก็บคำตอบของแต่ละ userId
+const OpenAI = require('openai'); // <-- ใช้ require แทน import
 
-const configuration = new Configuration({
+// สร้าง instance ของ OpenAI SDK v4
+const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-const openai = new OpenAIApi(configuration);
 
 const app = express();
 app.use(express.json());
 const PORT = process.env.PORT || 3000;
 
+// MongoDB
 const uri = process.env.MONGODB_URI;
 mongoose.connect(uri)
-.then(() => console.log('✅ MongoDB connected!'))
-.catch(err => console.error('❌ MongoDB connection error:', err));
+  .then(() => console.log('✅ MongoDB connected!'))
+  .catch(err => console.error('❌ MongoDB connection error:', err));
 
+// LINE bot config
 const lineConfig = {
   channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN,
   channelSecret: process.env.LINE_CHANNEL_SECRET,
 };
 const client = new line.Client(lineConfig);
+
+// Dialogflow
 const projectId = process.env.DIALOGFLOW_PROJECT_ID;
 const sessionClient = new SessionsClient();
 
@@ -35,15 +47,13 @@ async function detectIntentText(sessionId, text, languageCode = 'th') {
   const sessionPath = sessionClient.projectAgentSessionPath(projectId, sessionId);
   const request = {
     session: sessionPath,
-    queryInput: {
-      text: { text, languageCode },
-    },
+    queryInput: { text: { text, languageCode } },
   };
   const responses = await sessionClient.detectIntent(request);
   return responses[0].queryResult;
 }
 
-// AI แปลงข้อความเป็น abilities array
+// แปลงข้อความเป็น abilities array ด้วย AI
 async function mapAbilitiesWithAI(userText) {
   if (!userText) return [];
   const prompt = `
@@ -54,12 +64,12 @@ async function mapAbilitiesWithAI(userText) {
   อย่าเพิ่มคำอื่นนอกจากสิ่งที่ผู้ใช้พิมพ์
   `;
   try {
-    const response = await openai.createChatCompletion({
+    const response = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [{ role: "user", content: prompt }],
       max_tokens: 150,
     });
-    const text = response.data.choices[0].message.content;
+    const text = response.choices[0].message.content;
     return text
       .replace(/[\[\]\"]/g, "")
       .split(/[,\n]/)
@@ -88,12 +98,12 @@ async function generatePersonalizedReplyWithAI(session, topMajors) {
   ]
   `;
   try {
-    const response = await openai.createChatCompletion({
+    const response = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [{ role: "user", content: prompt }],
       max_tokens: 400,
     });
-    const text = response.data.choices[0].message.content;
+    const text = response.choices[0].message.content;
     return JSON.parse(text);
   } catch (err) {
     console.error("AI generatePersonalizedReply error:", err);
@@ -168,6 +178,7 @@ app.post("/webhook", async (req, res) => {
 
   const session = await getSession(sessionId);
   session.sessionId = sessionId;
+
 
   // ====== Welcome ======
   if (intent === "welcome") {
