@@ -1277,7 +1277,7 @@ if (matchedMajor) {
     hero: {
       type: "image",
       url: safeText(matchedMajor?.logoUrl) || "https://www.uru.ac.th/images/logouru2011.png",
-      size: "kilo",
+      size: "mega",
       aspectRatio: "1.51:1",
       aspectMode: "fit"
     },
@@ -1478,7 +1478,7 @@ const majorName = rec.major || "";
     hero: {
       type: "image",
       url: rec.logoUrl || "https://www.uru.ac.th/images/logouru2011.png",
-      size: "kilo",
+      size: "mega",
       aspectRatio: "1.51:1",
       aspectMode: "fit"
     },
