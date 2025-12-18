@@ -14,6 +14,7 @@ const questions = require('./questions');
 const { faqFlex, faqs } = require('./faqFlex');
 const { createPlanCard, handlePostback } = require('./flexTemplates');
 const userSessions = {}; // <== ต้องมีไว้เก็บคำตอบของแต่ละ userId
+const aiAnalyzeUserText = require('./aiAnalyzer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -63,82 +64,6 @@ async function detectIntentText(sessionId, text, languageCode = 'th') {
 }
 
 
-// ฟังก์ชันเปรียบเทียบความใกล้เคียง
-function findClosestAbility(userInput, similarityThreshold = 0.85) {
-  // แปลงข้อความเป็นตัวพิมพ์เล็ก และตัดช่องว่าง
-  userInput = userInput.trim().toLowerCase();
-
-  // รวมทุก ability ของ faculties และ majors (ตัดซ้ำ)
-  const allAbilities = [...new Set(
-    faculties.flatMap(f => f.majors.flatMap(m => m.ability))
-  )].map(a => a.trim().toLowerCase());
-
-  // 1️⃣ exact match ถ้าเจอคืนค่าเลย
-  if (allAbilities.includes(userInput)) return userInput;
-
-  // 2️⃣ prefix match เฉพาะ input ≥ 3 ตัวอักษร
-  if (userInput.length >= 3) {
-    const prefixMatch = allAbilities.find(a => a.startsWith(userInput));
-    if (prefixMatch) return prefixMatch;
-  }
-
-  // 3️⃣ similarity ratio สำหรับพิมพ์ผิดเล็กน้อย
-  let closest = null;
-  let maxSimilarity = 0;
-  for (const ability of allAbilities) {
-    const dist = levenshtein.get(userInput, ability);
-    const similarity = 1 - (dist / Math.max(userInput.length, ability.length));
-    // รับเฉพาะ similarity สูงมากๆ
-    if (similarity > maxSimilarity && similarity >= similarityThreshold) {
-      maxSimilarity = similarity;
-      closest = ability;
-    }
-  }
-
-  return closest; // คืนค่าเฉพาะถ้า similarity สูงพอ
-}
-
-//จับคู่คณะและสาขา
-function findMatchingMajors(grade, abilities, educationLevel) {
-  let results = [];
-
-  // แปลง abilities ของผู้ใช้เป็นค่าที่แม่นที่สุด
-  const mappedAbilities = abilities
-    .map(a => findClosestAbility(a))  // ใช้ฟังก์ชันแม่น ๆ
-    .filter(a => a !== null);
-
-  faculties.forEach(faculty => {
-    faculty.majors.forEach(major => {
-      // ตรวจสอบเกรดและระดับการศึกษา
-      if (grade < major.grade) return;
-      if (!major.requiredEducation.includes(educationLevel)) return;
-
-      // ตรวจสอบว่า major มี ability ไหนตรงกับ abilities ของผู้ใช้
-      const matchedAbilities = major.ability.filter(majorAbility =>
-        mappedAbilities.includes(majorAbility.toLowerCase())
-      );
-
-      if (matchedAbilities.length === 0) return;
-
-      results.push({
-        faculty: faculty.name,
-        major: major.name,
-        matchedAbilities,
-        condition: major.condition,
-        grade: major.grade
-      });
-    });
-  });
-
-  // Top 5 จากจำนวน abilities ที่ตรงมากที่สุด
-  let topByAbilities = results
-    .sort((a, b) => b.matchedAbilities.length - a.matchedAbilities.length)
-    .slice(0, 5);
-
-  // เรียง Top 5 ตาม grade มาก → น้อย
-  return topByAbilities.sort((a, b) => b.grade - a.grade);
-}
-
 // MongoDB Session Helper
 async function getSession(sessionId) {
   let session = await Session.findOne({ sessionId });
@@ -182,239 +107,46 @@ app.post("/webhook", async (req, res) => {
 
   if (intent === "welcome") {
     return res.json({
-      fulfillmentText: "🌟 สวัสดีค่ะ!\nยินดีต้อนรับสู่ระบบแนะนำคณะและสาขา 🎓\n\nเราพร้อมช่วยคุณค้นหาคณะที่เหมาะสมที่สุด\nเพื่อเริ่มต้น กรุณาพิมพ์ \"ชื่อของคุณ\" เข้ามาก่อนนะคะ 😊"
+      fulfillmentText: "กรุณาพิมพ์อธิบายความสนใจของคุณเช่น สิ่งที่ชอบ ไม่ชอบ หรือกิจกรรมที่สนใจ 😊"
     });
   }
 
-if (intent === "get name") {
-  const name = params.name || "คุณ";
-  session.name = name;
-  await saveSession(session);
+if (intent === "analyze_interest_text") {
 
-const levels = ["มัธยมปลาย", "ปวช", "ปวส", "อื่นๆ"];
-const colors = ["#FFCC80", "#F48FB1", "#BA68C8", "#4FC3F7"];
-const labels = {
-  "มัธยมปลาย": "ม.ปลาย 🎓",
-  "ปวช": "ปวช 🛠️",
-  "ปวส": "ปวส 🔧",
-  "อื่นๆ": "อื่นๆ 📘"
-};
-const levelBubbles = levels.map((level, index) => ({
-  type: "bubble",
-  size: "micro",
-  body: {
-    type: "box",
-    layout: "vertical",
-    contents: [
-      {
-        type: "button",
-        style: "primary",
-        color: colors[index],
-        action: {
-          type: "message",
-          label: labels[level],
-          text: level
-        }
-      }
-    ]
+  const userText = params.interestText;
+
+  if (!userText || userText.length < 10) {
+    return res.json({
+      fulfillmentText: "กรุณาพิมพ์อธิบายความสนใจของคุณสักเล็กน้อยนะคะ 😊"
+    });
   }
-}));
-// 1. ส่งข้อความตอบกลับ Dialogflow ก่อน
-res.json({
-fulfillmentText: `👋 สวัสดีค่ะ คุณ${name}\n📘 กรุณาเลือกระดับการศึกษาของคุณ 🎓\n👇 เลือกจากปุ่มด้านล่างได้เลยค่ะ`
-});
 
-// 2. หน่วงเวลาเล็กน้อยก่อน push message (เพื่อให้ข้อความขึ้นก่อน)
-setTimeout(() => {
-  client.pushMessage(sessionId, {
-    type: "flex",
-    altText: "เลือกระดับการศึกษา",
-    contents: {
-      type: "carousel",
-      contents: levelBubbles
-    }
-  }).catch((err) => {
-    console.error("Push message error:", err);
+  // 🔥 เรียก AI
+  const results = aiAnalyzeUserText(userText);
+
+  if (results.length === 0) {
+    return res.json({
+      fulfillmentText: "AI ยังไม่สามารถวิเคราะห์ความเหมาะสมได้ ลองอธิบายเพิ่มอีกนิดนะคะ 🙏"
+    });
+  }
+
+let reply = `🧠 AI วิเคราะห์จากความสนใจของคุณ\n\n`;
+
+  results.forEach((r, i) => {
+    reply +=
+      `━━━━━━━━━━━━━━━━━━\n` +
+      `🎓 อันดับที่ ${i + 1}\n` +
+      `คณะ: ${r.faculty}\n` +
+      `สาขา: ${r.major}\n` +
+      `เหตุผลที่ AI เลือก:\n` +
+      `• ตรงกับความสนใจ: ${r.matchedKeywords.join(", ")}\n\n`;
   });
-}, 500); // ✅ รอ 500 มิลลิวินาที
 
-return;
-}
-
-if (intent === "educationLevel") {
-  const educationLevel = (params.educationLevel || "").toLowerCase();
-  session.educationLevel = educationLevel;
-  await saveSession(session);
-
-  if (["มัธยมปลาย", "ปวช", "ปวส", "อื่นๆ"].includes(educationLevel)) {
-    return res.json({
-      fulfillmentText: `🎓 คุณ${session.name || ""} ได้เลือกระดับการศึกษา : ${educationLevel}\n\n` +
-                       `📘 กรุณากรอกเกรดเฉลี่ย (GPAX) ของคุณ\nตัวอย่าง : 3.25 หรือ 3.50\n\n🔔 โปรดระบุค่าไม่เกิน 4.00 เพื่อความถูกต้องนะคะ 📈`,
-      outputContexts: [{
-        name: `${sessionFull}/contexts/ask_grad`,
-        lifespanCount: 2
-      }]
-    });
-  } else {
-    return res.json({
-      fulfillmentText: `⚠️ ขอโทษค่ะ คุณ${session.name || ""} 🙏\n\n` +
-                       `❌ กรุณาเลือกระดับการศึกษาใหม่อีกครั้ง (มัธยมปลาย, ปวช, ปวส, อื่นๆ) 🙇‍♀️`,
-      outputContexts: [{
-        name: `${sessionFull}/contexts/ask_education`,
-        lifespanCount: 2
-      }]
-    });
-  }
-} 
-
-  if (intent === "get grade") {
-    const grade = params.grade;
-    if (typeof grade !== "number" || grade < 0 || grade > 4) {
-      return res.json({
-        fulfillmentText: "📊 กรุณาระบุเกรดเฉลี่ยของคุณ\nโดยต้องอยู่ในช่วง 0.0 - 4.0 นะคะ 😊",
-      });
-    }
-    session.grade = grade;
-    await saveSession(session);
- 
-    // สร้างปุ่มภายใน intent
- const abilityButton = {
-  type: "bubble",
-  size: "micro",
-  body: {
-    type: "box",
-    layout: "vertical",
-    contents: [
-      {
-        type: "button",
-        style: "primary",
-        color: "#4FC3F7",
-        action: {
-          type: "message",
-          label: "ดูคำกิจกรรม",
-          text: "คำกิจกรรมที่ระบบเข้าใจ"
-        }
-      }
-    ]
-  }
-};
-
-// 1️⃣ ส่งข้อความถามทักษะ
-res.json({
-  fulfillmentText: `🙏 ขอบคุณค่ะ คุณ${session.name || ""}\n📊 เกรดเฉลี่ยของคุณ : ${grade}\n\n🧠 กรุณาระบุ *ความสามารถ* หรือ *ความถนัด* ของคุณ\n\n👉 หากไม่แน่ใจ ให้กดปุ่มด้านล่างเพื่อดู "คำกิจกรรมที่ระบบเข้าใจ"`,
-  outputContexts: [{
-    name: `${sessionFull}/contexts/ask_skills`,
-    lifespanCount: 2
-  }]
-});
-
-// 2️⃣ ส่งปุ่ม Flex
-setTimeout(() => {
-  client.pushMessage(sessionId, {
-    type: "flex",
-    altText: "ดูคำกิจกรรม",
-    contents: abilityButton
-  });
-}, 300);
-
-return;
-}if (intent === "get skills") {
-  let abilities = params.ability;
-  if (typeof abilities === "string") {
-    abilities = abilities.split(/[,\s]+/).map(a => a.trim());  // 🔁 ใช้ regex แยกทั้งคอมม่าและเว้นวรรค
-    } else if (Array.isArray(abilities)) {
-    abilities = abilities.flatMap(item => item.split(",").map(a => a.trim()));
-  }
-  
-  abilities = abilities.filter(a => a.length > 0);
-  abilities = [...new Set(abilities)];
-
-  const grade = session.grade;
-  const name = session.name;
-  const educationLevel = session.educationLevel;
-
-  
-  if (!grade) {
-    return res.json({
-      fulfillmentText: "❗ กรุณาใส่เกรดเฉลี่ยก่อนค่ะ"
-    });
-  }
-
-  if (abilities.length === 0) {
-    return res.json({
-      fulfillmentText: "⚠️🙏 กรุณาระบุความสามารถอย่างน้อย 1 อย่างค่ะ 🙏⚠️"
-    });
-  }
-    let validAbilities = new Set();
-    let invalid = [];
-
-    abilities.forEach(a => {
-      const closest = findClosestAbility(a);
-      if (closest) validAbilities.add(closest);
-      else invalid.push(a);
-    });
-
-    validAbilities = Array.from(validAbilities);
-
-    if (invalid.length > 0) {
-      return res.json({
-        fulfillmentText: `⚠️ ขอโทษค่ะ\nคำว่า "${invalid.join(", ")}" เราไม่เข้าใจ\nช่วยกรอกความสามารถใหม่อีกครั้งนะคะ 😊`,
-      });
-    }
-
-    const results = findMatchingMajors(grade, validAbilities, session.educationLevel);
-
-    if (results.length === 0) {
-      return res.json({
-        fulfillmentText: `❌ ขออภัยค่ะ คุณ${name}\nเราไม่พบคณะที่เหมาะสมกับคุณในขณะนี้\nกรุณาลองใหม่อีกครั้งนะคะ 🙇‍♀️`
-      });
-    }
-
-    const abilitiesInputText = abilities.join(", ");
-
-let reply = `🙏 ขอบคุณค่ะคุณ${name || ''} จากข้อมูลที่คุณกรอกมามีดังนี้  \n` +
-  `📘 เกรดเฉลี่ย : ${grade}    \n` +
-  `🧠 ความสามารถหรือความถนัดของคุณ : ${abilitiesInputText}  \n\n` +
-  `เราขอแนะนำคณะและสาขาที่เหมาะสมกับคุณดังนี้ : \n`;
-
-results.forEach((r, i) => {
-  const majorInfo = faculties
-    .find(f => f.name === r.faculty)
-    .majors.find(m => m.name === r.major);
-
-  const requiredGrade = majorInfo.grade !== null ? majorInfo.grade : 'ไม่ระบุ';
-  const allAbilitiesText = majorInfo.ability.join(", ");
-  const matchedAbilitiesText = r.matchedAbilities.join(", ");
-  const quotaText = majorInfo.quota ? `👥 รับจำนวน : ${majorInfo.quota} คน\n` : "";
-  const conditionText = majorInfo.condition ? `📄 คุณสมบัติ : ${majorInfo.condition}\n` : "";
-  const reasonText = majorInfo.reason ? `💡 เหตุผลที่เหมาะสม : ${majorInfo.reason}\n` : "";
-
-  //ทำข้อความอาชีพให้อ่านง่าย (ถ้ามี)
-  let careersText = "";
-  if (majorInfo.careers && majorInfo.careers.length > 0) {
-    careersText = "💼 เส้นทางอาชีพในอนาคต\n";
-    careersText += majorInfo.careers.map(career => `  • ${career}`).join("\n") + "\n";
-  }
-
-  reply += `\n━━━━━━━━━━━━━━━━━━━━\n` + // เส้นแบ่งก่อนแต่ละอันดับ
-           `🎓 อันดับที่ ${i + 1} ${r.faculty}\n` +
-           `🏫 สาขา : ${r.major}\n` +
-           `📊 เกรดเฉลี่ยขั้นต่ำที่กำหนด : ${requiredGrade}\n` +
-           `🛠️ ทักษะความสามารถ : ${allAbilitiesText}\n` +
-           `✅ ความสามารถของคุณที่ตรงกับสาขา : ${matchedAbilitiesText}\n` +
-           quotaText +
-           conditionText +
-           reasonText +
-           careersText;  // ต่อท้ายด้วยอาชีพ
-});
-
-reply += `\n✨ ขอให้โชคดีกับการเลือกคณะนะคะ!`;
+  reply += "✨ การวิเคราะห์นี้ใช้ AI ด้านการประมวลผลภาษาธรรมชาติ (NLP)";
 
 // ✅ เก็บข้อมูลผู้ใช้ด้านบนสุดก่อนเลย และ // เก็บค่าผลลัพธ์ทั้งหมดใน session แบบ array (ไม่รวม quota, gradeRequirement, etc.) 5 ลำดับ
 session.sessionId = sessionId;
-session.name = name;
-session.grade = grade;
-session.abilitiesInputText = abilities.join(", ");
+session.interestText = userText;
 
 // แล้วค่อย map results
 session.recommendations = results.map((r, i) => {
@@ -428,7 +160,7 @@ session.recommendations = results.map((r, i) => {
     major: r.major,
     requiredGrade: majorInfo.grade,
     abilities: majorInfo.ability,           // ต้องเป็น array เช่น ['วิเคราะห์', 'สื่อสาร']
-    matchedAbilities: r.matchedAbilities,
+    matchedAbilities: r.matchedKeywords,
     majorDescription: majorInfo.majorDescription,   // ต้องเป็น array เช่น ['วิเคราะห์']
     quota: majorInfo.quota,
     condition: majorInfo.condition,
@@ -571,7 +303,7 @@ if (userMessage === "คำถามที่พบบ่อย") {
               spacing: "md",
               contents: [
                 { type: "text", text: "📚 วิชาการ / ภาษา", weight: "bold", size: "md", color: "#333333" },
-                { type: "text", text: "ภาษาไทย, วรรณกรรม, การอ่าน, จับใจความ, ไวยากรณ์, การเขียน, วิทยาศาสตร์, เคมี, ฟิสิกส์, ชีววิทยา, ภาษาอังกฤษ, ภาษา, การแปล, ภาษาจีน, วัฒนธรรม, ภาษาเกาหลี, เลข, คำนวณ, คณิตศาสตร์, สถิติ, แคลคูลัส, สังคม, สอนประวัติศาสตร์, การเมือง", wrap: true, size: "sm", color: "#666666" }
+                { type: "text", text: "ภาษาไทย, วรรณกรรม, การอ่าน, จับใจความ, ไวยากรณ์, การเขียน, วิทยาศาสตร์, เคมี, ฟิสิกส์, ชีววิทยา, ภาษาอังกฤษ, ภาษา, การแปล, ภาษาจีน, วัฒนธรรม, ภาษาเกาหลี, เลข, คำนวณ, คณิตศาสตร์, สถิติ, แคลคูลัส, สังคม, สอนประวัติศาสตร์, การเมือง, ความเข้าใจวัฒนธรรม, กฎหมาย, การปกครอง, ความรู้ด้านกฎหมายและนโยบาย", wrap: true, size: "sm", color: "#666666" }
               ]
             },
             footer: {
@@ -592,7 +324,7 @@ if (userMessage === "คำถามที่พบบ่อย") {
               spacing: "md",
               contents: [
                 { type: "text", text: "🗣 การสื่อสาร / ผู้นำ", weight: "bold", size: "md", color: "#333333" },
-                { type: "text", text: "ครู, สอน, เข้าใจในการสอน, สื่อสาร, เรียบเรียง, สอนเด็กประถม, บริหารห้องเรียน, ออกแบบการเรียนการสอน, การพูด, การฟัง, จัดกิจกรรมเด็ก, ทำกิจกรรม, เข้าสังคม, ความมั่นใจ, มองภาพรวม", wrap: true, size: "sm", color: "#666666" }
+                { type: "text", text: "ครู, สอน, เข้าใจในการสอน, การสื่อสาร, เรียบเรียง, สอนเด็กประถม, บริหารห้องเรียน, ออกแบบการเรียนการสอน, การพูด, การฟัง, จัดกิจกรรมเด็ก, ทำกิจกรรม, เข้าสังคม, ความมั่นใจ, มองภาพรวม, มนุษยสัมพันธ์, การเจรจาต่อรอง, ภาวะผู้นำ, การทำงานเป็นทีม", wrap: true, size: "sm", color: "#666666" }
               ]
             },
             footer: {
@@ -655,7 +387,7 @@ if (userMessage === "คำถามที่พบบ่อย") {
               spacing: "md",
               contents: [
                 { type: "text", text: "📖 การวิจัย / การวิเคราะห์เชิงวิชาการ", weight: "bold", size: "md", color: "#333333" },
-                { type: "text", text: "แล็บ, การทดลอง", wrap: true, size: "sm", color: "#666666" }
+                { type: "text", text: "แล็บ, การทดลอง, การวิเคราะห์ปัญหา, การแก้ปัญหาเฉพาะหน้า", wrap: true, size: "sm", color: "#666666" }
               ]
             },
             footer: {
@@ -676,7 +408,7 @@ if (userMessage === "คำถามที่พบบ่อย") {
               spacing: "md",
               contents: [
                 { type: "text", text: "💼 ธุรกิจ / การบริหาร", weight: "bold", size: "md", color: "#333333" },
-                { type: "text", text: "กีฬา, การเต้น, งานกลางแจ้ง, งานช่าง", wrap: true, size: "sm", color: "#666666" }
+                { type: "text", text: "การบริการ, การจัดการ, การบริหารจัดการ, การวางแผน, การตัดสินใจ", wrap: true, size: "sm", color: "#666666" }
               ]
             },
             footer: {
@@ -718,7 +450,7 @@ if (userMessage === "คำถามที่พบบ่อย") {
               spacing: "md",
               contents: [
                 { type: "text", text: "🧘 จิตใจ / สังคม / การช่วยเหลือ", weight: "bold", size: "md", color: "#333333" },
-                { type: "text", text: "รักเด็ก, อดทน, พัฒนาเด็ก, มารยาท, เรียนรู้ตลอดเวลา", wrap: true, size: "sm", color: "#666666" }
+                { type: "text", text: "รักเด็ก, อดทน, พัฒนาเด็ก, มารยาท, เรียนรู้ตลอดเวลา, พัฒนา, เข้าใจวัฒนธรรมๅ, , จริยธรรม, ความยุติธรรม", wrap: true, size: "sm", color: "#666666" }
               ]
             },
             footer: {
@@ -1474,10 +1206,8 @@ await client.replyMessage(event.replyToken, [
 
           if (session && session.recommendations && session.recommendations.length > 0) {
           // สร้างข้อความแนะนำก่อน carousel
-          const introText = `🙏 ขอบคุณค่ะ คุณ${session.name || ''} จากข้อมูลที่คุณกรอกมามีดังนี้\n\n` +
-                  `🎓 ระดับการศึกษา : ${session.educationLevel || 'ยังไม่ระบุ'}\n` +  // ✅ เพิ่มบรรทัดนี้
-                  `📘 เกรดเฉลี่ย : ${session.grade}\n` +
-                  `🧠 ความสามารถหรือความถนัดของคุณ : ${session.abilitiesInputText}\n\n` +
+          const introText = `🙏 ขอบคุณค่ะ จากข้อมูลที่คุณกรอกมามีดังนี้\n\n` +
+                  `📝 ความสนใจของคุณ: ${session.interestText}\n\n` +
                   `🎯 เราขอแนะนำคณะและสาขาที่เหมาะสมกับคุณ 5 ลำดับดังนี้ค่ะ 👇`;
               // สร้าง Flex Message carousel
 const bubbles = session.recommendations.map((rec) => {
