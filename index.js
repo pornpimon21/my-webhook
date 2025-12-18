@@ -63,40 +63,59 @@ async function detectIntentText(sessionId, text, languageCode = 'th') {
 }
 
 
-// ฟังก์ชันเปรียบเทียบความใกล้เคียง
-function findClosestAbility(userInput, similarityThreshold = 0.85) {
-  // แปลงข้อความเป็นตัวพิมพ์เล็ก และตัดช่องว่าง
-  userInput = userInput.trim().toLowerCase();
+const levenshtein = require('fast-levenshtein');
+
+// ฟังก์ชันใหม่ สำหรับประโยคยาว ๆ
+function extractAbilitiesFromText(userText, similarityThreshold = 0.85) {
+  if (!userText) return [];
+
+  // แปลงข้อความเป็นตัวพิมพ์เล็ก
+  const input = userText.trim().toLowerCase();
 
   // รวมทุก ability ของ faculties และ majors (ตัดซ้ำ)
   const allAbilities = [...new Set(
     faculties.flatMap(f => f.majors.flatMap(m => m.ability))
   )].map(a => a.trim().toLowerCase());
 
-  // 1️⃣ exact match ถ้าเจอคืนค่าเลย
-  if (allAbilities.includes(userInput)) return userInput;
+  // แยกประโยค / คำ โดยใช้ space, comma, หรือ semicolon
+  const tokens = input.split(/[\s,;]+/).map(t => t.trim()).filter(t => t.length > 0);
 
-  // 2️⃣ prefix match เฉพาะ input ≥ 3 ตัวอักษร
-  if (userInput.length >= 3) {
-    const prefixMatch = allAbilities.find(a => a.startsWith(userInput));
-    if (prefixMatch) return prefixMatch;
-  }
+  const matchedAbilities = new Set();
 
-  // 3️⃣ similarity ratio สำหรับพิมพ์ผิดเล็กน้อย
-  let closest = null;
-  let maxSimilarity = 0;
-  for (const ability of allAbilities) {
-    const dist = levenshtein.get(userInput, ability);
-    const similarity = 1 - (dist / Math.max(userInput.length, ability.length));
-    // รับเฉพาะ similarity สูงมากๆ
-    if (similarity > maxSimilarity && similarity >= similarityThreshold) {
-      maxSimilarity = similarity;
-      closest = ability;
+  tokens.forEach(token => {
+    // 1️⃣ exact match
+    if (allAbilities.includes(token)) {
+      matchedAbilities.add(token);
+      return;
     }
-  }
 
-  return closest; // คืนค่าเฉพาะถ้า similarity สูงพอ
+    // 2️⃣ prefix match
+    if (token.length >= 3) {
+      const prefixMatch = allAbilities.find(a => a.startsWith(token));
+      if (prefixMatch) {
+        matchedAbilities.add(prefixMatch);
+        return;
+      }
+    }
+
+    // 3️⃣ similarity ratio
+    let closest = null;
+    let maxSimilarity = 0;
+    for (const ability of allAbilities) {
+      const dist = levenshtein.get(token, ability);
+      const similarity = 1 - (dist / Math.max(token.length, ability.length));
+      if (similarity > maxSimilarity && similarity >= similarityThreshold) {
+        maxSimilarity = similarity;
+        closest = ability;
+      }
+    }
+    if (closest) matchedAbilities.add(closest);
+  });
+
+  return Array.from(matchedAbilities);
 }
+
+const mappedAbilities = extractAbilitiesFromText(userText);
 
 //จับคู่คณะและสาขา
 function findMatchingMajors(grade, abilities, educationLevel) {
