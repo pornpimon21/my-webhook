@@ -1298,10 +1298,7 @@ if (matchedMajor) {
       layout: "vertical",
       spacing: "sm",
       contents: [
-        // เรียนเกี่ยวกับ
-        { type: "text", text: "📄 รายละเอียดสาขา", size: "sm", weight: "bold", margin: "md" },
-        { type: "text", text: majorDescription, size: "sm", wrap: true },
-
+        
         // เกรดขั้นต่ำ
         { type: "text", text: "📊 เกรดขั้นต่ำ", size: "sm", weight: "bold", margin: "md" },
         { type: "text", text: gradeText, size: "sm", wrap: true },
@@ -1318,17 +1315,9 @@ if (matchedMajor) {
         { type: "text", text: "📆 ระยะเวลาเรียน", size: "sm", weight: "bold", margin: "md" },
         { type: "text", text: studyDuration, size: "sm", wrap: true },
  
-        // ทักษะที่จะได้จากการเรียน
-        { type: "text", text: "💡 ทักษะที่จะได้จากการเรียน", size: "sm", weight: "bold", margin: "md" },
-        { type: "text", text: acquiredSkills, size: "sm", wrap: true },
-
         // ค่าเทอม
         { type: "text", text: "💰 ค่าเทอม", size: "sm", weight: "bold", margin: "md" },
         { type: "text", text: tuitionFee, size: "sm", wrap: true },        
-        
-        // อาชีพ
-        { type: "text", text: "🎯 เส้นทางอาชีพในอนาคต", size: "sm", weight: "bold", margin: "md" },
-        ...careersContents,
 
         // ช่องทางติดตามข่าวสาร
         { type: "text", text: "🔗 ช่องทางติดตามข่าวสาร", size: "sm", weight: "bold", wrap: true, margin: "md" },
@@ -1536,21 +1525,6 @@ const majorName = rec.major || "";
           wrap: true,
           margin: "xs"
         },
-        {
-          type: "text",
-          text: "📖 รายละเอียดสาขา",
-          size: "sm",
-          weight: "bold",
-          wrap: true,
-          margin: "md"
-        },
-        {
-          type: "text",
-          text: rec.majorDescription || "ไม่ระบุ",
-          size: "sm",
-          wrap: true,
-          margin: "xs"
-        },
 
         {
           type: "text",
@@ -1614,21 +1588,6 @@ const majorName = rec.major || "";
         },
         {
           type: "text",
-          text: "🚀 ทักษะที่จะได้จากการเรียน",
-          size: "sm",
-          weight: "bold",
-          wrap: true,
-          margin: "md"
-        },
-        {
-          type: "text",
-          text: rec.acquiredSkills || "ไม่ระบุ",
-          size: "sm",
-          wrap: true,
-          margin: "xs"
-        },
-        {
-          type: "text",
           text: "💵 ค่าเทอม",
           size: "sm",
           weight: "bold",
@@ -1642,30 +1601,6 @@ const majorName = rec.major || "";
           wrap: true,
           margin: "xs"
         },
-
-        {
-          type: "text",
-          text: "💼 เส้นทางอาชีพในอนาคต",
-          weight: "bold",
-          margin: "md",
-          size: "sm"
-        },
-        ...(rec.careers?.length > 0
-          ? rec.careers.map(career => ({
-              type: "text",
-              text: `• ${career}`,
-              size: "sm",
-              margin: "xs",
-              wrap: true
-            }))
-          : [
-              {
-                type: "text",
-                text: "ไม่ระบุ",
-                size: "sm",
-                margin: "xs"
-              }
-            ]),
 {
   type: "text",
   text: "🔗 ช่องทางติดตามข่าวสาร",
