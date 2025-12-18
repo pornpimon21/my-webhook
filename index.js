@@ -14,7 +14,6 @@ const questions = require('./questions');
 const { faqFlex, faqs } = require('./faqFlex');
 const { createPlanCard, handlePostback } = require('./flexTemplates');
 const userSessions = {}; // <== ต้องมีไว้เก็บคำตอบของแต่ละ userId
-const { parseAbilitiesWithAI } = require('./aiAbilityParser');
 const app = express();
 const PORT = process.env.PORT || 3000;
 //app.use(express.json());
