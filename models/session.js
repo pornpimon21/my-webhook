@@ -5,6 +5,7 @@ const sessionSchema = new mongoose.Schema({
   name: String,
   grade: Number,
   educationLevel: String, // ✅ เพิ่มระดับการศึกษา
+  aiAdvice: String, // ✅ เพิ่มบรรทัดนี้
   abilitiesInputText: String,
   recommendations: [
     {
@@ -30,6 +31,7 @@ const sessionSchema = new mongoose.Schema({
       majorsFacebook: String,
       facultyFacebook: String,
       logoUrl: String //โลโก้
+     
     }
   ]
 }, { timestamps: true });
