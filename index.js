@@ -468,20 +468,27 @@ app.post('/linewebhook',
   line.middleware(lineConfig),
   async (req, res) => {
     try {
+      // ✅ 1. ตอบกลับ LINE ทันที! (ย้ายจากข้างล่างขึ้นมาบนสุด)
+      // เพื่อบอก LINE ว่า "ได้รับคำสั่งแล้ว" จะได้ไม่เกิด Timeout/Error 400
+      res.status(200).send('OK');
+
       const events = req.body.events;
 
-      await Promise.all(events.map(async (event) => {
-        if (event.type === "postback") {
-          console.log("📩 ได้ postback:", event.postback.data);
-          await handlePostback(event, client, faculties);
-          return;
-        }
+      // ✅ 2. ประมวลผลแบบ Background (เอา await ออก)
+      // เพื่อให้ Server ทำงานต่อได้เลยโดยไม่ต้องรอให้เสร็จถึงจะตอบ LINE
+      Promise.all(events.map(async (event) => {
+        try {
+            // --- โค้ดเดิมของคุณ (Logic การตอบกลับ) ---
+            if (event.type === "postback") {
+                console.log("📩 ได้ postback:", event.postback.data);
+                await handlePostback(event, client, faculties);
+                return;
+            }
 
-        if (event.type === 'message' && event.message.type === 'text') {
-          const userId = event.source.userId;
-          const userMessage = event.message.text;
-          const sessionId = event.source.userId || uuid.v4();  // LINE user ID ใช้แทน session
-
+            if (event.type === 'message' && event.message.type === 'text') {
+                const userId = event.source.userId;
+                const userMessage = event.message.text;
+                const sessionId = event.source.userId || uuid.v4();
 
 if (userMessage === "คำถามที่พบบ่อย") {
     // ส่งเมนู FAQ Flex Message
@@ -1757,17 +1764,16 @@ await client.replyMessage(event.replyToken, [
             text: replyText,
           });
         }
-      }));
 
-      res.status(200).send('OK');
+    } catch (innerErr) {
+            console.error("Error processing event:", innerErr);
+        }
+      })).catch(err => console.error("Promise.all error:", err));
+
     } catch (err) {
-      console.error(err);
-      res.status(500).send('Error');
+      console.error("Webhook Error:", err);
+      // ไม่ต้อง res.status(500) แล้ว เพราะเราส่ง 200 ไปตั้งแต่ต้น
     }
   }
 );
 // --- จบโค้ด LINE bot ---
-
-app.listen(PORT, () => {
-  console.log(`✅ Server running at http://localhost:${PORT}`);
-});
