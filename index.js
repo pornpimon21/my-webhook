@@ -1777,3 +1777,9 @@ await client.replyMessage(event.replyToken, [
   }
 );
 // --- จบโค้ด LINE bot ---
+// ==========================================
+// 🚀 ส่วนเปิด Server (ต้องมี! ไม่งั้น Render Error)
+// ==========================================
+app.listen(PORT, () => {
+  console.log(`✅ Server is running on port ${PORT}`);
+});
