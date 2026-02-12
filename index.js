@@ -215,7 +215,7 @@ if (isSkill && session.name && session.educationLevel) {
     });
 
     // 4. ส่งออกไปทาง LINE ทันที
-    await client.replyMessage(event.replyToken, [
+    await client.pushMessage(sessionId, [
         { type: "text", text: introText },
         { type: "flex", altText: "ผลลัพธ์แนะนำคณะและสาขา", contents: { type: "carousel", contents: bubbles } }
     ]);
