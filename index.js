@@ -98,70 +98,46 @@ function findClosestAbility(userInput, similarityThreshold = 0.85) {
   return closest; // คืนค่าเฉพาะถ้า similarity สูงพอ
 }
 
-// 1. วางฟังก์ชันกลุ่มคำพ้องไว้ด้านบนสุด
-function getMathGroup() {
-  return ['คณิตศาสตร์', 'คณิต', 'คำนวณ', 'เลข', 'สถิติ', 'แคลคูลัส'];
-}
-
 //จับคู่คณะและสาขา
 function findMatchingMajors(grade, abilities, educationLevel) {
   let results = [];
-  const mathGroup = getMathGroup();
-  const myGrade = parseFloat(grade) || 0;
 
-  // ❌ ลบบรรทัด mappedAbilities ทิ้งไปเลย หรือไม่ต้องใช้มันในลูปข้างล่าง
-  // เพราะมันทำให้คำว่า "คณิต" หายไป
+  // แปลง abilities ของผู้ใช้เป็นค่าที่แม่นที่สุด
+  const mappedAbilities = abilities
+    .map(a => findClosestAbility(a))  // ใช้ฟังก์ชันแม่น ๆ
+    .filter(a => a !== null);
 
   faculties.forEach(faculty => {
     faculty.majors.forEach(major => {
-      
-      // ตรวจสอบเกรดและระดับการศึกษา (ตัดช่องว่างให้ชัวร์)
-      if (myGrade < (major.grade || 0)) return;
+      // ตรวจสอบเกรดและระดับการศึกษา
+      if (grade < major.grade) return;
       if (!major.requiredEducation.includes(educationLevel)) return;
 
-      // 🎯 แก้ไขจุดนี้: ใช้ abilities (คำดิบ) แทน mappedAbilities
-      const matchedAbilities = major.ability.filter(majorAbility => {
-        // ล้างช่องว่างในฐานข้อมูล (แก้ปัญหาเว้นวรรคหน้าคำ)
-        const mAbilityLow = majorAbility.trim().toLowerCase();
-        
-        return abilities.some(userAbility => {
-          // ใช้คำดิบๆ ที่ผู้ใช้พิมพ์มาเลย ไม่ต้องแปลง
-          const uAbilityLow = userAbility.trim().toLowerCase();
-          
-          // 1. เช็คกลุ่มคำพ้องคณิตศาสตร์ (คณิต = คณิตศาสตร์ = เลข)
-          const isUserInMath = mathGroup.includes(uAbilityLow);
-          const isMajorInMath = mathGroup.includes(mAbilityLow);
-          
-          if (isUserInMath && isMajorInMath) return true;
-
-          // 2. เช็คแบบปกติ (เคมี, ชีวะ) ใช้ includes เหมือนเดิม
-          return mAbilityLow.includes(uAbilityLow) || uAbilityLow.includes(mAbilityLow);
-        });
-      });
+      // ตรวจสอบว่า major มี ability ไหนตรงกับ abilities ของผู้ใช้
+      const matchedAbilities = major.ability.filter(majorAbility =>
+        mappedAbilities.includes(majorAbility.toLowerCase())
+      );
 
       if (matchedAbilities.length === 0) return;
 
       results.push({
         faculty: faculty.name,
         major: major.name,
-        matchedAbilities, 
+        matchedAbilities,
         condition: major.condition,
-        grade: major.grade,
-        majorDescription: major.majorDescription,
-        studyPlanPdf: major.studyPlanPdf,
-        logoUrl: major.logoUrl
+        grade: major.grade
       });
     });
   });
 
-  // เรียงลำดับตามจำนวนคำที่ตรง -> แล้วค่อยเรียงเกรด
+  // Top 5 จากจำนวน abilities ที่ตรงมากที่สุด
   let topByAbilities = results
     .sort((a, b) => b.matchedAbilities.length - a.matchedAbilities.length)
     .slice(0, 5);
 
+  // เรียง Top 5 ตาม grade มาก → น้อย
   return topByAbilities.sort((a, b) => b.grade - a.grade);
 }
-
 // MongoDB Session Helper
 async function getSession(sessionId) {
   let session = await Session.findOne({ sessionId });
