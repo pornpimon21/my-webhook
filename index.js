@@ -98,13 +98,19 @@ function findClosestAbility(userInput, similarityThreshold = 0.85) {
   return closest; // คืนค่าเฉพาะถ้า similarity สูงพอ
 }
 
+// 1. วางฟังก์ชันกลุ่มคำพ้องไว้ด้านบนสุด
+function getMathGroup() {
+  return ['คณิตศาสตร์', 'คณิต', 'คำนวณ', 'เลข', 'สถิติ', 'แคลคูลัส'];
+}
+
 //จับคู่คณะและสาขา
 function findMatchingMajors(grade, abilities, educationLevel) {
   let results = [];
+  const mathGroup = getMathGroup(); 
 
   // แปลง abilities ของผู้ใช้เป็นค่าที่แม่นที่สุด
   const mappedAbilities = abilities
-    .map(a => findClosestAbility(a))  // ใช้ฟังก์ชันแม่น ๆ
+    .map(a => findClosestAbility(a))  
     .filter(a => a !== null);
 
   faculties.forEach(faculty => {
@@ -113,10 +119,23 @@ function findMatchingMajors(grade, abilities, educationLevel) {
       if (grade < major.grade) return;
       if (!major.requiredEducation.includes(educationLevel)) return;
 
-      // ตรวจสอบว่า major มี ability ไหนตรงกับ abilities ของผู้ใช้
-      const matchedAbilities = major.ability.filter(majorAbility =>
-        mappedAbilities.includes(majorAbility.toLowerCase())
-      );
+      // 🎯 แก้ไขจุดนี้: ตรวจสอบความสามารถโดยรองรับคำพ้องหมวดคณิตศาสตร์
+      const matchedAbilities = major.ability.filter(majorAbility => {
+        const mAbilityLow = majorAbility.toLowerCase().trim();
+        
+        return mappedAbilities.some(userAbility => {
+          const uAbilityLow = userAbility.toLowerCase().trim();
+          
+          // เช็คกลุ่มคำพ้องคณิตศาสตร์ (เช่น พิมพ์ "คณิต" แต่ DB เป็น "คณิตศาสตร์")
+          const isUserInMath = mathGroup.includes(uAbilityLow);
+          const isMajorInMath = mathGroup.includes(mAbilityLow);
+          
+          if (isUserInMath && isMajorInMath) return true;
+
+          // เช็คแบบปกติ (มีคำผสมอยู่ไหม)
+          return mAbilityLow.includes(uAbilityLow) || uAbilityLow.includes(mAbilityLow);
+        });
+      });
 
       if (matchedAbilities.length === 0) return;
 
@@ -125,7 +144,11 @@ function findMatchingMajors(grade, abilities, educationLevel) {
         major: major.name,
         matchedAbilities,
         condition: major.condition,
-        grade: major.grade
+        grade: major.grade,
+        // เพิ่มเติมเพื่อให้ตารางสมบูรณ์
+        majorDescription: major.majorDescription,
+        studyPlanPdf: major.studyPlanPdf,
+        logoUrl: major.logoUrl
       });
     });
   });
@@ -137,9 +160,7 @@ function findMatchingMajors(grade, abilities, educationLevel) {
 
   // เรียง Top 5 ตาม grade มาก → น้อย
   return topByAbilities.sort((a, b) => b.grade - a.grade);
-}
-
-// MongoDB Session Helper
+}// MongoDB Session Helper
 async function getSession(sessionId) {
   let session = await Session.findOne({ sessionId });
   if (!session) session = new Session({ sessionId });
