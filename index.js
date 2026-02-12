@@ -159,110 +159,68 @@ if (session.name && session.educationLevel) {
 
 // เงื่อนไข: ถ้ามีชื่อและวุฒิแล้ว สิ่งที่พิมพ์มาตอนนี้เราจะตีความเป็น "ทักษะ" เสมอ
 if (isSkill && session.name && session.educationLevel) {
-    console.log(`✅ ระบบตรวจพบทักษะ: ${detectedSkill} (จากข้อความเดิม: ${req.body.queryResult.queryText})`);
-
-    // 1. เตรียมข้อมูลเพื่อบันทึกและคำนวณ
+    // 1. จัดการข้อมูลให้ถูกต้อง (เปลี่ยนคำผิดเป็นคำถูก)
     session.abilitiesInputText = detectedSkill; 
-    // รันฟังก์ชันหาคณะทันทีเพื่อให้มีข้อมูลสำหรับสร้างการ์ดและลง MongoDB
     session.recommendations = findMatchingMajors(session.grade || 3.00, [detectedSkill], session.educationLevel);
     
-    // 2. บันทึกลง MongoDB ทันที (เพื่อให้ในฐานข้อมูลมีประวัติที่ถูกต้อง)
+    // 2. บันทึกลง MongoDB
     await saveSession(session); 
 
-    // 3. สร้างข้อความแนะนำและการ์ด Carousel (ใช้ Logic เดิมของคุณ)
-    const introText = `🙏 ขอบคุณค่ะ คุณ${session.name || ''} จากข้อมูลที่คุณกรอกมามีดังนี้\n\n` +
-                      `🎓 ระดับการศึกษา : ${session.educationLevel || 'ยังไม่ระบุ'}\n` +
+    // 3. สร้างการ์ด (ใช้ index + 1 เพื่อแก้ undefined ของอันดับ)
+    const introText = `🙏 ขอบคุณค่ะ คุณ${session.name} จากข้อมูลที่คุณกรอกมามีดังนี้\n\n` +
+                      `🎓 ระดับการศึกษา : ${session.educationLevel}\n` +
                       `📘 เกรดเฉลี่ย : ${session.grade}\n` +
-                      `🧠 ความสามารถหรือความถนัดของคุณ : ${session.abilitiesInputText}\n\n` +
-                      `🎯 เราขอแนะนำคณะและสาขาที่เหมาะสมกับคุณ 5 ลำดับดังนี้ค่ะ 👇`;
+                      `🧠 ความสามารถของคุณ : ${detectedSkill}\n\n` +
+                      `🎯 เราขอแนะนำคณะและสาขาที่เหมาะสม 5 ลำดับดังนี้ค่ะ 👇`;
 
-const bubbles = session.recommendations.map((rec, index) => { // ใส่ index เพื่อใช้ทำลำดับ
-        const facultyName = rec.faculty || "";
-        const majorName = rec.major || "";
-        
+    const bubbles = session.recommendations.map((rec, index) => {
         return {
             type: "bubble",
             size: "mega",
             hero: {
                 type: "image",
                 url: rec.logoUrl || "https://www.uru.ac.th/images/logouru2011.png",
-                size: "full",
-                aspectRatio: "1.51:1",
-                aspectMode: "fit"
+                size: "full", aspectRatio: "1.51:1", aspectMode: "fit"
             },
             header: {
-                type: "box",
-                layout: "vertical",
+                type: "box", layout: "vertical",
                 contents: [
-                    { 
-                        type: "text", 
-                        text: `🎓 อันดับที่ ${index + 1}`, // ✅ แก้จาก undefined เป็นตัวเลขลำดับ
-                        weight: "bold", 
-                        color: "#1DB446", 
-                        size: "lg" 
-                    },
-                    { type: "text", text: rec.faculty, weight: "bold", size: "md", wrap: true, margin: "sm" },
+                    { type: "text", text: `🎓 อันดับที่ ${index + 1}`, weight: "bold", color: "#1DB446", size: "lg" }, // แก้ undefined
+                    { type: "text", text: rec.faculty, weight: "bold", size: "md", wrap: true },
                     { type: "text", text: `🏫 ${rec.major}`, weight: "bold", size: "sm", wrap: true }
                 ]
             },
             body: {
-                type: "box",
-                layout: "vertical",
-                spacing: "sm",
+                type: "box", layout: "vertical", spacing: "sm",
                 contents: [
-                    { type: "text", text: "✅ ความสามารถของคุณที่ตรงกับสาขา", size: "sm", weight: "bold", wrap: true, margin: "md" },
-                    { type: "text", text: rec.matchedAbilities?.length > 0 ? `${rec.matchedAbilities.join(", ")}` : "ฟิสิกส์", size: "sm", wrap: true },
-                    { type: "text", text: "📊 เกรดขั้นต่ำที่กำหนด", size: "sm", weight: "bold", wrap: true, margin: "md" },
-                    { 
-                        type: "text", 
-                        text: rec.grade !== null && rec.grade !== undefined ? `${rec.grade}` : "ไม่ระบุ", // ✅ แก้ให้ใช้ rec.grade ตามฐานข้อมูลของคุณ
-                        size: "sm", 
-                        wrap: true, 
-                        margin: "xs" 
-                    },
-                    { type: "text", text: "🛠️ คุณสมบัติ", size: "sm", weight: "bold", wrap: true, margin: "md" },
-                    { type: "text", text: rec.condition || "ไม่ระบุ", size: "sm", wrap: true, margin: "xs" }
+                    { type: "text", text: "✅ ตรงกับทักษะ", size: "sm", weight: "bold" },
+                    { type: "text", text: detectedSkill, size: "sm" },
+                    { type: "text", text: "📊 เกรดขั้นต่ำ", size: "sm", weight: "bold", margin: "md" },
+                    { type: "text", text: `${rec.grade || 'ไม่ระบุ'}`, size: "sm" } // แก้ undefined
                 ]
             },
             footer: {
-                type: "box",
-                layout: "horizontal",
-                spacing: "sm",
+                type: "box", layout: "horizontal", spacing: "sm",
                 contents: [
-                    {
-                        type: "button",
-                        style: "secondary",
-                        action: {
-                            type: "message",
-                            label: "แผนการเรียน",
-                            text: `📚 แผนการเรียน\n🏛️ คณะ : ${facultyName}\n📘 สาขา : ${majorName}`
-                        }
-                    },
-                    {
-                        type: "button",
-                        style: "primary",
-                        action: {
-                            type: "message",
-                            label: "เริ่มใหม่",
-                            text: "เริ่มแนะนำคณะสาขาใหม่"
-                        }
-                    }
+                    { type: "button", style: "secondary", action: { type: "message", label: "แผนการเรียน", text: `📚 แผนการเรียน คณะ : ${rec.faculty} สาขา : ${rec.major}` } },
+                    { type: "button", style: "primary", action: { type: "message", label: "เริ่มใหม่", text: "เริ่มแนะนำคณะสาขาใหม่" } }
                 ]
             }
         };
     });
-    
-    // 4. ส่งข้อความและการ์ดผ่าน Push Message (ใช้ sessionId เป็นไอดีผู้ใช้)
+
+    // 4. ส่ง Push Message ออกไปใบเดียว
     await client.pushMessage(sessionId, [
         { type: "text", text: introText },
-        { type: "flex", altText: "ผลลัพธ์แนะนำคณะและสาขา", contents: { type: "carousel", contents: bubbles } }
+        { type: "flex", altText: "แนะนำคณะ", contents: { type: "carousel", contents: bubbles } }
     ]);
-    
-    // 5. ส่ง JSON กลับหา Dialogflow เพื่อจบการประมวลผล
-    return res.json({ fulfillmentText: "วิเคราะห์คณะและสาขาเรียบร้อยแล้วค่ะ" });
-}
 
-// =================================================================
+    // 🔥 5. บรรทัดสำคัญ: สั่งจบการทำงานทันที (ไม่ให้ Dialogflow ตอบซ้ำ)
+    return res.json({ 
+        fulfillmentText: "", 
+        fulfillmentMessages: [] 
+    });
+}
 
   if (intent === "welcome") {
     return res.json({
