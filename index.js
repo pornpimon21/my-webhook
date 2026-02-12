@@ -144,79 +144,89 @@ app.post("/webhook", async (req, res) => {
    session.sessionId = sessionId;  // เซ็ตที่นี่แค่ครั้งเดียว  
    if (!session) session = { userId: sessionId };
 
-
 // =================================================================
-// 🛡️ ส่วนดักจับทักษะ (Skill Guard) - ฉบับปรับปรุงเพื่อป้องกันการเด้งซ้ำ
+// 🛡️ ส่วนที่เพิ่ม: ดักจับทักษะ (Skill Guard) เพื่อป้องกันการวนลูปไปเก็บชื่อ
 // =================================================================
-// 🛡️ 2. ส่วนดักจับทักษะ (Skill Guard) - ต้องวางไว้ก่อนเช็ค Intent อื่นๆ
-  // =================================================================
-  const detectedSkill = findClosestAbility(userInput); // แก้คำผิด เช่น "เคมี"
-  const allValidSkills = faculties.flatMap(f => f.majors.flatMap(m => m.ability));
-  const isSkill = allValidSkills.some(s => s === detectedSkill);
 
-  // เงื่อนไข: ถ้าเป็นทักษะ และมีชื่อ+ระดับการศึกษาแล้ว ให้จัดการทันที
-  if (isSkill && session.name && session.educationLevel && userInput.length > 2) {
-      console.log(`✅ จัดการทักษะผ่าน Skill Guard: ${detectedSkill}`);
+// เช็คว่าถ้ามีชื่อและระดับการศึกษาใน session แล้ว แปลว่าตอนนี้ต้องถามทักษะ
+if (session.name && session.educationLevel) {
+    const userInput = req.body.queryResult.queryText;
+    const detectedSkill = findClosestAbility(userInput); // แก้คำผิด เช่น "คณิด" เป็น "คณิต"
+    
+    // ดึงรายการทักษะทั้งหมดมาเช็ค
+    const allValidSkills = faculties.flatMap(f => f.majors.flatMap(m => m.ability));
+    const isSkill = allValidSkills.some(s => s === detectedSkill);
 
-      // บันทึกและคำนวณคณะ
-      session.abilitiesInputText = detectedSkill; 
-      session.recommendations = findMatchingMajors(session.grade || 3.00, [detectedSkill], session.educationLevel);
-      await saveSession(session); 
+// เงื่อนไข: ถ้ามีชื่อและวุฒิแล้ว สิ่งที่พิมพ์มาตอนนี้เราจะตีความเป็น "ทักษะ" เสมอ
+if (isSkill && session.name && session.educationLevel) {
+    // 1. จัดการข้อมูลให้ถูกต้อง (เปลี่ยนคำผิดเป็นคำถูก)
+    session.abilitiesInputText = detectedSkill; 
+    session.recommendations = findMatchingMajors(session.grade || 3.00, [detectedSkill], session.educationLevel);
+    
+    // 2. บันทึกลง MongoDB
+    await saveSession(session); 
 
-      // สร้าง Flex Carousel (แก้ปัญหาอันดับและเกรด undefined)
-      const introText = `🙏 ขอบคุณค่ะ คุณ${session.name} วิเคราะห์ทักษะ "${detectedSkill}" เรียบร้อยแล้วค่ะ...`;
-      const bubbles = session.recommendations.map((rec, index) => ({
-          type: "bubble",
-          size: "mega",
-          hero: {
-              type: "image",
-              url: rec.logoUrl || "https://www.uru.ac.th/images/logouru2011.png",
-              size: "full", aspectRatio: "1.51:1", aspectMode: "fit"
-          },
-          header: {
-              type: "box", layout: "vertical",
-              contents: [
-                  { type: "text", text: `🎓 อันดับที่ ${index + 1}`, weight: "bold", color: "#1DB446", size: "lg" }, // แก้ undefined
-                  { type: "text", text: rec.faculty, weight: "bold", size: "md", wrap: true },
-                  { type: "text", text: `🏫 ${rec.major}`, weight: "bold", size: "sm", wrap: true }
-              ]
-          },
-          body: {
-              type: "box", layout: "vertical", spacing: "sm",
-              contents: [
-                  { type: "text", text: "✅ ตรงกับทักษะ", size: "sm", weight: "bold" },
-                  { type: "text", text: detectedSkill, size: "sm" },
-                  { type: "text", text: "📊 เกรดขั้นต่ำ", size: "sm", weight: "bold", margin: "md" },
-                  { type: "text", text: `${rec.grade || 'ไม่ระบุ'}`, size: "sm" } // ใช้ rec.grade ตามที่คุณแจ้ง
-              ]
-          },
-          footer: {
-              type: "box", layout: "horizontal", spacing: "sm",
-              contents: [
-                  { type: "button", style: "secondary", action: { type: "message", label: "แผนการเรียน", text: `📚 แผนการเรียน คณะ : ${rec.faculty} สาขา : ${rec.major}` } },
-                  { type: "button", style: "primary", action: { type: "message", label: "เริ่มใหม่", text: "เริ่มแนะนำคณะสาขาใหม่" } }
-              ]
-          }
-      }));
+    // 3. สร้างการ์ด (ใช้ index + 1 เพื่อแก้ undefined ของอันดับ)
+    const introText = `🙏 ขอบคุณค่ะ คุณ${session.name} จากข้อมูลที่คุณกรอกมามีดังนี้\n\n` +
+                      `🎓 ระดับการศึกษา : ${session.educationLevel}\n` +
+                      `📘 เกรดเฉลี่ย : ${session.grade}\n` +
+                      `🧠 ความสามารถของคุณ : ${detectedSkill}\n\n` +
+                      `🎯 เราขอแนะนำคณะและสาขาที่เหมาะสม 5 ลำดับดังนี้ค่ะ 👇`;
 
-      // ส่งข้อความผ่าน Push Message
-      await client.pushMessage(sessionId, [
-          { type: "text", text: introText },
-          { type: "flex", altText: "แนะนำคณะ", contents: { type: "carousel", contents: bubbles } }
-      ]);
+    const bubbles = session.recommendations.map((rec, index) => {
+        return {
+            type: "bubble",
+            size: "mega",
+            hero: {
+                type: "image",
+                url: rec.logoUrl || "https://www.uru.ac.th/images/logouru2011.png",
+                size: "full", aspectRatio: "1.51:1", aspectMode: "fit"
+            },
+            header: {
+                type: "box", layout: "vertical",
+                contents: [
+                    { type: "text", text: `🎓 อันดับที่ ${index + 1}`, weight: "bold", color: "#1DB446", size: "lg" }, // แก้ undefined
+                    { type: "text", text: rec.faculty, weight: "bold", size: "md", wrap: true },
+                    { type: "text", text: `🏫 ${rec.major}`, weight: "bold", size: "sm", wrap: true }
+                ]
+            },
+            body: {
+                type: "box", layout: "vertical", spacing: "sm",
+                contents: [
+                    { type: "text", text: "✅ ตรงกับทักษะ", size: "sm", weight: "bold" },
+                    { type: "text", text: detectedSkill, size: "sm" },
+                    { type: "text", text: "📊 เกรดขั้นต่ำ", size: "sm", weight: "bold", margin: "md" },
+                    { type: "text", text: `${rec.grade || 'ไม่ระบุ'}`, size: "sm" } // แก้ undefined
+                ]
+            },
+            footer: {
+                type: "box", layout: "horizontal", spacing: "sm",
+                contents: [
+                    { type: "button", style: "secondary", action: { type: "message", label: "แผนการเรียน", text: `📚 แผนการเรียน คณะ : ${rec.faculty} สาขา : ${rec.major}` } },
+                    { type: "button", style: "primary", action: { type: "message", label: "เริ่มใหม่", text: "เริ่มแนะนำคณะสาขาใหม่" } }
+                ]
+            }
+        };
+    });
 
-      // 🔥 บรรทัดสำคัญที่สุด: ตอบกลับ Dialogflow ว่างๆ แล้วหยุดทำงานทันที (ป้องกันเด้งซ้ำ)
-      return res.json({ 
-          fulfillmentText: "", 
-          fulfillmentMessages: [] 
-      });
-  }
+    // 4. ส่ง Push Message ออกไปใบเดียว
+    await client.pushMessage(sessionId, [
+        { type: "text", text: introText },
+        { type: "flex", altText: "แนะนำคณะ", contents: { type: "carousel", contents: bubbles } }
+    ]);
+
+    // 🔥 5. บรรทัดสำคัญ: สั่งจบการทำงานทันที (ไม่ให้ Dialogflow ตอบซ้ำ)
+    return res.json({ 
+        fulfillmentText: "", 
+        fulfillmentMessages: [] 
+    });
+}
 
   if (intent === "welcome") {
     return res.json({
       fulfillmentText: "🌟 สวัสดีค่ะ!\nยินดีต้อนรับสู่ระบบแนะนำคณะและสาขา 🎓\n\nเราพร้อมช่วยคุณค้นหาคณะที่เหมาะสมที่สุด\nเพื่อเริ่มต้น กรุณาพิมพ์ \"ชื่อของคุณ\" เข้ามาก่อนนะคะ 😊"
-      });
-  }
+    });
+  } }
 
 
 if (intent === "get name") {
