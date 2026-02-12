@@ -64,7 +64,7 @@ async function detectIntentText(sessionId, text, languageCode = 'th') {
 
 
 // ฟังก์ชันเปรียบเทียบความใกล้เคียง
-function findClosestAbility(userInput, similarityThreshold = 0.85) {
+function findClosestAbility(userInput, similarityThreshold = 0.60) {
   // แปลงข้อความเป็นตัวพิมพ์เล็ก และตัดช่องว่าง
   userInput = userInput.trim().toLowerCase();
 
