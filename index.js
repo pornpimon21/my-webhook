@@ -144,6 +144,43 @@ app.post("/webhook", async (req, res) => {
    session.sessionId = sessionId;  // เซ็ตที่นี่แค่ครั้งเดียว  
    if (!session) session = { userId: sessionId };
 
+// =================================================================
+// 🛡️ ส่วนที่เพิ่ม: ดักจับทักษะ (Skill Guard) เพื่อป้องกันการวนลูปไปเก็บชื่อ
+// =================================================================
+
+// เช็คว่าถ้ามีชื่อและระดับการศึกษาใน session แล้ว แปลว่าตอนนี้ต้องถามทักษะ
+if (session.name && session.educationLevel) {
+    const userInput = req.body.queryResult.queryText;
+    const detectedSkill = findClosestAbility(userInput); // แก้คำผิด เช่น "คณิด" เป็น "คณิต"
+    
+    // ดึงรายการทักษะทั้งหมดมาเช็ค
+    const allValidSkills = faculties.flatMap(f => f.majors.flatMap(m => m.ability));
+    const isSkill = allValidSkills.some(s => s === detectedSkill);
+
+    if (isSkill) {
+        console.log(`✅ ตรวจพบทักษะในขั้นตอนสุดท้าย: ${detectedSkill}`);
+        
+        // บันทึกทักษะลง session
+        if (!session.abilities) session.abilities = [];
+        if (!session.abilities.includes(detectedSkill)) session.abilities.push(detectedSkill);
+        await saveSession(session);
+
+        // ดึงผลลัพธ์การแนะนำคณะทันที
+        const grade = session.grade || 3.00;
+        const results = findMatchingMajors(grade, [detectedSkill], session.educationLevel);
+
+        if (results.length > 0) {
+            // สร้าง Carousel ผลลัพธ์ (ดึง Logic การสร้างจาก Intent แนะนำของคุณมาใส่ตรงนี้)
+            // ตัวอย่างการตอบกลับ:
+            return res.json({
+                fulfillmentText: `วิเคราะห์เสร็จแล้วค่ะ! สำหรับทักษะด้าน "${detectedSkill}" คณะที่แนะนำมีดังนี้ค่ะ:`,
+                // ในใช้งานจริง ให้เพิ่ม payload: { line: { type: "flex", ... } } ตรงนี้ด้วย
+            });
+        }
+    }
+}
+// =================================================================
+
 
   if (intent === "welcome") {
     return res.json({
@@ -241,7 +278,6 @@ if (intent === "get name") {
 
     return;
   }
-  
 if (intent === "educationLevel") {
   const educationLevel = (params.educationLevel || "").toLowerCase();
   session.educationLevel = educationLevel;
