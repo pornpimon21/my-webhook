@@ -157,17 +157,19 @@ if (session.name && session.educationLevel) {
     const allValidSkills = faculties.flatMap(f => f.majors.flatMap(m => m.ability));
     const isSkill = allValidSkills.some(s => s === detectedSkill);
 
+// เงื่อนไข: ถ้ามีชื่อและวุฒิแล้ว สิ่งที่พิมพ์มาตอนนี้เราจะตีความเป็น "ทักษะ" เสมอ
 if (isSkill && session.name && session.educationLevel) {
-    console.log(`✅ ตรวจพบทักษะ (พิมพ์ผิดหรือดักจับ): ${detectedSkill}`);
+    console.log(`✅ ระบบตรวจพบทักษะ: ${detectedSkill} (จากข้อความเดิม: ${req.body.queryResult.queryText})`);
 
-    // 1. อัปเดตข้อมูลและคำนวณผลใหม่ทันทีเพื่อให้ข้อมูลลง MongoDB
+    // 1. เตรียมข้อมูลเพื่อบันทึกและคำนวณ
     session.abilitiesInputText = detectedSkill; 
+    // รันฟังก์ชันหาคณะทันทีเพื่อให้มีข้อมูลสำหรับสร้างการ์ดและลง MongoDB
     session.recommendations = findMatchingMajors(session.grade || 3.00, [detectedSkill], session.educationLevel);
     
-    // 2. บันทึกลง MongoDB (เพื่อให้ในฐานข้อมูลมีรายการแนะนำ)
+    // 2. บันทึกลง MongoDB ทันที (เพื่อให้ในฐานข้อมูลมีประวัติที่ถูกต้อง)
     await saveSession(session); 
 
-    // 3. 🏁 โค้ดสร้างการ์ด (ชุดเดิมที่คุณต้องการให้อยู่ที่เดิม)
+    // 3. สร้างข้อความแนะนำและการ์ด Carousel (ใช้ Logic เดิมของคุณ)
     const introText = `🙏 ขอบคุณค่ะ คุณ${session.name || ''} จากข้อมูลที่คุณกรอกมามีดังนี้\n\n` +
                       `🎓 ระดับการศึกษา : ${session.educationLevel || 'ยังไม่ระบุ'}\n` +
                       `📘 เกรดเฉลี่ย : ${session.grade}\n` +
@@ -183,10 +185,13 @@ if (isSkill && session.name && session.educationLevel) {
             hero: {
                 type: "image",
                 url: rec.logoUrl || "https://www.uru.ac.th/images/logouru2011.png",
-                size: "full", aspectRatio: "1.51:1", aspectMode: "fit"
+                size: "full",
+                aspectRatio: "1.51:1",
+                aspectMode: "fit"
             },
             header: {
-                type: "box", layout: "vertical",
+                type: "box",
+                layout: "vertical",
                 contents: [
                     { type: "text", text: `🎓 อันดับที่ ${rec.rank}`, weight: "bold", color: "#1DB446", size: "lg" },
                     { type: "text", text: rec.faculty, weight: "bold", size: "md", wrap: true, margin: "sm" },
@@ -194,34 +199,57 @@ if (isSkill && session.name && session.educationLevel) {
                 ]
             },
             body: {
-                type: "box", layout: "vertical", spacing: "sm",
+                type: "box",
+                layout: "vertical",
+                spacing: "sm",
                 contents: [
                     { type: "text", text: "✅ ความสามารถของคุณที่ตรงกับสาขา", size: "sm", weight: "bold", wrap: true, margin: "md" },
-                    { type: "text", text: rec.matchedAbilities?.length > 0 ? `${rec.matchedAbilities.join(", ")}` : "ไม่ระบุ", size: "sm", wrap: true, margin: "xs" },
-                    { type: "text", text: "📊 เกรดขั้นต่ำที่กำหนด", size: "sm", weight: "bold", wrap: true, margin: "md" },
-                    { type: "text", text: rec.requiredGrade !== null ? `${rec.requiredGrade}` : "ไม่ระบุ", size: "sm", wrap: true, margin: "xs" },
-                    { type: "text", text: "🛠️ คุณสมบัติ", size: "sm", weight: "bold", wrap: true, margin: "md" },
-                    { type: "text", text: rec.condition || "ไม่ระบุ", size: "sm", wrap: true, margin: "xs" }
+                    { type: "text", text: rec.matchedAbilities?.length > 0 ? `${rec.matchedAbilities.join(", ")}` : "ไม่ระบุ", size: "sm", wrap: true },
+                    { type: "text", text: "📊 เกรดขั้นต่ำที่กำหนด", size: "sm", weight: "bold", margin: "md" },
+                    { type: "text", text: rec.requiredGrade !== null ? `${rec.requiredGrade}` : "ไม่ระบุ", size: "sm" },
+                    { type: "text", text: "🛠️ คุณสมบัติ", size: "sm", weight: "bold", margin: "md" },
+                    { type: "text", text: rec.condition || "ไม่ระบุ", size: "sm", wrap: true }
                 ]
             },
             footer: {
-                type: "box", layout: "horizontal", spacing: "sm",
+                type: "box",
+                layout: "horizontal",
+                spacing: "sm",
                 contents: [
-                    { type: "button", style: "secondary", action: { type: "message", label: "แผนการเรียน", text: `📚 แผนการเรียน\n🏛️ คณะ : ${facultyName}\n📘 สาขา : ${majorName}` } },
-                    { type: "button", style: "primary", action: { type: "message", label: "เริ่มใหม่", text: "เริ่มแนะนำคณะสาขาใหม่" } }
+                    {
+                        type: "button",
+                        style: "secondary",
+                        action: {
+                            type: "message",
+                            label: "แผนการเรียน",
+                            text: `📚 แผนการเรียน\n🏛️ คณะ : ${facultyName}\n📘 สาขา : ${majorName}`
+                        }
+                    },
+                    {
+                        type: "button",
+                        style: "primary",
+                        action: {
+                            type: "message",
+                            label: "เริ่มใหม่",
+                            text: "เริ่มแนะนำคณะสาขาใหม่"
+                        }
+                    }
                 ]
             }
         };
     });
 
-    // 4. ส่งออกไปทาง LINE ทันที
+    // 4. ส่งข้อความและการ์ดผ่าน Push Message (ใช้ sessionId เป็นไอดีผู้ใช้)
     await client.pushMessage(sessionId, [
         { type: "text", text: introText },
         { type: "flex", altText: "ผลลัพธ์แนะนำคณะและสาขา", contents: { type: "carousel", contents: bubbles } }
     ]);
     
-    return; // หยุดการทำงานเพื่อให้จบ Flow ตรงนี้เลย
+    // 5. ส่ง JSON กลับหา Dialogflow เพื่อจบการประมวลผล
+    return res.json({ fulfillmentText: "วิเคราะห์คณะและสาขาเรียบร้อยแล้วค่ะ" });
 }
+
+// =================================================================
 
   if (intent === "welcome") {
     return res.json({
