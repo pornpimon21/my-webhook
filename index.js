@@ -157,30 +157,81 @@ if (session.name && session.educationLevel) {
     const allValidSkills = faculties.flatMap(f => f.majors.flatMap(m => m.ability));
     const isSkill = allValidSkills.some(s => s === detectedSkill);
 
-    if (isSkill) {
-        console.log(`✅ ตรวจพบทักษะในขั้นตอนสุดท้าย: ${detectedSkill}`);
-        
-        // บันทึกทักษะลง session
-        if (!session.abilities) session.abilities = [];
-        if (!session.abilities.includes(detectedSkill)) session.abilities.push(detectedSkill);
-        await saveSession(session);
+if (isSkill) {
+    console.log(`✅ จับคู่ทักษะสำเร็จ: ${userText} -> ${detectedSkill}`);
 
-        // ดึงผลลัพธ์การแนะนำคณะทันที
-        const grade = session.grade || 3.00;
-        const results = findMatchingMajors(grade, [detectedSkill], session.educationLevel);
+    // 1. ดึงข้อมูลเกรดและวุฒิจาก session (ถ้าไม่มีให้ค่า default)
+    const grade = session.grade || 3.00;
+    const education = session.educationLevel || "มัธยมปลาย";
 
-        if (results.length > 0) {
-            // สร้าง Carousel ผลลัพธ์ (ดึง Logic การสร้างจาก Intent แนะนำของคุณมาใส่ตรงนี้)
-            // ตัวอย่างการตอบกลับ:
-            return res.json({
-                fulfillmentText: `วิเคราะห์เสร็จแล้วค่ะ! สำหรับทักษะด้าน "${detectedSkill}" คณะที่แนะนำมีดังนี้ค่ะ:`,
-                // ในใช้งานจริง ให้เพิ่ม payload: { line: { type: "flex", ... } } ตรงนี้ด้วย
-            });
-        }
+    // 2. เรียกฟังก์ชันค้นหาคณะ (ที่แก้ปัญหาคณิตศาสตร์แล้ว)
+    const recommendations = findMatchingMajors(grade, [detectedSkill], education);
+
+    if (recommendations && recommendations.length > 0) {
+        // 3. สร้างข้อความแนะนำ (Intro Text)
+        const introText = `🙏 ขอบคุณค่ะ คุณ${session.name || 'นักเรียน'} วิเคราะห์ทักษะ "${detectedSkill}" เสร็จแล้วค่ะ\n\n` +
+                          `🎓 ระดับการศึกษา : ${education}\n` +
+                          `📘 เกรดเฉลี่ย : ${grade}\n` +
+                          `🎯 เราขอแนะนำคณะและสาขาที่เหมาะสมกับคุณดังนี้ค่ะ 👇`;
+
+        // 4. สร้าง Flex Message Carousel (ใช้ Logic เดียวกับการพิมพ์ถูกที่คุณส่งมา)
+        const bubbles = recommendations.map((rec, index) => {
+            return {
+                type: "bubble",
+                size: "mega",
+                hero: {
+                    type: "image",
+                    url: rec.logoUrl || "https://www.uru.ac.th/images/logouru2011.png",
+                    size: "full", aspectMode: "fit"
+                },
+                header: {
+                    type: "box", layout: "vertical",
+                    contents: [
+                        { type: "text", text: `🎓 อันดับที่ ${index + 1}`, weight: "bold", color: "#1DB446", size: "lg" },
+                        { type: "text", text: rec.faculty, weight: "bold", size: "md", wrap: true },
+                        { type: "text", text: `🏫 ${rec.major}`, weight: "bold", size: "sm", wrap: true }
+                    ]
+                },
+                body: {
+                    type: "box", layout: "vertical", spacing: "sm",
+                    contents: [
+                        { type: "text", text: "✅ ทักษะที่ตรงกับสาขา", size: "sm", weight: "bold" },
+                        { type: "text", text: rec.matchedAbilities?.join(", ") || detectedSkill, size: "sm", wrap: true },
+                        { type: "text", text: "📊 เกรดขั้นต่ำ", size: "sm", weight: "bold", margin: "md" },
+                        { type: "text", text: `${rec.grade || 'ไม่ระบุ'}`, size: "sm" }
+                    ]
+                },
+                footer: {
+                    type: "box", layout: "horizontal", spacing: "sm",
+                    contents: [
+                        { type: "button", style: "secondary", action: { type: "message", label: "แผนการเรียน", text: `📚 แผนการเรียน คณะ : ${rec.faculty} สาขา : ${rec.major}` } },
+                        { type: "button", style: "primary", action: { type: "message", label: "เริ่มใหม่", text: "เริ่มแนะนำคณะสาขาใหม่" } }
+                    ]
+                }
+            };
+        });
+
+        // 5. ส่งกลับไปที่ LINE ทันที (จบการทำงาน)
+        return res.json({
+            fulfillmentText: introText,
+            fulfillmentMessages: [
+                {
+                    payload: {
+                        line: {
+                            type: "flex",
+                            altText: "ผลลัพธ์แนะนำคณะและสาขา",
+                            contents: { type: "carousel", contents: bubbles }
+                        }
+                    }
+                }
+            ]
+        });
+
+    } else {
+        return res.json({ fulfillmentText: `ไม่พบคณะที่เหมาะสมกับทักษะ "${detectedSkill}" ในตอนนี้ค่ะ 🙇‍♀️` });
     }
 }
-// =================================================================
-
+}
 
   if (intent === "welcome") {
     return res.json({
