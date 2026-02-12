@@ -98,54 +98,68 @@ function findClosestAbility(userInput, similarityThreshold = 0.85) {
   return closest; // คืนค่าเฉพาะถ้า similarity สูงพอ
 }
 
+// 1. วางฟังก์ชันกลุ่มคำพ้องไว้ด้านบนสุด
+function getMathGroup() {
+  return ['คณิตศาสตร์', 'คณิต', 'คำนวณ', 'เลข', 'สถิติ', 'แคลคูลัส'];
+}
+
+//จับคู่คณะและสาขา
 function findMatchingMajors(grade, abilities, educationLevel) {
-    let results = [];
-    const myGrade = parseFloat(grade) || 0;
+  let results = [];
+  const mathGroup = getMathGroup();
+  const myGrade = parseFloat(grade) || 0;
 
-    faculties.forEach(faculty => {
-        faculty.majors.forEach(major => {
-            
-            // 1. ด่านตรวจเกรดและวุฒิ (ต้องผ่านก่อน)
-            if (myGrade < (major.grade || 0)) return;
-            if (!major.requiredEducation.includes(educationLevel)) return;
+  // ❌ ลบบรรทัด mappedAbilities ทิ้งไปเลย หรือไม่ต้องใช้มันในลูปข้างล่าง
+  // เพราะมันทำให้คำว่า "คณิต" หายไป
 
-            // 2. 🎯 วางโค้ดที่คุณถามตรงนี้ครับ!
-            // เป็นการกรองทักษะ (Ability Filter)
-            const matchedAbilities = major.ability.filter(majorAbility => {
-                // ล้างช่องว่างในฐานข้อมูล (ในรูปมีช่องว่างหน้าคำ เช่น ' คณิตศาสตร์')
-                const mAbility = majorAbility.trim().toLowerCase();
-                
-                return abilities.some(userA => {
-                    const uLow = userA.trim().toLowerCase();
-                    
-                    // กฎพิเศษสำหรับหมวดคณิตศาสตร์
-                    const mathGroup = ['คณิต', 'คณิตศาสตร์', 'เลข', 'คำนวณ', 'สถิติ', 'แคลคูลัส'];
-                    if (mathGroup.includes(uLow) && mathGroup.includes(mAbility)) {
-                        return true;
-                    }
+  faculties.forEach(faculty => {
+    faculty.majors.forEach(major => {
+      
+      // ตรวจสอบเกรดและระดับการศึกษา (ตัดช่องว่างให้ชัวร์)
+      if (myGrade < (major.grade || 0)) return;
+      if (!major.requiredEducation.includes(educationLevel)) return;
 
-                    // กฎทั่วไปสำหรับหมวดอื่น (เคมี, ชีวะ)
-                    return mAbility.includes(uLow) || uLow.includes(mAbility);
-                });
-            });
+      // 🎯 แก้ไขจุดนี้: ใช้ abilities (คำดิบ) แทน mappedAbilities
+      const matchedAbilities = major.ability.filter(majorAbility => {
+        // ล้างช่องว่างในฐานข้อมูล (แก้ปัญหาเว้นวรรคหน้าคำ)
+        const mAbilityLow = majorAbility.trim().toLowerCase();
+        
+        return abilities.some(userAbility => {
+          // ใช้คำดิบๆ ที่ผู้ใช้พิมพ์มาเลย ไม่ต้องแปลง
+          const uAbilityLow = userAbility.trim().toLowerCase();
+          
+          // 1. เช็คกลุ่มคำพ้องคณิตศาสตร์ (คณิต = คณิตศาสตร์ = เลข)
+          const isUserInMath = mathGroup.includes(uAbilityLow);
+          const isMajorInMath = mathGroup.includes(mAbilityLow);
+          
+          if (isUserInMath && isMajorInMath) return true;
 
-            // 3. ถ้าตรวจสอบแล้วมีทักษะตรงกัน (matchedAbilities ไม่ว่าง) ให้เก็บผลลัพธ์
-            if (matchedAbilities.length > 0) {
-                results.push({
-                    faculty: faculty.name,
-                    major: major.name,
-                    matchedAbilities, // ส่งรายการที่แมตช์ไปโชว์
-                    condition: major.condition,
-                    grade: major.grade
-                });
-            }
+          // 2. เช็คแบบปกติ (เคมี, ชีวะ) ใช้ includes เหมือนเดิม
+          return mAbilityLow.includes(uAbilityLow) || uAbilityLow.includes(mAbilityLow);
         });
-    });
+      });
 
-    // คืนค่าผลลัพธ์ (เรียงตามความแม่นยำและเอาแค่ 5 อันดับ)
-    return results
-        .sort((a, b) => b.matchedAbilities.length - a.matchedAbilities.length)
-        .slice(0, 5);
+      if (matchedAbilities.length === 0) return;
+
+      results.push({
+        faculty: faculty.name,
+        major: major.name,
+        matchedAbilities, 
+        condition: major.condition,
+        grade: major.grade,
+        majorDescription: major.majorDescription,
+        studyPlanPdf: major.studyPlanPdf,
+        logoUrl: major.logoUrl
+      });
+    });
+  });
+
+  // เรียงลำดับตามจำนวนคำที่ตรง -> แล้วค่อยเรียงเกรด
+  let topByAbilities = results
+    .sort((a, b) => b.matchedAbilities.length - a.matchedAbilities.length)
+    .slice(0, 5);
+
+  return topByAbilities.sort((a, b) => b.grade - a.grade);
 }
 
 // MongoDB Session Helper
