@@ -176,9 +176,10 @@ if (isSkill && session.name && session.educationLevel) {
                       `🧠 ความสามารถหรือความถนัดของคุณ : ${session.abilitiesInputText}\n\n` +
                       `🎯 เราขอแนะนำคณะและสาขาที่เหมาะสมกับคุณ 5 ลำดับดังนี้ค่ะ 👇`;
 
-    const bubbles = session.recommendations.map((rec) => {
+const bubbles = session.recommendations.map((rec, index) => { // ใส่ index เพื่อใช้ทำลำดับ
         const facultyName = rec.faculty || "";
         const majorName = rec.major || "";
+        
         return {
             type: "bubble",
             size: "mega",
@@ -193,7 +194,13 @@ if (isSkill && session.name && session.educationLevel) {
                 type: "box",
                 layout: "vertical",
                 contents: [
-                    { type: "text", text: `🎓 อันดับที่ ${rec.rank}`, weight: "bold", color: "#1DB446", size: "lg" },
+                    { 
+                        type: "text", 
+                        text: `🎓 อันดับที่ ${index + 1}`, // ✅ แก้จาก undefined เป็นตัวเลขลำดับ
+                        weight: "bold", 
+                        color: "#1DB446", 
+                        size: "lg" 
+                    },
                     { type: "text", text: rec.faculty, weight: "bold", size: "md", wrap: true, margin: "sm" },
                     { type: "text", text: `🏫 ${rec.major}`, weight: "bold", size: "sm", wrap: true }
                 ]
@@ -204,11 +211,17 @@ if (isSkill && session.name && session.educationLevel) {
                 spacing: "sm",
                 contents: [
                     { type: "text", text: "✅ ความสามารถของคุณที่ตรงกับสาขา", size: "sm", weight: "bold", wrap: true, margin: "md" },
-                    { type: "text", text: rec.matchedAbilities?.length > 0 ? `${rec.matchedAbilities.join(", ")}` : "ไม่ระบุ", size: "sm", wrap: true },
-                    { type: "text", text: "📊 เกรดขั้นต่ำที่กำหนด", size: "sm", weight: "bold", margin: "md" },
-                    { type: "text", text: rec.requiredGrade !== null ? `${rec.requiredGrade}` : "ไม่ระบุ", size: "sm" },
-                    { type: "text", text: "🛠️ คุณสมบัติ", size: "sm", weight: "bold", margin: "md" },
-                    { type: "text", text: rec.condition || "ไม่ระบุ", size: "sm", wrap: true }
+                    { type: "text", text: rec.matchedAbilities?.length > 0 ? `${rec.matchedAbilities.join(", ")}` : "ฟิสิกส์", size: "sm", wrap: true },
+                    { type: "text", text: "📊 เกรดขั้นต่ำที่กำหนด", size: "sm", weight: "bold", wrap: true, margin: "md" },
+                    { 
+                        type: "text", 
+                        text: rec.grade !== null && rec.grade !== undefined ? `${rec.grade}` : "ไม่ระบุ", // ✅ แก้ให้ใช้ rec.grade ตามฐานข้อมูลของคุณ
+                        size: "sm", 
+                        wrap: true, 
+                        margin: "xs" 
+                    },
+                    { type: "text", text: "🛠️ คุณสมบัติ", size: "sm", weight: "bold", wrap: true, margin: "md" },
+                    { type: "text", text: rec.condition || "ไม่ระบุ", size: "sm", wrap: true, margin: "xs" }
                 ]
             },
             footer: {
@@ -238,7 +251,7 @@ if (isSkill && session.name && session.educationLevel) {
             }
         };
     });
-
+    
     // 4. ส่งข้อความและการ์ดผ่าน Push Message (ใช้ sessionId เป็นไอดีผู้ใช้)
     await client.pushMessage(sessionId, [
         { type: "text", text: introText },
