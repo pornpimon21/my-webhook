@@ -1519,9 +1519,11 @@ await client.replyMessage(event.replyToken, [
                   `🧠 ความสามารถหรือความถนัดของคุณ : ${session.abilitiesInputText}\n\n` +
                   `🎯 เราขอแนะนำคณะและสาขาที่เหมาะสมกับคุณ 5 ลำดับดังนี้ค่ะ 👇`;
               // สร้าง Flex Message carousel
-const bubbles = session.recommendations.map((rec) => {
-const facultyName = rec.faculty || "";
-const majorName = rec.major || "";
+// สร้าง Flex Message carousel
+const bubbles = session.recommendations.map((rec, index) => { // ✅ เพิ่ม index ตรงนี้
+  const facultyName = rec.faculty || "";
+  const majorName = rec.major || "";
+  
   return {
     type: "bubble",
     size: "mega",
@@ -1538,14 +1540,14 @@ const majorName = rec.major || "";
       contents: [
         {
           type: "text",
-          text: `🎓 อันดับที่ ${rec.rank}`,
+          text: `🎓 อันดับที่ ${index + 1}`, // ✅ แก้จาก rec.rank เป็น index + 1
           weight: "bold",
           color: "#1DB446",
           size: "lg"
         },
         {
           type: "text",
-          text: rec.faculty,
+          text: facultyName,
           weight: "bold",
           size: "md",
           wrap: true,
@@ -1553,7 +1555,7 @@ const majorName = rec.major || "";
         },
         {
           type: "text",
-          text: `🏫 ${rec.major}`,
+          text: `🏫 ${majorName}`,
           weight: "bold",
           size: "sm",
           wrap: true
@@ -1580,7 +1582,6 @@ const majorName = rec.major || "";
           wrap: true,
           margin: "xs"
         },
-        
         {
           type: "text",
           text: "📊 เกรดขั้นต่ำที่กำหนด",
@@ -1591,7 +1592,7 @@ const majorName = rec.major || "";
         },
         {
           type: "text",
-          text: rec.requiredGrade !== null ? `${rec.requiredGrade}` : "ไม่ระบุ",
+          text: rec.grade !== null && rec.grade !== undefined ? `${rec.grade}` : "ไม่ระบุ", // ✅ แก้จาก rec.requiredGrade เป็น rec.grade
           size: "sm",
           wrap: true,
           margin: "xs"
@@ -1611,6 +1612,7 @@ const majorName = rec.major || "";
           wrap: true,
           margin: "xs"
         },
+        // ... ส่วน รับจำนวน และ ระยะเวลาเรียน ใช้ของเดิมของคุณได้เลยค่ะ ...
         {
           type: "text",
           text: "👥 รับจำนวน",
@@ -1641,7 +1643,6 @@ const majorName = rec.major || "";
           wrap: true,
           margin: "xs"
         },
-        
         {
           type: "text",
           text: "💵 ค่าเทอม",
@@ -1657,126 +1658,93 @@ const majorName = rec.major || "";
           wrap: true,
           margin: "xs"
         },
-
-{
-  type: "text",
-  text: "🔗 ช่องทางติดตามข่าวสาร",
-  size: "sm",
-  weight: "bold",
-  wrap: true,
-  margin: "md"
-},
-{
-  type: "box",
-  layout: "horizontal",
-  spacing: "sm",
-  contents: [
-    {
+        {
+          type: "text",
+          text: "🔗 ช่องทางติดตามข่าวสาร",
+          size: "sm",
+          weight: "bold",
+          wrap: true,
+          margin: "md"
+        },
+        {
+          type: "box",
+          layout: "horizontal",
+          spacing: "sm",
+          contents: [
+            {
+              type: "box",
+              layout: "vertical",
+              flex: 1,
+              contents: [
+                {
+                  type: "button",
+                  style: "link",
+                  height: "sm",
+                  action: { type: "uri", label: "🌐", uri: rec.website || "https://edu.uru.ac.th/" }
+                },
+                { type: "text", text: "เว็บไซต์", align: "center", size: "xs" }
+              ]
+            },
+            {
+              type: "box",
+              layout: "vertical",
+              flex: 1,
+              contents: [
+                {
+                  type: "button",
+                  style: "link",
+                  height: "sm",
+                  action: { type: "uri", label: "📘", uri: rec.majorsFacebook || "https://www.facebook.com/" }
+                },
+                { type: "text", text: "สาขา", align: "center", size: "xs" }
+              ]
+            },
+            {
+              type: "box",
+              layout: "vertical",
+              flex: 1,
+              contents: [
+                {
+                  type: "button",
+                  style: "link",
+                  height: "sm",
+                  action: { type: "uri", label: "🏛️", uri: rec.facultyFacebook || "https://www.facebook.com/" }
+                },
+                { type: "text", text: "คณะ", align: "center", size: "xs" }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    footer: {
       type: "box",
-      layout: "vertical",
+      layout: "horizontal",
+      spacing: "sm",
       contents: [
         {
           type: "button",
-          style: "link",
-          height: "sm",
+          style: "secondary",
           action: {
-            type: "uri",
-            label: "🌐",
-            uri: rec.website || "https://edu.uru.ac.th/"
+            type: "message",
+            label: "แผนการเรียน",
+            // ✅ ข้อความต้องตรงกับฟังก์ชัน StartsWith("📚 แผนการเรียน")
+            text: `📚 แผนการเรียน\n🏛️ คณะ : ${facultyName}\n📘 สาขา : ${majorName}`
           }
         },
-        {
-          type: "text",
-          text: "เว็บไซต์",
-          align: "center",
-          size: "xs",
-          wrap: true
-        }
-      ],
-      flex: 1,
-      spacing: "xs"
-    },
-    {
-      type: "box",
-      layout: "vertical",
-      contents: [
         {
           type: "button",
-          style: "link",
-          height: "sm",
+          style: "primary",
           action: {
-            type: "uri",
-            label: "📘",
-            uri: rec.majorsFacebook || "https://www.facebook.com/"
+            type: "message",
+            label: "เริ่มใหม่",
+            text: "เริ่มแนะนำคณะสาขาใหม่"
           }
-        },
-        {
-          type: "text",
-          text: "สาขา",
-          align: "center",
-          size: "xs",
-          wrap: true
         }
-      ],
-      flex: 1,
-      spacing: "xs"
-    },
-    {
-      type: "box",
-      layout: "vertical",
-      contents: [
-        {
-          type: "button",
-          style: "link",
-          height: "sm",
-          action: {
-            type: "uri",
-            label: "🏛️",
-            uri: rec.facultyFacebook || "https://www.facebook.com/"
-          }
-        },
-        {
-          type: "text",
-          text: "คณะ",
-          align: "center",
-          size: "xs",
-          wrap: true
-        }
-      ],
-      flex: 1,
-      spacing: "xs"
-    }
-  ]
-  }
-  ]
-    },
-  footer: {
-  type: "box",
-  layout: "horizontal",
-  spacing: "sm",
-  contents: [
-    {
-      type: "button",
-      style: "secondary",
-      action: {
-        type: "message",
-        label: "แผนการเรียน",
-        text: `📚 แผนการเรียน\n🏛️ คณะ : ${facultyName}\n📘 สาขา : ${majorName}`
-      }
-    },
-    {
-      type: "button",
-      style: "primary",
-      action: {
-        type: "message",
-        label: "เริ่มใหม่",
-        text: "เริ่มแนะนำคณะสาขาใหม่"
-      }        }
       ]
     }
   };
 });
-
 await client.replyMessage(event.replyToken, [
   {
     type: "text",
@@ -1791,6 +1759,7 @@ await client.replyMessage(event.replyToken, [
     },
   },
 ]);
+
   return;  // หยุดโค้ดตรงนี้เพื่อไม่ส่งข้อความอื่นซ้ำ
               } else {
               // กรณี session ไม่มี recommendations
