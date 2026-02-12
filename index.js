@@ -98,58 +98,47 @@ function findClosestAbility(userInput, similarityThreshold = 0.85) {
   return closest; // คืนค่าเฉพาะถ้า similarity สูงพอ
 }
 
-// 1. วางกลุ่มคำพ้องไว้ (เอาไว้เช็คแบบกลุ่ม)
-const mathGroup = ['คณิตศาสตร์', 'คณิต', 'คำนวณ', 'เลข', 'สถิติ', 'แคลคูลัส'];
-
 function findMatchingMajors(grade, userAbilities, educationLevel) {
   let results = [];
   const myGrade = parseFloat(grade) || 0;
+  
+  // 🟢 LOG 1: ดูว่าบอทได้รับค่าอะไรมา
+  console.log(`--- เริ่มค้นหา: วุฒิ=${educationLevel}, เกรด=${myGrade}, ทักษะที่พิมพ์=${userAbilities} ---`);
 
   faculties.forEach(faculty => {
     faculty.majors.forEach(major => {
       
-      // ด่านที่ 1: เช็ควุฒิ (ต้องตรงกัน)
-      if (!major.requiredEducation.includes(educationLevel)) return;
+      // 🕵️ เช็คเฉพาะสาขาคณิตศาสตร์เพื่อหาจุดบกพร่อง
+      if (major.name.includes("คณิต")) {
+          const eduMatch = major.requiredEducation.some(e => e.trim() === educationLevel.trim());
+          const gradeMatch = myGrade >= (parseFloat(major.grade) || 0);
+          
+          console.log(`🎯 ตรวจสาขา: ${major.name}`);
+          console.log(`   - วุฒิที่ต้องการ: ${major.requiredEducation} | ผล: ${eduMatch ? '✅ ผ่าน' : '❌ ตก'}`);
+          console.log(`   - เกรดที่ต้องการ: ${major.grade} | ผล: ${gradeMatch ? '✅ ผ่าน' : '❌ ตก'}`);
+      }
 
-      // ด่านที่ 2: เช็คเกรด (เกรดเราต้องไม่น้อยกว่าเกณฑ์)
-      const majorMinGrade = parseFloat(major.grade) || 0;
-      if (myGrade < majorMinGrade) return;
+      // Logic การกรองจริง
+      if (!major.requiredEducation.some(e => e.trim() === educationLevel.trim())) return;
+      if (major.grade > 0 && myGrade < major.grade) return;
 
-      // ด่านที่ 3: เช็คทักษะ (ปรับให้ยืดหยุ่นที่สุด)
       const matched = major.ability.filter(dbAbility => {
         const dbLow = dbAbility.trim().toLowerCase();
-        
         return userAbilities.some(userA => {
           const userLow = userA.trim().toLowerCase();
-          
-          // กฎข้อที่ 1: ถ้าเป็นกลุ่มคณิตเหมือนกัน ให้ผ่านเลย
-          if (mathGroup.includes(userLow) && mathGroup.includes(dbLow)) return true;
-
-          // กฎข้อที่ 2: เช็คแบบมีคำผสม (เช่น "คณิต" อยู่ใน "คณิตศาสตร์")
-          if (dbLow.includes(userLow) || userLow.includes(dbLow)) return true;
-
-          return false;
+          // เช็คคำพ้องหรือคำผสม
+          return dbLow.includes(userLow) || userLow.includes(dbLow) || 
+                 (userLow === 'คณิต' && dbLow === 'คณิตศาสตร์');
         });
       });
 
       if (matched.length > 0) {
-        results.push({
-          faculty: faculty.name,
-          major: major.name,
-          matchedAbilities: matched,
-          condition: major.condition,
-          grade: major.grade
-        });
+        results.push({ ...major, faculty: faculty.name, matchedAbilities: matched });
       }
     });
   });
-
-  // เรียงลำดับสาขาที่ตรงทักษะมากที่สุด และเอาแค่ 5 อันดับ
-  return results
-    .sort((a, b) => b.matchedAbilities.length - a.matchedAbilities.length)
-    .slice(0, 5);
+  return results.sort((a, b) => b.matchedAbilities.length - a.matchedAbilities.length).slice(0, 5);
 }
-
 // MongoDB Session Helper
 async function getSession(sessionId) {
   let session = await Session.findOne({ sessionId });
