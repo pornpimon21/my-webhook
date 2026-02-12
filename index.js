@@ -63,6 +63,40 @@ async function detectIntentText(sessionId, text, languageCode = 'th') {
 }
 
 
+// ฟังก์ชันเปรียบเทียบความใกล้เคียง
+function findClosestAbility(userInput, similarityThreshold = 0.60) {
+  // แปลงข้อความเป็นตัวพิมพ์เล็ก และตัดช่องว่าง
+  userInput = userInput.trim().toLowerCase();
+
+  // รวมทุก ability ของ faculties และ majors (ตัดซ้ำ)
+  const allAbilities = [...new Set(
+    faculties.flatMap(f => f.majors.flatMap(m => m.ability))
+  )].map(a => a.trim().toLowerCase());
+
+  // 1️⃣ exact match ถ้าเจอคืนค่าเลย
+  if (allAbilities.includes(userInput)) return userInput;
+
+  // 2️⃣ prefix match เฉพาะ input ≥ 3 ตัวอักษร
+  if (userInput.length >= 3) {
+    const prefixMatch = allAbilities.find(a => a.startsWith(userInput));
+    if (prefixMatch) return prefixMatch;
+  }
+
+  // 3️⃣ similarity ratio สำหรับพิมพ์ผิดเล็กน้อย
+  let closest = null;
+  let maxSimilarity = 0;
+  for (const ability of allAbilities) {
+    const dist = levenshtein.get(userInput, ability);
+    const similarity = 1 - (dist / Math.max(userInput.length, ability.length));
+    // รับเฉพาะ similarity สูงมากๆ
+    if (similarity > maxSimilarity && similarity >= similarityThreshold) {
+      maxSimilarity = similarity;
+      closest = ability;
+    }
+  }
+
+  return closest; // คืนค่าเฉพาะถ้า similarity สูงพอ
+}
 
 //จับคู่คณะและสาขา
 function findMatchingMajors(grade, abilities, educationLevel) {
@@ -144,90 +178,12 @@ app.post("/webhook", async (req, res) => {
    session.sessionId = sessionId;  // เซ็ตที่นี่แค่ครั้งเดียว  
    if (!session) session = { userId: sessionId };
 
-// =================================================================
-// 🛡️ ส่วนที่เพิ่ม: ดักจับทักษะ (Skill Guard) เพื่อป้องกันการวนลูปไปเก็บชื่อ
-// =================================================================
-
-// เช็คว่าถ้ามีชื่อและระดับการศึกษาใน session แล้ว แปลว่าตอนนี้ต้องถามทักษะ
-if (session.name && session.educationLevel) {
-    const userInput = req.body.queryResult.queryText;
-    const detectedSkill = findClosestAbility(userInput); // แก้คำผิด เช่น "คณิด" เป็น "คณิต"
-    
-    // ดึงรายการทักษะทั้งหมดมาเช็ค
-    const allValidSkills = faculties.flatMap(f => f.majors.flatMap(m => m.ability));
-    const isSkill = allValidSkills.some(s => s === detectedSkill);
-
-// เงื่อนไข: ถ้ามีชื่อและวุฒิแล้ว สิ่งที่พิมพ์มาตอนนี้เราจะตีความเป็น "ทักษะ" เสมอ
-if (isSkill && session.name && session.educationLevel) {
-    // 1. จัดการข้อมูลให้ถูกต้อง (เปลี่ยนคำผิดเป็นคำถูก)
-    session.abilitiesInputText = detectedSkill; 
-    session.recommendations = findMatchingMajors(session.grade || 3.00, [detectedSkill], session.educationLevel);
-    
-    // 2. บันทึกลง MongoDB
-    await saveSession(session); 
-
-    // 3. สร้างการ์ด (ใช้ index + 1 เพื่อแก้ undefined ของอันดับ)
-    const introText = `🙏 ขอบคุณค่ะ คุณ${session.name} จากข้อมูลที่คุณกรอกมามีดังนี้\n\n` +
-                      `🎓 ระดับการศึกษา : ${session.educationLevel}\n` +
-                      `📘 เกรดเฉลี่ย : ${session.grade}\n` +
-                      `🧠 ความสามารถของคุณ : ${detectedSkill}\n\n` +
-                      `🎯 เราขอแนะนำคณะและสาขาที่เหมาะสม 5 ลำดับดังนี้ค่ะ 👇`;
-
-    const bubbles = session.recommendations.map((rec, index) => {
-        return {
-            type: "bubble",
-            size: "mega",
-            hero: {
-                type: "image",
-                url: rec.logoUrl || "https://www.uru.ac.th/images/logouru2011.png",
-                size: "full", aspectRatio: "1.51:1", aspectMode: "fit"
-            },
-            header: {
-                type: "box", layout: "vertical",
-                contents: [
-                    { type: "text", text: `🎓 อันดับที่ ${index + 1}`, weight: "bold", color: "#1DB446", size: "lg" }, // แก้ undefined
-                    { type: "text", text: rec.faculty, weight: "bold", size: "md", wrap: true },
-                    { type: "text", text: `🏫 ${rec.major}`, weight: "bold", size: "sm", wrap: true }
-                ]
-            },
-            body: {
-                type: "box", layout: "vertical", spacing: "sm",
-                contents: [
-                    { type: "text", text: "✅ ตรงกับทักษะ", size: "sm", weight: "bold" },
-                    { type: "text", text: detectedSkill, size: "sm" },
-                    { type: "text", text: "📊 เกรดขั้นต่ำ", size: "sm", weight: "bold", margin: "md" },
-                    { type: "text", text: `${rec.grade || 'ไม่ระบุ'}`, size: "sm" } // แก้ undefined
-                ]
-            },
-            footer: {
-                type: "box", layout: "horizontal", spacing: "sm",
-                contents: [
-                    { type: "button", style: "secondary", action: { type: "message", label: "แผนการเรียน", text: `📚 แผนการเรียน คณะ : ${rec.faculty} สาขา : ${rec.major}` } },
-                    { type: "button", style: "primary", action: { type: "message", label: "เริ่มใหม่", text: "เริ่มแนะนำคณะสาขาใหม่" } }
-                ]
-            }
-        };
-    });
-
-    // 4. ส่ง Push Message ออกไปใบเดียว
-    await client.pushMessage(sessionId, [
-        { type: "text", text: introText },
-        { type: "flex", altText: "แนะนำคณะ", contents: { type: "carousel", contents: bubbles } }
-    ]);
-
-    // 🔥 5. บรรทัดสำคัญ: สั่งจบการทำงานทันที (ไม่ให้ Dialogflow ตอบซ้ำ)
-    return res.json({ 
-        fulfillmentText: "", 
-        fulfillmentMessages: [] 
-    });
-}
 
   if (intent === "welcome") {
     return res.json({
       fulfillmentText: "🌟 สวัสดีค่ะ!\nยินดีต้อนรับสู่ระบบแนะนำคณะและสาขา 🎓\n\nเราพร้อมช่วยคุณค้นหาคณะที่เหมาะสมที่สุด\nเพื่อเริ่มต้น กรุณาพิมพ์ \"ชื่อของคุณ\" เข้ามาก่อนนะคะ 😊"
     });
-  } }
-
+  }
 
 if (intent === "get name") {
   const name = params.name || "คุณ";
@@ -1519,11 +1475,9 @@ await client.replyMessage(event.replyToken, [
                   `🧠 ความสามารถหรือความถนัดของคุณ : ${session.abilitiesInputText}\n\n` +
                   `🎯 เราขอแนะนำคณะและสาขาที่เหมาะสมกับคุณ 5 ลำดับดังนี้ค่ะ 👇`;
               // สร้าง Flex Message carousel
-// สร้าง Flex Message carousel
-const bubbles = session.recommendations.map((rec, index) => { // ✅ เพิ่ม index ตรงนี้
-  const facultyName = rec.faculty || "";
-  const majorName = rec.major || "";
-  
+const bubbles = session.recommendations.map((rec) => {
+const facultyName = rec.faculty || "";
+const majorName = rec.major || "";
   return {
     type: "bubble",
     size: "mega",
@@ -1540,14 +1494,14 @@ const bubbles = session.recommendations.map((rec, index) => { // ✅ เพิ�
       contents: [
         {
           type: "text",
-          text: `🎓 อันดับที่ ${index + 1}`, // ✅ แก้จาก rec.rank เป็น index + 1
+          text: `🎓 อันดับที่ ${rec.rank}`,
           weight: "bold",
           color: "#1DB446",
           size: "lg"
         },
         {
           type: "text",
-          text: facultyName,
+          text: rec.faculty,
           weight: "bold",
           size: "md",
           wrap: true,
@@ -1555,7 +1509,7 @@ const bubbles = session.recommendations.map((rec, index) => { // ✅ เพิ�
         },
         {
           type: "text",
-          text: `🏫 ${majorName}`,
+          text: `🏫 ${rec.major}`,
           weight: "bold",
           size: "sm",
           wrap: true
@@ -1582,6 +1536,7 @@ const bubbles = session.recommendations.map((rec, index) => { // ✅ เพิ�
           wrap: true,
           margin: "xs"
         },
+        
         {
           type: "text",
           text: "📊 เกรดขั้นต่ำที่กำหนด",
@@ -1592,7 +1547,7 @@ const bubbles = session.recommendations.map((rec, index) => { // ✅ เพิ�
         },
         {
           type: "text",
-          text: rec.grade !== null && rec.grade !== undefined ? `${rec.grade}` : "ไม่ระบุ", // ✅ แก้จาก rec.requiredGrade เป็น rec.grade
+          text: rec.requiredGrade !== null ? `${rec.requiredGrade}` : "ไม่ระบุ",
           size: "sm",
           wrap: true,
           margin: "xs"
@@ -1612,7 +1567,6 @@ const bubbles = session.recommendations.map((rec, index) => { // ✅ เพิ�
           wrap: true,
           margin: "xs"
         },
-        // ... ส่วน รับจำนวน และ ระยะเวลาเรียน ใช้ของเดิมของคุณได้เลยค่ะ ...
         {
           type: "text",
           text: "👥 รับจำนวน",
@@ -1643,6 +1597,7 @@ const bubbles = session.recommendations.map((rec, index) => { // ✅ เพิ�
           wrap: true,
           margin: "xs"
         },
+        
         {
           type: "text",
           text: "💵 ค่าเทอม",
@@ -1658,93 +1613,126 @@ const bubbles = session.recommendations.map((rec, index) => { // ✅ เพิ�
           wrap: true,
           margin: "xs"
         },
-        {
-          type: "text",
-          text: "🔗 ช่องทางติดตามข่าวสาร",
-          size: "sm",
-          weight: "bold",
-          wrap: true,
-          margin: "md"
-        },
-        {
-          type: "box",
-          layout: "horizontal",
-          spacing: "sm",
-          contents: [
-            {
-              type: "box",
-              layout: "vertical",
-              flex: 1,
-              contents: [
-                {
-                  type: "button",
-                  style: "link",
-                  height: "sm",
-                  action: { type: "uri", label: "🌐", uri: rec.website || "https://edu.uru.ac.th/" }
-                },
-                { type: "text", text: "เว็บไซต์", align: "center", size: "xs" }
-              ]
-            },
-            {
-              type: "box",
-              layout: "vertical",
-              flex: 1,
-              contents: [
-                {
-                  type: "button",
-                  style: "link",
-                  height: "sm",
-                  action: { type: "uri", label: "📘", uri: rec.majorsFacebook || "https://www.facebook.com/" }
-                },
-                { type: "text", text: "สาขา", align: "center", size: "xs" }
-              ]
-            },
-            {
-              type: "box",
-              layout: "vertical",
-              flex: 1,
-              contents: [
-                {
-                  type: "button",
-                  style: "link",
-                  height: "sm",
-                  action: { type: "uri", label: "🏛️", uri: rec.facultyFacebook || "https://www.facebook.com/" }
-                },
-                { type: "text", text: "คณะ", align: "center", size: "xs" }
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    footer: {
+
+{
+  type: "text",
+  text: "🔗 ช่องทางติดตามข่าวสาร",
+  size: "sm",
+  weight: "bold",
+  wrap: true,
+  margin: "md"
+},
+{
+  type: "box",
+  layout: "horizontal",
+  spacing: "sm",
+  contents: [
+    {
       type: "box",
-      layout: "horizontal",
-      spacing: "sm",
+      layout: "vertical",
       contents: [
         {
           type: "button",
-          style: "secondary",
+          style: "link",
+          height: "sm",
           action: {
-            type: "message",
-            label: "แผนการเรียน",
-            // ✅ ข้อความต้องตรงกับฟังก์ชัน StartsWith("📚 แผนการเรียน")
-            text: `📚 แผนการเรียน\n🏛️ คณะ : ${facultyName}\n📘 สาขา : ${majorName}`
+            type: "uri",
+            label: "🌐",
+            uri: rec.website || "https://edu.uru.ac.th/"
           }
         },
         {
-          type: "button",
-          style: "primary",
-          action: {
-            type: "message",
-            label: "เริ่มใหม่",
-            text: "เริ่มแนะนำคณะสาขาใหม่"
-          }
+          type: "text",
+          text: "เว็บไซต์",
+          align: "center",
+          size: "xs",
+          wrap: true
         }
+      ],
+      flex: 1,
+      spacing: "xs"
+    },
+    {
+      type: "box",
+      layout: "vertical",
+      contents: [
+        {
+          type: "button",
+          style: "link",
+          height: "sm",
+          action: {
+            type: "uri",
+            label: "📘",
+            uri: rec.majorsFacebook || "https://www.facebook.com/"
+          }
+        },
+        {
+          type: "text",
+          text: "สาขา",
+          align: "center",
+          size: "xs",
+          wrap: true
+        }
+      ],
+      flex: 1,
+      spacing: "xs"
+    },
+    {
+      type: "box",
+      layout: "vertical",
+      contents: [
+        {
+          type: "button",
+          style: "link",
+          height: "sm",
+          action: {
+            type: "uri",
+            label: "🏛️",
+            uri: rec.facultyFacebook || "https://www.facebook.com/"
+          }
+        },
+        {
+          type: "text",
+          text: "คณะ",
+          align: "center",
+          size: "xs",
+          wrap: true
+        }
+      ],
+      flex: 1,
+      spacing: "xs"
+    }
+  ]
+  }
+  ]
+    },
+  footer: {
+  type: "box",
+  layout: "horizontal",
+  spacing: "sm",
+  contents: [
+    {
+      type: "button",
+      style: "secondary",
+      action: {
+        type: "message",
+        label: "แผนการเรียน",
+        text: `📚 แผนการเรียน\n🏛️ คณะ : ${facultyName}\n📘 สาขา : ${majorName}`
+      }
+    },
+    {
+      type: "button",
+      style: "primary",
+      action: {
+        type: "message",
+        label: "เริ่มใหม่",
+        text: "เริ่มแนะนำคณะสาขาใหม่"
+      }        }
       ]
     }
   };
 });
+
 await client.replyMessage(event.replyToken, [
   {
     type: "text",
@@ -1759,7 +1747,6 @@ await client.replyMessage(event.replyToken, [
     },
   },
 ]);
-
   return;  // หยุดโค้ดตรงนี้เพื่อไม่ส่งข้อความอื่นซ้ำ
               } else {
               // กรณี session ไม่มี recommendations
@@ -1790,95 +1777,8 @@ await client.replyMessage(event.replyToken, [
 );
 // --- จบโค้ด LINE bot ---
 // ==========================================
-
-
-
 // 🚀 ส่วนเปิด Server (ต้องมี! ไม่งั้น Render Error)
 // ==========================================
 app.listen(PORT, () => {
   console.log(`✅ Server is running on port ${PORT}`);
 });
-
-// =======================================================
-// 🧠 ฟังก์ชันค้นหาคำที่เหมือนที่สุด (Dynamic Fuzzy Search)
-// =======================================================
-
-// 1. ตัวช่วยคำนวณความเหมือน (Dice Coefficient) - แม่นยำกับภาษาไทยมากกว่า
-function compareTwoStrings(first, second) {
-    first = first.replace(/\s+/g, '');
-    second = second.replace(/\s+/g, '');
-
-    if (first === second) return 1; // ตรงเป๊ะ 100%
-    if (first.length < 2 || second.length < 2) return 0; // สั้นไปไม่ตรวจ
-
-    let firstBigrams = new Map();
-    for (let i = 0; i < first.length - 1; i++) {
-        const bigram = first.substring(i, i + 2);
-        const count = firstBigrams.has(bigram) ? firstBigrams.get(bigram) + 1 : 1;
-        firstBigrams.set(bigram, count);
-    }
-
-    let intersectionSize = 0;
-    for (let i = 0; i < second.length - 1; i++) {
-        const bigram = second.substring(i, i + 2);
-        const count = firstBigrams.has(bigram) ? firstBigrams.get(bigram) : 0;
-        if (count > 0) {
-            firstBigrams.set(bigram, count - 1);
-            intersectionSize++;
-        }
-    }
-
-    return (2.0 * intersectionSize) / (first.length + second.length - 2);
-}
-
-// 2. ฟังก์ชันหลัก: หาคำที่ใกล้เคียงที่สุดจากฐานข้อมูล facultiesData โดยตรง
-function findClosestAbility(userInput) {
-    if (!userInput) return null;
-    const inputClean = userInput.trim().toLowerCase();
-
-    // 📥 ดึงทักษะทั้งหมดจาก facultiesData ออกมากองรวมกัน (ทำอัตโนมัติ)
-    // ไม่ต้องมานั่งเขียน manual mapping เอง
-    const allKnownSkills = [];
-    faculties.forEach(f => {
-        f.majors.forEach(m => {
-            if (m.ability) {
-                m.ability.forEach(a => allKnownSkills.push(a.trim()));
-            }
-        });
-    });
-
-    // ตัดคำซ้ำออก
-    const uniqueSkills = [...new Set(allKnownSkills)];
-
-    let bestMatch = inputClean; // ถ้าหาไม่เจอ ให้คืนค่าเดิมกลับไป
-    let highestScore = 0;
-
-    // 🔍 วนลูปเทียบทีละคำ
-    uniqueSkills.forEach(dbSkill => {
-        const skillClean = dbSkill.toLowerCase();
-
-        // กฎที่ 1: ถ้าเป็นคำย่อยของกันและกัน (เช่น พิมพ์ "คณิต" -> เจอ "คณิตศาสตร์")
-        // ให้คะแนนเต็มทันที
-        if (skillClean.includes(inputClean)) {
-            bestMatch = dbSkill;
-            highestScore = 1.0;
-            return;
-        }
-
-        // กฎที่ 2: คำนวณความคล้าย (เช่น พิมพ์ "คณิด" -> เจอ "คณิต")
-        const score = compareTwoStrings(inputClean, skillClean);
-        
-        // ถ้าคะแนนสูงกว่าตัวเก่า และสูงเกิน 60% (0.6) ให้เก็บไว้
-        if (score > highestScore && score > 0.6) {
-            highestScore = score;
-            bestMatch = dbSkill;
-        }
-    });
-
-    // ถ้าคะแนนความเชื่อมั่นต่ำกว่า 50% ให้ถือว่าไม่เจอ (ป้องกันมั่ว)
-    if (highestScore < 0.5) {
-        return inputClean; // คืนค่าเดิมไปให้ฟังก์ชันอื่นจัดการต่อ
-    }
-
-    return bestMatch;
-}
