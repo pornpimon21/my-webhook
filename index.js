@@ -98,47 +98,56 @@ function findClosestAbility(userInput, similarityThreshold = 0.85) {
   return closest; // คืนค่าเฉพาะถ้า similarity สูงพอ
 }
 
-function findMatchingMajors(grade, userAbilities, educationLevel) {
-  let results = [];
-  const myGrade = parseFloat(grade) || 0;
-  
-  // 🟢 LOG 1: ดูว่าบอทได้รับค่าอะไรมา
-  console.log(`--- เริ่มค้นหา: วุฒิ=${educationLevel}, เกรด=${myGrade}, ทักษะที่พิมพ์=${userAbilities} ---`);
+function findMatchingMajors(grade, abilities, educationLevel) {
+    let results = [];
+    const myGrade = parseFloat(grade) || 0;
 
-  faculties.forEach(faculty => {
-    faculty.majors.forEach(major => {
-      
-      // 🕵️ เช็คเฉพาะสาขาคณิตศาสตร์เพื่อหาจุดบกพร่อง
-      if (major.name.includes("คณิต")) {
-          const eduMatch = major.requiredEducation.some(e => e.trim() === educationLevel.trim());
-          const gradeMatch = myGrade >= (parseFloat(major.grade) || 0);
-          
-          console.log(`🎯 ตรวจสาขา: ${major.name}`);
-          console.log(`   - วุฒิที่ต้องการ: ${major.requiredEducation} | ผล: ${eduMatch ? '✅ ผ่าน' : '❌ ตก'}`);
-          console.log(`   - เกรดที่ต้องการ: ${major.grade} | ผล: ${gradeMatch ? '✅ ผ่าน' : '❌ ตก'}`);
-      }
+    faculties.forEach(faculty => {
+        faculty.majors.forEach(major => {
+            
+            // 1. ด่านตรวจเกรดและวุฒิ (ต้องผ่านก่อน)
+            if (myGrade < (major.grade || 0)) return;
+            if (!major.requiredEducation.includes(educationLevel)) return;
 
-      // Logic การกรองจริง
-      if (!major.requiredEducation.some(e => e.trim() === educationLevel.trim())) return;
-      if (major.grade > 0 && myGrade < major.grade) return;
+            // 2. 🎯 วางโค้ดที่คุณถามตรงนี้ครับ!
+            // เป็นการกรองทักษะ (Ability Filter)
+            const matchedAbilities = major.ability.filter(majorAbility => {
+                // ล้างช่องว่างในฐานข้อมูล (ในรูปมีช่องว่างหน้าคำ เช่น ' คณิตศาสตร์')
+                const mAbility = majorAbility.trim().toLowerCase();
+                
+                return abilities.some(userA => {
+                    const uLow = userA.trim().toLowerCase();
+                    
+                    // กฎพิเศษสำหรับหมวดคณิตศาสตร์
+                    const mathGroup = ['คณิต', 'คณิตศาสตร์', 'เลข', 'คำนวณ', 'สถิติ', 'แคลคูลัส'];
+                    if (mathGroup.includes(uLow) && mathGroup.includes(mAbility)) {
+                        return true;
+                    }
 
-      const matched = major.ability.filter(dbAbility => {
-        const dbLow = dbAbility.trim().toLowerCase();
-        return userAbilities.some(userA => {
-          const userLow = userA.trim().toLowerCase();
-          // เช็คคำพ้องหรือคำผสม
-          return dbLow.includes(userLow) || userLow.includes(dbLow) || 
-                 (userLow === 'คณิต' && dbLow === 'คณิตศาสตร์');
+                    // กฎทั่วไปสำหรับหมวดอื่น (เคมี, ชีวะ)
+                    return mAbility.includes(uLow) || uLow.includes(mAbility);
+                });
+            });
+
+            // 3. ถ้าตรวจสอบแล้วมีทักษะตรงกัน (matchedAbilities ไม่ว่าง) ให้เก็บผลลัพธ์
+            if (matchedAbilities.length > 0) {
+                results.push({
+                    faculty: faculty.name,
+                    major: major.name,
+                    matchedAbilities, // ส่งรายการที่แมตช์ไปโชว์
+                    condition: major.condition,
+                    grade: major.grade
+                });
+            }
         });
-      });
-
-      if (matched.length > 0) {
-        results.push({ ...major, faculty: faculty.name, matchedAbilities: matched });
-      }
     });
-  });
-  return results.sort((a, b) => b.matchedAbilities.length - a.matchedAbilities.length).slice(0, 5);
+
+    // คืนค่าผลลัพธ์ (เรียงตามความแม่นยำและเอาแค่ 5 อันดับ)
+    return results
+        .sort((a, b) => b.matchedAbilities.length - a.matchedAbilities.length)
+        .slice(0, 5);
 }
+
 // MongoDB Session Helper
 async function getSession(sessionId) {
   let session = await Session.findOne({ sessionId });
