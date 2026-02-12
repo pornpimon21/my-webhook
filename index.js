@@ -63,40 +63,6 @@ async function detectIntentText(sessionId, text, languageCode = 'th') {
 }
 
 
-// ฟังก์ชันเปรียบเทียบความใกล้เคียง
-function findClosestAbility(userInput, similarityThreshold = 0.60) {
-  // แปลงข้อความเป็นตัวพิมพ์เล็ก และตัดช่องว่าง
-  userInput = userInput.trim().toLowerCase();
-
-  // รวมทุก ability ของ faculties และ majors (ตัดซ้ำ)
-  const allAbilities = [...new Set(
-    faculties.flatMap(f => f.majors.flatMap(m => m.ability))
-  )].map(a => a.trim().toLowerCase());
-
-  // 1️⃣ exact match ถ้าเจอคืนค่าเลย
-  if (allAbilities.includes(userInput)) return userInput;
-
-  // 2️⃣ prefix match เฉพาะ input ≥ 3 ตัวอักษร
-  if (userInput.length >= 3) {
-    const prefixMatch = allAbilities.find(a => a.startsWith(userInput));
-    if (prefixMatch) return prefixMatch;
-  }
-
-  // 3️⃣ similarity ratio สำหรับพิมพ์ผิดเล็กน้อย
-  let closest = null;
-  let maxSimilarity = 0;
-  for (const ability of allAbilities) {
-    const dist = levenshtein.get(userInput, ability);
-    const similarity = 1 - (dist / Math.max(userInput.length, ability.length));
-    // รับเฉพาะ similarity สูงมากๆ
-    if (similarity > maxSimilarity && similarity >= similarityThreshold) {
-      maxSimilarity = similarity;
-      closest = ability;
-    }
-  }
-
-  return closest; // คืนค่าเฉพาะถ้า similarity สูงพอ
-}
 
 //จับคู่คณะและสาขา
 function findMatchingMajors(grade, abilities, educationLevel) {
@@ -1777,8 +1743,95 @@ await client.replyMessage(event.replyToken, [
 );
 // --- จบโค้ด LINE bot ---
 // ==========================================
+
+
+
 // 🚀 ส่วนเปิด Server (ต้องมี! ไม่งั้น Render Error)
 // ==========================================
 app.listen(PORT, () => {
   console.log(`✅ Server is running on port ${PORT}`);
 });
+
+// =======================================================
+// 🧠 ฟังก์ชันค้นหาคำที่เหมือนที่สุด (Dynamic Fuzzy Search)
+// =======================================================
+
+// 1. ตัวช่วยคำนวณความเหมือน (Dice Coefficient) - แม่นยำกับภาษาไทยมากกว่า
+function compareTwoStrings(first, second) {
+    first = first.replace(/\s+/g, '');
+    second = second.replace(/\s+/g, '');
+
+    if (first === second) return 1; // ตรงเป๊ะ 100%
+    if (first.length < 2 || second.length < 2) return 0; // สั้นไปไม่ตรวจ
+
+    let firstBigrams = new Map();
+    for (let i = 0; i < first.length - 1; i++) {
+        const bigram = first.substring(i, i + 2);
+        const count = firstBigrams.has(bigram) ? firstBigrams.get(bigram) + 1 : 1;
+        firstBigrams.set(bigram, count);
+    }
+
+    let intersectionSize = 0;
+    for (let i = 0; i < second.length - 1; i++) {
+        const bigram = second.substring(i, i + 2);
+        const count = firstBigrams.has(bigram) ? firstBigrams.get(bigram) : 0;
+        if (count > 0) {
+            firstBigrams.set(bigram, count - 1);
+            intersectionSize++;
+        }
+    }
+
+    return (2.0 * intersectionSize) / (first.length + second.length - 2);
+}
+
+// 2. ฟังก์ชันหลัก: หาคำที่ใกล้เคียงที่สุดจากฐานข้อมูล facultiesData โดยตรง
+function findClosestAbility(userInput) {
+    if (!userInput) return null;
+    const inputClean = userInput.trim().toLowerCase();
+
+    // 📥 ดึงทักษะทั้งหมดจาก facultiesData ออกมากองรวมกัน (ทำอัตโนมัติ)
+    // ไม่ต้องมานั่งเขียน manual mapping เอง
+    const allKnownSkills = [];
+    faculties.forEach(f => {
+        f.majors.forEach(m => {
+            if (m.ability) {
+                m.ability.forEach(a => allKnownSkills.push(a.trim()));
+            }
+        });
+    });
+
+    // ตัดคำซ้ำออก
+    const uniqueSkills = [...new Set(allKnownSkills)];
+
+    let bestMatch = inputClean; // ถ้าหาไม่เจอ ให้คืนค่าเดิมกลับไป
+    let highestScore = 0;
+
+    // 🔍 วนลูปเทียบทีละคำ
+    uniqueSkills.forEach(dbSkill => {
+        const skillClean = dbSkill.toLowerCase();
+
+        // กฎที่ 1: ถ้าเป็นคำย่อยของกันและกัน (เช่น พิมพ์ "คณิต" -> เจอ "คณิตศาสตร์")
+        // ให้คะแนนเต็มทันที
+        if (skillClean.includes(inputClean)) {
+            bestMatch = dbSkill;
+            highestScore = 1.0;
+            return;
+        }
+
+        // กฎที่ 2: คำนวณความคล้าย (เช่น พิมพ์ "คณิด" -> เจอ "คณิต")
+        const score = compareTwoStrings(inputClean, skillClean);
+        
+        // ถ้าคะแนนสูงกว่าตัวเก่า และสูงเกิน 60% (0.6) ให้เก็บไว้
+        if (score > highestScore && score > 0.6) {
+            highestScore = score;
+            bestMatch = dbSkill;
+        }
+    });
+
+    // ถ้าคะแนนความเชื่อมั่นต่ำกว่า 50% ให้ถือว่าไม่เจอ (ป้องกันมั่ว)
+    if (highestScore < 0.5) {
+        return inputClean; // คืนค่าเดิมไปให้ฟังก์ชันอื่นจัดการต่อ
+    }
+
+    return bestMatch;
+}
