@@ -403,12 +403,19 @@ if (abilities.length === 0) {
     let validAbilities = new Set();
     let invalid = [];
 
-    abilities.forEach(a => {
-      const closest = findClosestAbility(a);
-      if (closest) validAbilities.add(closest);
-      else invalid.push(a);
-    });
+abilities.forEach(a => {
 
+  // ✔️ ถ้าเป็นหมวดหลักอยู่แล้ว ใช้เลย
+  if (CORE_ABILITIES.includes(a)) {
+    validAbilities.add(a);
+    return;
+  }
+
+  // ❗ ถ้าไม่ใช่ค่อย fuzzy
+  const closest = findClosestAbility(a);
+  if (closest) validAbilities.add(closest);
+  else invalid.push(a);
+});
     validAbilities = Array.from(validAbilities);
 
     if (invalid.length > 0) {
