@@ -15,6 +15,53 @@ const { faqFlex, faqs } = require('./faqFlex');
 const { createPlanCard, handlePostback } = require('./flexTemplates');
 const userSessions = {}; // <== ต้องมีไว้เก็บคำตอบของแต่ละ userId
 
+const CORE_ABILITIES = [
+  'ครู',
+  'ภาษา',
+  'สื่อสาร',
+  'คณิตศาสตร์',
+  'วิทยาศาสตร์',
+  'สังคม',
+  'กีฬา',
+  'การแสดง',
+  'IT',
+  'สิ่งแวดล้อม',
+  'ธุรกิจ',
+  'การออกแบบ'
+];
+
+function normalize(text) {
+  return text
+    .toLowerCase()
+    .replace(/\s+/g, '')
+    .trim();
+}
+function fuzzyMatchAbility(input) {
+  if (!input) return null;
+
+  const normInput = normalize(input);
+
+  let bestMatch = null;
+  let bestScore = 0;
+
+  CORE_ABILITIES.forEach(core => {
+    const dist = levenshtein.get(normInput, normalize(core));
+    const similarity = 1 - (dist / Math.max(normInput.length, core.length));
+
+    if (similarity > bestScore) {
+      bestScore = similarity;
+      bestMatch = core;
+    }
+  });
+
+  if (bestScore >= 0.5) {
+    return bestMatch;
+  }
+
+  return null;
+}
+
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 //app.use(express.json());
@@ -318,7 +365,7 @@ setTimeout(() => {
 
 return;
 }if (intent === "get skills") {
-  let abilities = params.ability;
+let abilities = params.ability || [];
   if (typeof abilities === "string") {
     abilities = abilities.split(/[,\s]+/).map(a => a.trim());  // 🔁 ใช้ regex แยกทั้งคอมม่าและเว้นวรรค
     } else if (Array.isArray(abilities)) {
@@ -327,6 +374,15 @@ return;
   
   abilities = abilities.filter(a => a.length > 0);
   abilities = [...new Set(abilities)];
+
+  // 🔥 Fallback ถ้า Dialogflow ไม่จับได้
+if (!abilities || abilities.length === 0) {
+  const fallback = fuzzyMatchAbility(req.body.queryResult.queryText || '');
+  if (fallback) {
+    abilities = [fallback];
+  }
+}
+
 
   const grade = session.grade;
   const name = session.name;
@@ -339,11 +395,11 @@ return;
     });
   }
 
-  if (abilities.length === 0) {
-    return res.json({
-      fulfillmentText: "⚠️🙏 กรุณาระบุความสามารถอย่างน้อย 1 อย่างค่ะ 🙏⚠️"
-    });
-  }
+if (abilities.length === 0) {
+  return res.json({
+    fulfillmentText: "⚠️ ขอโทษค่ะ เราไม่เข้าใจความสามารถที่กรอกมา กรุณาลองใหม่อีกครั้งนะคะ 😊"
+  });
+}
     let validAbilities = new Set();
     let invalid = [];
 
