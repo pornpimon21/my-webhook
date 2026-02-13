@@ -1286,22 +1286,23 @@ if (match) {
 
 // STEP 3: ถ้าผู้ใช้พิมพ์ชื่อคณะ (เช่น "คณะครุศาสตร์")
 const selectedFaculty = faculties.find(f => f.name === userMessage);
+
 if (selectedFaculty) {
-  // ตอบข้อความแนะนำก่อน
-  await client.replyMessage(event.replyToken, {
-    type: "text",
-    text: `🎓 กรุณาเลือกสาขาที่สนใจใน "${selectedFaculty.name}" ด้านล่างนี้ค่ะ 😊`
-  });
 
-  // สร้าง Flex และส่งสาขาในหน้าที่ 1
   const flexMsg = createMajorFlexMessage(selectedFaculty, 1);
-  if (flexMsg) {
-    await client.replyMessage(event.replyToken, flexMsg);
 
+  if (flexMsg) {
+    await client.replyMessage(event.replyToken, [
+      {
+        type: "text",
+        text: `🎓 กรุณาเลือกสาขาที่สนใจใน "${selectedFaculty.name}" ด้านล่างนี้ค่ะ 😊`
+      },
+      flexMsg
+    ]);
   }
+
   return;
 }
-
 // STEP 3: เลือกสาขา
 let matchedMajor, matchedFaculty;
 for (const faculty of faculties) {
