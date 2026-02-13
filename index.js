@@ -266,18 +266,14 @@ fulfillmentText: `👋 สวัสดีค่ะ คุณ${name}\n📘 กร
 });
 
 // 2. หน่วงเวลาเล็กน้อยก่อน push message (เพื่อให้ข้อความขึ้นก่อน)
-setTimeout(() => {
-  client.pushMessage(sessionId, {
-    type: "flex",
-    altText: "เลือกระดับการศึกษา",
-    contents: {
-      type: "carousel",
-      contents: levelBubbles
-    }
-  }).catch((err) => {
-    console.error("Push message error:", err);
-  });
-}, 500); // ✅ รอ 500 มิลลิวินาที
+await client.replyMessage(event.replyToken, {
+  type: "flex",
+  altText: "เลือกระดับการศึกษา",
+  contents: {
+    type: "carousel",
+    contents: levelBubbles
+  }
+});
 
 return;
 }
@@ -348,18 +344,18 @@ res.json({
     lifespanCount: 2
   }]
 });
-
-// 2️⃣ ส่งปุ่ม Flex
-setTimeout(() => {
-  client.pushMessage(sessionId, {
+await client.replyMessage(event.replyToken, [
+  textMsg,
+  {
     type: "flex",
     altText: "ดูคำกิจกรรม",
     contents: abilityButton
-  });
-}, 300);
-
+  }
+]);
 return;
-}if (intent === "get skills") {
+}
+
+if (intent === "get skills") {
 let abilities = params.ability || [];
   if (typeof abilities === "string") {
     abilities = abilities.split(/[,\s]+/).map(a => a.trim());  // 🔁 ใช้ regex แยกทั้งคอมม่าและเว้นวรรค
@@ -1300,7 +1296,8 @@ if (selectedFaculty) {
   // สร้าง Flex และส่งสาขาในหน้าที่ 1
   const flexMsg = createMajorFlexMessage(selectedFaculty, 1);
   if (flexMsg) {
-    await client.pushMessage(event.source.userId, flexMsg);
+    await client.replyMessage(event.replyToken, flexMsg);
+
   }
   return;
 }
