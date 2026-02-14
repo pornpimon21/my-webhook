@@ -348,14 +348,14 @@ res.json({
     lifespanCount: 2
   }]
 });
-await client.replyMessage(event.replyToken, [
-  textMsg,
-  {
+// 2️⃣ ส่งปุ่ม Flex
+setTimeout(() => {
+  client.pushMessage(sessionId, {
     type: "flex",
     altText: "ดูคำกิจกรรม",
     contents: abilityButton
-  }
-]);
+  });
+}, 300);
 return;
 }
 
