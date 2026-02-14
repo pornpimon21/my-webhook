@@ -15,52 +15,6 @@ const { faqFlex, faqs } = require('./faqFlex');
 const { createPlanCard, handlePostback } = require('./flexTemplates');
 const userSessions = {}; // <== ต้องมีไว้เก็บคำตอบของแต่ละ userId
 
-const CORE_ABILITIES = [
-  'ครู',
-  'ภาษา',
-  'สื่อสาร',
-  'คณิตศาสตร์',
-  'วิทยาศาสตร์',
-  'สังคม',
-  'กีฬา',
-  'การแสดง',
-  'IT',
-  'สิ่งแวดล้อม',
-  'ธุรกิจ',
-  'การออกแบบ'
-];
-
-function normalize(text) {
-  return text
-    .toLowerCase()
-    .replace(/\s+/g, '')
-    .trim();
-}
-function fuzzyMatchAbility(input) {
-  if (!input) return null;
-
-  const normInput = normalize(input);
-
-  let bestMatch = null;
-  let bestScore = 0;
-
-  CORE_ABILITIES.forEach(core => {
-    const dist = levenshtein.get(normInput, normalize(core));
-    const similarity = 1 - (dist / Math.max(normInput.length, core.length));
-
-    if (similarity > bestScore) {
-      bestScore = similarity;
-      bestMatch = core;
-    }
-  });
-
-  if (bestScore >= 0.5) {
-    return bestMatch;
-  }
-
-  return null;
-}
-
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -110,34 +64,39 @@ async function detectIntentText(sessionId, text, languageCode = 'th') {
 }
 
 
-function fuzzyMatchAbility(input) {
-  if (!input) return null;
+// ฟังก์ชันเปรียบเทียบความใกล้เคียง
+function findClosestAbility(userInput, similarityThreshold = 0.60) {
+  // แปลงข้อความเป็นตัวพิมพ์เล็ก และตัดช่องว่าง
+  userInput = userInput.trim().toLowerCase();
 
-  const normInput = normalize(input);
+  // รวมทุก ability ของ faculties และ majors (ตัดซ้ำ)
+  const allAbilities = [...new Set(
+    faculties.flatMap(f => f.majors.flatMap(m => m.ability))
+  )].map(a => a.trim().toLowerCase());
 
-  // 🔥 เช็ค synonym ก่อน
-  if (ABILITY_SYNONYMS[normInput]) {
-    return ABILITY_SYNONYMS[normInput];
+  // 1️⃣ exact match ถ้าเจอคืนค่าเลย
+  if (allAbilities.includes(userInput)) return userInput;
+
+  // 2️⃣ prefix match เฉพาะ input ≥ 3 ตัวอักษร
+  if (userInput.length >= 3) {
+    const prefixMatch = allAbilities.find(a => a.startsWith(userInput));
+    if (prefixMatch) return prefixMatch;
   }
 
-  let bestMatch = null;
-  let bestScore = 0;
-
-  CORE_ABILITIES.forEach(core => {
-    const dist = levenshtein.get(normInput, normalize(core));
-    const similarity = 1 - (dist / Math.max(normInput.length, core.length));
-
-    if (similarity > bestScore) {
-      bestScore = similarity;
-      bestMatch = core;
+  // 3️⃣ similarity ratio สำหรับพิมพ์ผิดเล็กน้อย
+  let closest = null;
+  let maxSimilarity = 0;
+  for (const ability of allAbilities) {
+    const dist = levenshtein.get(userInput, ability);
+    const similarity = 1 - (dist / Math.max(userInput.length, ability.length));
+    // รับเฉพาะ similarity สูงมากๆ
+    if (similarity > maxSimilarity && similarity >= similarityThreshold) {
+      maxSimilarity = similarity;
+      closest = ability;
     }
-  });
-
-  if (bestScore >= 0.5) {
-    return bestMatch;
   }
 
-  return null;
+  return closest; // คืนค่าเฉพาะถ้า similarity สูงพอ
 }
 
 //จับคู่คณะและสาขา
