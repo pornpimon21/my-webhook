@@ -15,7 +15,6 @@ const { faqFlex, faqs } = require('./faqFlex');
 const { createPlanCard, handlePostback } = require('./flexTemplates');
 const userSessions = {}; // <== ต้องมีไว้เก็บคำตอบของแต่ละ userId
 
-
 const app = express();
 const PORT = process.env.PORT || 3000;
 //app.use(express.json());
@@ -307,6 +306,7 @@ res.json({
     lifespanCount: 2
   }]
 });
+
 // 2️⃣ ส่งปุ่ม Flex
 setTimeout(() => {
   client.pushMessage(sessionId, {
@@ -315,11 +315,10 @@ setTimeout(() => {
     contents: abilityButton
   });
 }, 300);
-return;
-}
 
-if (intent === "get skills") {
-let abilities = params.ability || [];
+return;
+}if (intent === "get skills") {
+  let abilities = params.ability;
   if (typeof abilities === "string") {
     abilities = abilities.split(/[,\s]+/).map(a => a.trim());  // 🔁 ใช้ regex แยกทั้งคอมม่าและเว้นวรรค
     } else if (Array.isArray(abilities)) {
@@ -328,15 +327,6 @@ let abilities = params.ability || [];
   
   abilities = abilities.filter(a => a.length > 0);
   abilities = [...new Set(abilities)];
-
-  // 🔥 Fallback ถ้า Dialogflow ไม่จับได้
-if (!abilities || abilities.length === 0) {
-  const fallback = fuzzyMatchAbility(req.body.queryResult.queryText || '');
-  if (fallback) {
-    abilities = [fallback];
-  }
-}
-
 
   const grade = session.grade;
   const name = session.name;
@@ -349,27 +339,20 @@ if (!abilities || abilities.length === 0) {
     });
   }
 
-if (abilities.length === 0) {
-  return res.json({
-    fulfillmentText: "⚠️ ขอโทษค่ะ เราไม่เข้าใจความสามารถที่กรอกมา กรุณาลองใหม่อีกครั้งนะคะ 😊"
-  });
-}
+  if (abilities.length === 0) {
+    return res.json({
+      fulfillmentText: "⚠️🙏 กรุณาระบุความสามารถอย่างน้อย 1 อย่างค่ะ 🙏⚠️"
+    });
+  }
     let validAbilities = new Set();
     let invalid = [];
 
-abilities.forEach(a => {
+    abilities.forEach(a => {
+      const closest = findClosestAbility(a);
+      if (closest) validAbilities.add(closest);
+      else invalid.push(a);
+    });
 
-  // ✔️ ถ้าเป็นหมวดหลักอยู่แล้ว ใช้เลย
-  if (CORE_ABILITIES.includes(a)) {
-    validAbilities.add(a);
-    return;
-  }
-
-  // ❗ ถ้าไม่ใช่ค่อย fuzzy
-  const closest = findClosestAbility(a);
-  if (closest) validAbilities.add(closest);
-  else invalid.push(a);
-});
     validAbilities = Array.from(validAbilities);
 
     if (invalid.length > 0) {
@@ -1249,23 +1232,21 @@ if (match) {
 
 // STEP 3: ถ้าผู้ใช้พิมพ์ชื่อคณะ (เช่น "คณะครุศาสตร์")
 const selectedFaculty = faculties.find(f => f.name === userMessage);
-
 if (selectedFaculty) {
+  // ตอบข้อความแนะนำก่อน
+  await client.replyMessage(event.replyToken, {
+    type: "text",
+    text: `🎓 กรุณาเลือกสาขาที่สนใจใน "${selectedFaculty.name}" ด้านล่างนี้ค่ะ 😊`
+  });
 
+  // สร้าง Flex และส่งสาขาในหน้าที่ 1
   const flexMsg = createMajorFlexMessage(selectedFaculty, 1);
-
   if (flexMsg) {
-    await client.replyMessage(event.replyToken, [
-      {
-        type: "text",
-        text: `🎓 กรุณาเลือกสาขาที่สนใจใน "${selectedFaculty.name}" ด้านล่างนี้ค่ะ 😊`
-      },
-      flexMsg
-    ]);
+    await client.pushMessage(event.source.userId, flexMsg);
   }
-
   return;
 }
+
 // STEP 3: เลือกสาขา
 let matchedMajor, matchedFaculty;
 for (const faculty of faculties) {
