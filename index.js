@@ -318,12 +318,7 @@ setTimeout(() => {
 
 return;
 }if (intent === "get skills") {
-let abilities = params.ability;
-
-// 🔥 ถ้า Dialogflow ไม่ส่ง ability มา
-if (!abilities) {
-  abilities = req.body.queryResult?.queryText || "";
-}
+  let abilities = params.ability;
   if (typeof abilities === "string") {
     abilities = abilities.split(/[,\s]+/).map(a => a.trim());  // 🔁 ใช้ regex แยกทั้งคอมม่าและเว้นวรรค
     } else if (Array.isArray(abilities)) {
@@ -470,12 +465,12 @@ session.recommendations = results.map((r, i) => {
 // บันทึกลง MongoDB
 await session.save();
         return res.json({
-        fulfillmentText: ""
+      fulfillmentText: reply
     });
   }
 
   return res.json({
-   
+    fulfillmentText: "ขออภัยค่ะ ไม่เข้าใจคำสั่ง\nกรุณาลองใหม่อีกครั้งนะคะ 😊"
   });
 });
 
@@ -1485,9 +1480,8 @@ await client.replyMessage(event.replyToken, [
           // <--- ตรงนี้คือจุดที่ให้ใส่โค้ดแสดง carousel --->
           if (dialogflowResult.intent && dialogflowResult.intent.displayName === 'get skills') {
             // ดึงข้อมูล session จาก MongoDB
-await new Promise(resolve => setTimeout(resolve, 300));
+            const session = await getSession(sessionId);
 
-const session = await getSession(sessionId);
           if (session && session.recommendations && session.recommendations.length > 0) {
           // สร้างข้อความแนะนำก่อน carousel
           const introText = `🙏 ขอบคุณค่ะ คุณ${session.name || ''} จากข้อมูลที่คุณกรอกมามีดังนี้\n\n` +
