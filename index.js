@@ -64,7 +64,7 @@ async function detectIntentText(sessionId, text, languageCode = 'th') {
 
 
 // ฟังก์ชันเปรียบเทียบความใกล้เคียง
-function findClosestAbility(userInput, similarityThreshold = 0.45) {
+function findClosestAbility(userInput, similarityThreshold = 0.60) {
   // แปลงข้อความเป็นตัวพิมพ์เล็ก และตัดช่องว่าง
   userInput = userInput.trim().toLowerCase();
 
@@ -344,38 +344,23 @@ return;
       fulfillmentText: "⚠️🙏 กรุณาระบุความสามารถอย่างน้อย 1 อย่างค่ะ 🙏⚠️"
     });
   }
-let validAbilities = new Set();
+    let validAbilities = new Set();
+    let invalid = [];
 
-abilities.forEach(a => {
+    abilities.forEach(a => {
+      const closest = findClosestAbility(a);
+      if (closest) validAbilities.add(closest);
+      else invalid.push(a);
+    });
 
-  let closest = findClosestAbility(a);
+    validAbilities = Array.from(validAbilities);
 
-  // 🔥 ถ้ายังไม่เจอ ให้ลองเดาคำสั้น
-  if (!closest) {
-    const shortGuess = findClosestAbility(a, 0.40);
-    if (shortGuess) {
-      closest = shortGuess;
+    if (invalid.length > 0) {
+      return res.json({
+        fulfillmentText: `⚠️ ขอโทษค่ะ\nคำว่า "${invalid.join(", ")}" เราไม่เข้าใจ\nช่วยกรอกความสามารถใหม่อีกครั้งนะคะ 😊`,
+      });
     }
-  }
 
-  // 🔥 ถ้ายังไม่เจออีก ให้ลองเติมสระที่หาย
-  if (!closest) {
-    const withVowel = a.replace(/([ก-ฮ])/g, '$1ะ');
-    closest = findClosestAbility(withVowel, 0.40);
-  }
-
-  if (closest) {
-    validAbilities.add(closest);
-  }
-
-});    validAbilities = Array.from(validAbilities);
-
-if (validAbilities.length === 0) {
-  return res.json({
-    fulfillmentText: `🤔 ระบบพยายามเข้าใจ "${abilities.join(", ")}" แล้ว
-แต่ยังไม่พบคำที่ใกล้เคียง`
-  });
-}
     const results = findMatchingMajors(grade, validAbilities, session.educationLevel);
 
     if (results.length === 0) {
