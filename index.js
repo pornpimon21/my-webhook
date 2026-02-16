@@ -318,7 +318,12 @@ setTimeout(() => {
 
 return;
 }if (intent === "get skills") {
-  let abilities = params.ability;
+let abilities = params.ability;
+
+// 🔥 ถ้า Dialogflow ไม่ส่ง ability มา
+if (!abilities) {
+  abilities = req.body.queryResult?.queryText || "";
+}
   if (typeof abilities === "string") {
     abilities = abilities.split(/[,\s]+/).map(a => a.trim());  // 🔁 ใช้ regex แยกทั้งคอมม่าและเว้นวรรค
     } else if (Array.isArray(abilities)) {
