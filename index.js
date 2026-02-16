@@ -64,7 +64,7 @@ async function detectIntentText(sessionId, text, languageCode = 'th') {
 
 
 // ฟังก์ชันเปรียบเทียบความใกล้เคียง
-function findClosestAbility(userInput, similarityThreshold = 0.45) {
+function findClosestAbility(userInput, similarityThreshold = 0.60) {
   // แปลงข้อความเป็นตัวพิมพ์เล็ก และตัดช่องว่าง
   userInput = userInput.trim().toLowerCase();
 
@@ -344,32 +344,24 @@ return;
       fulfillmentText: "⚠️🙏 กรุณาระบุความสามารถอย่างน้อย 1 อย่างค่ะ 🙏⚠️"
     });
   }
-let mappedAbilities = [];
-let correctedMap = [];
+    let validAbilities = new Set();
+    let invalid = [];
 
-abilities.forEach(a => {
-  const closest = findClosestAbility(a);
+    abilities.forEach(a => {
+      const closest = findClosestAbility(a);
+      if (closest) validAbilities.add(closest);
+      else invalid.push(a);
+    });
 
-  if (closest) {
-    mappedAbilities.push(closest);
+    validAbilities = Array.from(validAbilities);
 
-    if (closest !== a.toLowerCase()) {
-      correctedMap.push(`"${a}" → "${closest}"`);
+    if (invalid.length > 0) {
+      return res.json({
+        fulfillmentText: `⚠️ ขอโทษค่ะ\nคำว่า "${invalid.join(", ")}" เราไม่เข้าใจ\nช่วยกรอกความสามารถใหม่อีกครั้งนะคะ 😊`,
+      });
     }
-  }
-});
 
-// ตัดซ้ำ
-mappedAbilities = [...new Set(mappedAbilities)];
-
-// ถ้าไม่มีอะไร match เลยจริงๆ
-if (mappedAbilities.length === 0) {
-  return res.json({
-    fulfillmentText: `❌ ขออภัยค่ะ เราไม่เข้าใจความสามารถที่ระบุ\nกรุณาลองใหม่อีกครั้งนะคะ`
-  });
-}
-
-const results = findMatchingMajors(grade, mappedAbilities, session.educationLevel);
+    const results = findMatchingMajors(grade, validAbilities, session.educationLevel);
 
     if (results.length === 0) {
       return res.json({
@@ -377,12 +369,7 @@ const results = findMatchingMajors(grade, mappedAbilities, session.educationLeve
       });
     }
 
-const abilitiesInputText = mappedAbilities.join(", ");
-
-let correctionText = "";
-if (correctedMap.length > 0) {
-  correctionText = `\n📝 ระบบเข้าใจว่าคุณหมายถึง:\n${correctedMap.join("\n")}\n`;
-}
+    const abilitiesInputText = abilities.join(", ");
 
 let reply = `🙏 ขอบคุณค่ะคุณ${name || ''} จากข้อมูลที่คุณกรอกมามีดังนี้  \n` +
   `📘 เกรดเฉลี่ย : ${grade}    \n` +
@@ -426,7 +413,7 @@ reply += `\n✨ ขอให้โชคดีกับการเลือก�
 session.sessionId = sessionId;
 session.name = name;
 session.grade = grade;
-session.abilitiesInputText = mappedAbilities.join(", ");
+session.abilitiesInputText = abilities.join(", ");
 
 // แล้วค่อย map results
 session.recommendations = results.map((r, i) => {
