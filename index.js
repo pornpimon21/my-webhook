@@ -64,7 +64,7 @@ async function detectIntentText(sessionId, text, languageCode = 'th') {
 
 
 // ฟังก์ชันเปรียบเทียบความใกล้เคียง
-function findClosestAbility(userInput, similarityThreshold = 0.45) {
+function findClosestAbility(userInput, similarityThreshold = 0.60) {
   // แปลงข้อความเป็นตัวพิมพ์เล็ก และตัดช่องว่าง
   userInput = userInput.trim().toLowerCase();
 
@@ -98,18 +98,22 @@ function findClosestAbility(userInput, similarityThreshold = 0.45) {
   return closest; // คืนค่าเฉพาะถ้า similarity สูงพอ
 }
 
+//จับคู่คณะและสาขา
 function findMatchingMajors(grade, abilities, educationLevel) {
   let results = [];
 
-  // ❗ ใช้ abilities ที่ผ่านการ map มาแล้ว
-  const mappedAbilities = abilities.map(a => a.toLowerCase());
+  // แปลง abilities ของผู้ใช้เป็นค่าที่แม่นที่สุด
+  const mappedAbilities = abilities
+    .map(a => findClosestAbility(a))  // ใช้ฟังก์ชันแม่น ๆ
+    .filter(a => a !== null);
 
   faculties.forEach(faculty => {
     faculty.majors.forEach(major => {
-
+      // ตรวจสอบเกรดและระดับการศึกษา
       if (grade < major.grade) return;
       if (!major.requiredEducation.includes(educationLevel)) return;
 
+      // ตรวจสอบว่า major มี ability ไหนตรงกับ abilities ของผู้ใช้
       const matchedAbilities = major.ability.filter(majorAbility =>
         mappedAbilities.includes(majorAbility.toLowerCase())
       );
@@ -126,13 +130,14 @@ function findMatchingMajors(grade, abilities, educationLevel) {
     });
   });
 
+  // Top 5 จากจำนวน abilities ที่ตรงมากที่สุด
   let topByAbilities = results
     .sort((a, b) => b.matchedAbilities.length - a.matchedAbilities.length)
     .slice(0, 5);
 
+  // เรียง Top 5 ตาม grade มาก → น้อย
   return topByAbilities.sort((a, b) => b.grade - a.grade);
 }
-
 // MongoDB Session Helper
 async function getSession(sessionId) {
   let session = await Session.findOne({ sessionId });
@@ -339,33 +344,32 @@ return;
       fulfillmentText: "⚠️🙏 กรุณาระบุความสามารถอย่างน้อย 1 อย่างค่ะ 🙏⚠️"
     });
   }
-let mappedAbilities = [];
-let suggested = [];
+    let validAbilities = new Set();
+    let invalid = [];
 
-abilities.forEach(a => {
-  const closest = findClosestAbility(a, 0.45);
+    abilities.forEach(a => {
+      const closest = findClosestAbility(a);
+      if (closest) validAbilities.add(closest);
+      else invalid.push(a);
+    });
 
-  if (closest) {
-    mappedAbilities.push(closest);
-    if (closest !== a.toLowerCase()) {
-      suggested.push(`"${a}" → "${closest}"`);
+    validAbilities = Array.from(validAbilities);
+
+    if (invalid.length > 0) {
+      return res.json({
+        fulfillmentText: `⚠️ ขอโทษค่ะ\nคำว่า "${invalid.join(", ")}" เราไม่เข้าใจ\nช่วยกรอกความสามารถใหม่อีกครั้งนะคะ 😊`,
+      });
     }
-  }
-});
 
-// ✅ ลบซ้ำก่อน
-mappedAbilities = [...new Set(mappedAbilities)];
+    const results = findMatchingMajors(grade, validAbilities, session.educationLevel);
 
-// ✅ ถ้าไม่มีเลยค่อยแจ้ง
-if (mappedAbilities.length === 0) {
-  return res.json({
-    fulfillmentText: `⚠️ ระบบไม่พบความสามารถที่ใกล้เคียง\nกรุณาลองพิมพ์ใหม่อีกครั้งนะคะ 😊`
-  });
-}
+    if (results.length === 0) {
+      return res.json({
+        fulfillmentText: `❌ ขออภัยค่ะ คุณ${name}\nเราไม่พบคณะที่เหมาะสมกับคุณในขณะนี้\nกรุณาลองใหม่อีกครั้งนะคะ 🙇‍♀️`
+      });
+    }
 
-// ✅ ค่อย match หลังจาก clean แล้ว
-const results = findMatchingMajors(grade, mappedAbilities, session.educationLevel);
-const abilitiesInputText = abilities.join(", ");
+    const abilitiesInputText = abilities.join(", ");
 
 let reply = `🙏 ขอบคุณค่ะคุณ${name || ''} จากข้อมูลที่คุณกรอกมามีดังนี้  \n` +
   `📘 เกรดเฉลี่ย : ${grade}    \n` +
