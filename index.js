@@ -155,10 +155,9 @@ function findMatchingMajors(grade, abilities, educationLevel) {
       if (!major.requiredEducation.includes(educationLevel)) return;
 
       // ตรวจสอบว่า major มี ability ไหนตรงกับ abilities ของผู้ใช้
-  const matchedAbilities = major.ability.filter(majorAbility => {
-  const normMajor = normalizeThai(majorAbility);
-  return mappedAbilities.some(a => normalizeThai(a) === normMajor);
-});
+      const matchedAbilities = major.ability.filter(majorAbility =>
+        mappedAbilities.includes(majorAbility.toLowerCase())
+      );
 
       if (matchedAbilities.length === 0) return;
 
