@@ -421,6 +421,7 @@ if (validAbilities.size === 0) {
     fulfillmentText: `⚠️ ระบบยังไม่เข้าใจคำนี้\nลองพิมพ์กิจกรรมหรือทักษะ เช่น คอมพิวเตอร์ คณิต การแสดง 😊`
   });
 }
+validAbilities = Array.from(validAbilities);
 const abilitiesInputText = validAbilities.join(", ");
 const results = findMatchingMajors(grade, validAbilities, session.educationLevel);
 
