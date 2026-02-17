@@ -64,7 +64,7 @@ async function detectIntentText(sessionId, text, languageCode = 'th') {
 
 
 // ฟังก์ชันเปรียบเทียบความใกล้เคียง
-function findClosestAbility(userInput, similarityThreshold = 0.60) {
+function findClosestAbility(userInput, similarityThreshold = 0.45) {
   // แปลงข้อความเป็นตัวพิมพ์เล็ก และตัดช่องว่าง
   userInput = userInput.trim().toLowerCase();
 
@@ -344,32 +344,38 @@ return;
       fulfillmentText: "⚠️🙏 กรุณาระบุความสามารถอย่างน้อย 1 อย่างค่ะ 🙏⚠️"
     });
   }
-    let validAbilities = new Set();
-    let invalid = [];
+let validAbilities = new Set();
+let corrected = [];
+let trulyInvalid = [];
 
-    abilities.forEach(a => {
-      const closest = findClosestAbility(a);
-      if (closest) validAbilities.add(closest);
-      else invalid.push(a);
-    });
-
-    validAbilities = Array.from(validAbilities);
-
-    if (invalid.length > 0) {
-      return res.json({
-        fulfillmentText: `⚠️ ขอโทษค่ะ\nคำว่า "${invalid.join(", ")}" เราไม่เข้าใจ\nช่วยกรอกความสามารถใหม่อีกครั้งนะคะ 😊`,
-      });
+abilities.forEach(a => {
+  const closest = findClosestAbility(a, 0.45); // 🔥 ลด threshold ให้จับคำผิดได้มากขึ้น
+  if (closest) {
+    validAbilities.add(closest);
+    if (closest !== a.toLowerCase()) {
+      corrected.push(`${a} → ${closest}`);
     }
+  } else {
+    trulyInvalid.push(a);
+  }
+});
 
-    const results = findMatchingMajors(grade, validAbilities, session.educationLevel);
+validAbilities = Array.from(validAbilities);
 
-    if (results.length === 0) {
-      return res.json({
-        fulfillmentText: `❌ ขออภัยค่ะ คุณ${name}\nเราไม่พบคณะที่เหมาะสมกับคุณในขณะนี้\nกรุณาลองใหม่อีกครั้งนะคะ 🙇‍♀️`
-      });
-    }
+// ❗ ถ้ามีคำที่แก้ได้ ให้แจ้ง แต่ยังไปต่อ
+let notice = "";
+if (corrected.length > 0) {
+  notice += `🔎 เราแก้คำให้เป็น:\n${corrected.join("\n")}\n\n`;
+}
 
-    const abilitiesInputText = abilities.join(", ");
+// ❗ ถ้ามีคำที่ไม่เข้าใจจริง ๆ แต่ยังมีคำอื่นใช้ได้ → ไปต่อได้
+if (validAbilities.length === 0) {
+  return res.json({
+    fulfillmentText: `⚠️ คำว่า "${trulyInvalid.join(", ")}" ระบบไม่เข้าใจค่ะ\nลองพิมพ์ใหม่อีกครั้งนะคะ 😊`,
+  });
+}
+const abilitiesInputText = validAbilities.join(", ");
+const results = findMatchingMajors(grade, validAbilities, session.educationLevel);
 
 let reply = `🙏 ขอบคุณค่ะคุณ${name || ''} จากข้อมูลที่คุณกรอกมามีดังนี้  \n` +
   `📘 เกรดเฉลี่ย : ${grade}    \n` +
@@ -413,7 +419,7 @@ reply += `\n✨ ขอให้โชคดีกับการเลือก�
 session.sessionId = sessionId;
 session.name = name;
 session.grade = grade;
-session.abilitiesInputText = abilities.join(", ");
+session.abilitiesInputText = validAbilities.join(", ");
 
 // แล้วค่อย map results
 session.recommendations = results.map((r, i) => {
