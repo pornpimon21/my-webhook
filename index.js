@@ -64,7 +64,7 @@ async function detectIntentText(sessionId, text, languageCode = 'th') {
 
 
 // ฟังก์ชันเปรียบเทียบความใกล้เคียง
-function findClosestAbility(userInput, similarityThreshold = 0.60) {
+function findClosestAbility(userInput, similarityThreshold = 0.35) {
   // แปลงข้อความเป็นตัวพิมพ์เล็ก และตัดช่องว่าง
   userInput = userInput.trim().toLowerCase();
 
@@ -344,32 +344,46 @@ return;
       fulfillmentText: "⚠️🙏 กรุณาระบุความสามารถอย่างน้อย 1 อย่างค่ะ 🙏⚠️"
     });
   }
-    let validAbilities = new Set();
-    let invalid = [];
+let validAbilities = new Set();
+let corrected = [];
+let invalid = [];
 
-    abilities.forEach(a => {
-      const closest = findClosestAbility(a);
-      if (closest) validAbilities.add(closest);
-      else invalid.push(a);
-    });
+abilities.forEach(a => {
+  const closest = findClosestAbility(a);
 
-    validAbilities = Array.from(validAbilities);
+  if (closest) {
+    validAbilities.add(closest);
 
-    if (invalid.length > 0) {
-      return res.json({
-        fulfillmentText: `⚠️ ขอโทษค่ะ\nคำว่า "${invalid.join(", ")}" เราไม่เข้าใจ\nช่วยกรอกความสามารถใหม่อีกครั้งนะคะ 😊`,
-      });
+    // ถ้าคำไม่ตรงแต่ระบบเดาได้ → เก็บไว้แจ้งผู้ใช้
+    if (closest !== a.toLowerCase()) {
+      corrected.push(`${a} → ${closest}`);
     }
+  } else {
+    invalid.push(a);
+  }
+});
+
+validAbilities = Array.from(validAbilities);
+
+// ❗ ถ้าไม่มีคำที่ใช้ได้เลย ค่อยให้กรอกใหม่
+if (validAbilities.length === 0) {
+  return res.json({
+    fulfillmentText: `⚠️ ขอโทษค่ะ
+คำว่า "${invalid.join(", ")}" เราไม่เข้าใจ
+ช่วยกรอกความสามารถใหม่อีกครั้งนะคะ 😊`,
+  });
+}
 
     const results = findMatchingMajors(grade, validAbilities, session.educationLevel);
 
-    if (results.length === 0) {
-      return res.json({
-        fulfillmentText: `❌ ขออภัยค่ะ คุณ${name}\nเราไม่พบคณะที่เหมาะสมกับคุณในขณะนี้\nกรุณาลองใหม่อีกครั้งนะคะ 🙇‍♀️`
-      });
-    }
-
     const abilitiesInputText = abilities.join(", ");
+
+let correctionNote = "";
+
+if (corrected.length > 0) {
+  correctionNote = `\n🔎 ระบบตีความคำของคุณเป็น :\n${corrected.join("\n")}\n`;
+}
+
 
 let reply = `🙏 ขอบคุณค่ะคุณ${name || ''} จากข้อมูลที่คุณกรอกมามีดังนี้  \n` +
   `📘 เกรดเฉลี่ย : ${grade}    \n` +
