@@ -63,6 +63,18 @@ async function detectIntentText(sessionId, text, languageCode = 'th') {
 }
 
 ///เปรียบเทียบคำ
+function normalizeThai(text) {
+  return text
+    .toLowerCase()
+    .replace(/[่้๊๋]/g, '')   // ลบวรรณยุกต์
+    .replace(/[ืุู]/g, 'ุ')
+    .replace(/[ีิ]/g, 'ิ')
+    .replace(/[า]/g, 'ะ')
+    .replace(/[เแโใไ]/g, '')
+    .replace(/[์]/g, '')
+    .trim();
+}
+
 function findClosestAbility(userInput, similarityThreshold = 0.35) {
 
   const normInput = normalizeThai(userInput);
