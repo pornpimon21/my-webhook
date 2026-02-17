@@ -102,13 +102,20 @@ function findClosestAbility(userInput, similarityThreshold = 0.35) {
   }
 
 if (normInput.length >= 3) {
-  const substring = normalizedAbilities.find(a =>
-    a.normalized.includes(normInput) ||
-    normInput.includes(a.normalized)
-  );
+  const substring = normalizedAbilities.find(a => {
+
+    const lengthDiff = Math.abs(a.normalized.length - normInput.length);
+
+    return lengthDiff <= 2 && (
+      a.normalized.includes(normInput) ||
+      normInput.includes(a.normalized)
+    );
+  });
+
   if (substring) return substring.original;
 }
-  // 3️⃣ similarity match
+
+// 3️⃣ similarity match
   let closest = null;
   let maxSimilarity = 0;
 
@@ -116,10 +123,17 @@ if (normInput.length >= 3) {
     const dist = levenshtein.get(normInput, ability.normalized);
     const similarity = 1 - (dist / Math.max(normInput.length, ability.normalized.length));
 
-    if (similarity > maxSimilarity && similarity >= similarityThreshold) {
-      maxSimilarity = similarity;
-      closest = ability.original;
-    }
+    const lengthDiff = Math.abs(normInput.length - ability.normalized.length);
+
+  if (
+  similarity > maxSimilarity &&
+  similarity >= similarityThreshold &&
+  lengthDiff <= 3   // ⭐ เพิ่มตัวกันความยาว
+  ) 
+  {
+  maxSimilarity = similarity;
+  closest = ability.original;
+  }
   }
 
   return closest;
