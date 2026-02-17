@@ -62,6 +62,19 @@ async function detectIntentText(sessionId, text, languageCode = 'th') {
   return responses[0].queryResult;
 }
 
+
+function normalizeThai(text) {
+  return text
+    .toLowerCase()
+    .replace(/[่้๊๋]/g, '')
+    .replace(/[ืุู]/g, 'ุ')
+    .replace(/[ีิ]/g, 'ิ')
+    .replace(/[า]/g, 'ะ')
+    .replace(/[เแโใไ]/g, '')
+    .replace(/[์]/g, '')
+    .trim();
+}
+
 function findClosestAbility(userInput, similarityThreshold = 0.35) {
 
   const normInput = normalizeThai(userInput);
