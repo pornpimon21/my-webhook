@@ -62,20 +62,7 @@ async function detectIntentText(sessionId, text, languageCode = 'th') {
   return responses[0].queryResult;
 }
 
-///เปรียบเทียบคำ
-function normalizeThai(text) {
-  return text
-    .toLowerCase()
-    .replace(/[่้๊๋]/g, '')   // ลบวรรณยุกต์
-    .replace(/[ืุู]/g, 'ุ')
-    .replace(/[ีิ]/g, 'ิ')
-    .replace(/[า]/g, 'ะ')
-    .replace(/[เแโใไ]/g, '')
-    .replace(/[์]/g, '')
-    .trim();
-}
-
-function findClosestAbility(userInput, similarityThreshold = 0.25) {
+function findClosestAbility(userInput, similarityThreshold = 0.35) {
 
   const normInput = normalizeThai(userInput);
 
@@ -83,41 +70,38 @@ function findClosestAbility(userInput, similarityThreshold = 0.25) {
     faculties.flatMap(f => f.majors.flatMap(m => m.ability))
   )].map(a => a.trim().toLowerCase());
 
-  // 👉 normalize abilities ด้วย
   const normalizedAbilities = allAbilities.map(a => ({
     original: a,
     normalized: normalizeThai(a)
   }));
 
-  // 1️⃣ exact match หลัง normalize
+  // 1) exact
   const exact = normalizedAbilities.find(a => a.normalized === normInput);
-  if (exact) return exact.original;
+  if (exact) return { match: exact.original, score: 1 };
 
-  // 2️⃣ prefix match หลัง normalize
-  if (normInput.length >= 2) {
+  // 2) prefix (กันคำสั้น)
+  if (normInput.length >= 3) {
     const prefix = normalizedAbilities.find(a =>
       a.normalized.startsWith(normInput)
     );
-    if (prefix) return prefix.original;
+    if (prefix) return { match: prefix.original, score: 0.9 };
   }
 
-if (normInput.length >= 3) {
-  const substring = normalizedAbilities.find(a => {
+  // 3) substring (เฉพาะคำยาว)
+  if (normInput.length >= 4) {
+    const substring = normalizedAbilities.find(a => {
+      const lengthDiff = Math.abs(a.normalized.length - normInput.length);
+      return lengthDiff <= 2 &&
+        (a.normalized.includes(normInput) || normInput.includes(a.normalized));
+    });
+    if (substring) return { match: substring.original, score: 0.8 };
+  }
 
-    const lengthDiff = Math.abs(a.normalized.length - normInput.length);
+  // 4) similarity (กันคำสั้น)
+  if (normInput.length < 3) return null;
 
-    return lengthDiff <= 2 && (
-      a.normalized.includes(normInput) ||
-      normInput.includes(a.normalized)
-    );
-  });
-
-  if (substring) return substring.original;
-}
-
-// 3️⃣ similarity match
-  let closest = null;
-  let maxSimilarity = 0;
+  let best = null;
+  let bestScore = 0;
 
   for (const ability of normalizedAbilities) {
     const dist = levenshtein.get(normInput, ability.normalized);
@@ -125,18 +109,24 @@ if (normInput.length >= 3) {
 
     const lengthDiff = Math.abs(normInput.length - ability.normalized.length);
 
-  if (
-  similarity > maxSimilarity &&
-  similarity >= similarityThreshold &&
-  lengthDiff <= 3   // ⭐ เพิ่มตัวกันความยาว
-  ) 
-  {
-  maxSimilarity = similarity;
-  closest = ability.original;
-  }
+    if (similarity > bestScore && lengthDiff <= 2) {
+      bestScore = similarity;
+      best = ability.original;
+    }
   }
 
-  return closest;
+  if (!best) return null;
+
+  // ⭐ ตัดสินใจจากความมั่นใจ
+  if (bestScore >= similarityThreshold) {
+    return { match: best, score: bestScore };     // มั่นใจพอ
+  }
+
+  if (bestScore >= 0.25) {
+    return { suggest: best, score: bestScore };   // ใกล้เคียง แต่ไม่ชัวร์
+  }
+
+  return null; // ไม่เดา
 }
 
 //จับคู่คณะและสาขา
@@ -386,33 +376,36 @@ return;
     });
   }
 let validAbilities = new Set();
-let corrected = [];
+let suggestions = [];
 let trulyInvalid = [];
 
 abilities.forEach(a => {
-  const closest = findClosestAbility(a, 0.25); // 🔥 ลด threshold ให้จับคำผิดได้มากขึ้น
-  if (closest) {
-    validAbilities.add(closest);
-    if (closest !== a.toLowerCase()) {
-      corrected.push(`${a} → ${closest}`);
-    }
-  } else {
+  const result = findClosestAbility(a);
+
+  if (!result) {
     trulyInvalid.push(a);
+    return;
+  }
+
+  if (result.match) {
+    validAbilities.add(result.match);
+  } else if (result.suggest) {
+    suggestions.push({ from: a, to: result.suggest });
   }
 });
 
-validAbilities = Array.from(validAbilities);
-
-// ❗ ถ้ามีคำที่แก้ได้ ให้แจ้ง แต่ยังไปต่อ
-let notice = "";
-if (corrected.length > 0) {
-  notice += `🔎 เราแก้คำให้เป็น:\n${corrected.join("\n")}\n\n`;
+// ถ้าไม่มี match แต่มี suggest → ถามยืนยัน
+if (validAbilities.size === 0 && suggestions.length > 0) {
+  const msg = suggestions.map(s => `• "${s.from}" → คุณหมายถึง "${s.to}" ไหม?`).join('\n');
+  return res.json({
+    fulfillmentText: `🤔 ระบบไม่มั่นใจ 100%\n${msg}\n\nพิมพ์ยืนยันคำที่ถูกต้องอีกครั้งได้เลยค่ะ`
+  });
 }
 
-// ❗ ถ้ามีคำที่ไม่เข้าใจจริง ๆ แต่ยังมีคำอื่นใช้ได้ → ไปต่อได้
-if (validAbilities.length === 0) {
+// ถ้าไม่มีอะไรเลย
+if (validAbilities.size === 0) {
   return res.json({
-    fulfillmentText: `⚠️ คำว่า "${trulyInvalid.join(", ")}" ระบบไม่เข้าใจค่ะ\nลองพิมพ์ใหม่อีกครั้งนะคะ 😊`,
+    fulfillmentText: `⚠️ ระบบยังไม่เข้าใจคำนี้\nลองพิมพ์กิจกรรมหรือทักษะ เช่น คอมพิวเตอร์ คณิต การแสดง 😊`
   });
 }
 const abilitiesInputText = validAbilities.join(", ");
