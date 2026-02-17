@@ -64,7 +64,7 @@ async function detectIntentText(sessionId, text, languageCode = 'th') {
 
 
 // ฟังก์ชันเปรียบเทียบความใกล้เคียง
-function findClosestAbility(userInput, similarityThreshold = 0.45) {
+function findClosestAbility(userInput, similarityThreshold = 0.60) {
   // แปลงข้อความเป็นตัวพิมพ์เล็ก และตัดช่องว่าง
   userInput = userInput.trim().toLowerCase();
 
@@ -344,35 +344,32 @@ return;
       fulfillmentText: "⚠️🙏 กรุณาระบุความสามารถอย่างน้อย 1 อย่างค่ะ 🙏⚠️"
     });
   }
-let validAbilities = new Set();
-let corrected = [];
+    let validAbilities = new Set();
+    let invalid = [];
 
-abilities.forEach(a => {
-  const closest = findClosestAbility(a, 0.45); // ⬅️ ลด threshold
+    abilities.forEach(a => {
+      const closest = findClosestAbility(a);
+      if (closest) validAbilities.add(closest);
+      else invalid.push(a);
+    });
 
-  if (closest) {
-    validAbilities.add(closest);
+    validAbilities = Array.from(validAbilities);
 
-    if (a.toLowerCase() !== closest.toLowerCase()) {
-      corrected.push(`"${a}" → "${closest}"`);
+    if (invalid.length > 0) {
+      return res.json({
+        fulfillmentText: `⚠️ ขอโทษค่ะ\nคำว่า "${invalid.join(", ")}" เราไม่เข้าใจ\nช่วยกรอกความสามารถใหม่อีกครั้งนะคะ 😊`,
+      });
     }
-  }
-});
-
-validAbilities = Array.from(validAbilities);
-
-// ❗ ถ้าไม่มีแม้แต่คำเดียวจริง ๆ ค่อย reject
-if (validAbilities.length === 0) {
-  return res.json({
-    fulfillmentText: `⚠️ ขออภัยค่ะ ระบบไม่พบความสามารถที่เข้าใจได้\nกรุณาลองพิมพ์ใหม่อีกครั้ง 😊`,
-    
-  });
-}
 
     const results = findMatchingMajors(grade, validAbilities, session.educationLevel);
 
-    const abilitiesInputText = validAbilities.join(", ");
+    if (results.length === 0) {
+      return res.json({
+        fulfillmentText: `❌ ขออภัยค่ะ คุณ${name}\nเราไม่พบคณะที่เหมาะสมกับคุณในขณะนี้\nกรุณาลองใหม่อีกครั้งนะคะ 🙇‍♀️`
+      });
+    }
 
+    const abilitiesInputText = abilities.join(", ");
 
 let reply = `🙏 ขอบคุณค่ะคุณ${name || ''} จากข้อมูลที่คุณกรอกมามีดังนี้  \n` +
   `📘 เกรดเฉลี่ย : ${grade}    \n` +
@@ -1461,7 +1458,6 @@ await client.replyMessage(event.replyToken, [
   return;  
 }
 
-
           // ตรวจสอบ Intent จาก Dialogflow
           const dialogflowResult = await detectIntentText(sessionId, userMessage);
           const replyText = dialogflowResult.fulfillmentText || '❗ ขออภัยค่ะ  \nฉันไม่เข้าใจข้อความของคุณในครั้งนี้  \nกรุณาลองพิมพ์ใหม่อีกครั้งนะคะ 😊';
@@ -1766,7 +1762,8 @@ await client.replyMessage(event.replyToken, [
             type: 'text',
             text: replyText,
           });
-      }
+        }
+
     } catch (innerErr) {
             console.error("Error processing event:", innerErr);
         }
