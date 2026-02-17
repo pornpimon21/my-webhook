@@ -1461,35 +1461,25 @@ await client.replyMessage(event.replyToken, [
   return;  
 }
 
+
           // ตรวจสอบ Intent จาก Dialogflow
-          // ===== Fallback Mode: ตรวจ ability ก่อน =====
-const abilityGuess = findClosestAbility(userMessage, 0.45);
+          const dialogflowResult = await detectIntentText(sessionId, userMessage);
+          const replyText = dialogflowResult.fulfillmentText || '❗ ขออภัยค่ะ  \nฉันไม่เข้าใจข้อความของคุณในครั้งนี้  \nกรุณาลองพิมพ์ใหม่อีกครั้งนะคะ 😊';
 
-if (abilityGuess) {
-  console.log("⚡ Ability detected locally:", abilityGuess);
+          // <--- ตรงนี้คือจุดที่ให้ใส่โค้ดแสดง carousel --->
+          if (dialogflowResult.intent && dialogflowResult.intent.displayName === 'get skills') {
+            // ดึงข้อมูล session จาก MongoDB
+            const session = await getSession(sessionId);
 
-  const session = await getSession(sessionId);
-
-  if (session && session.grade && session.educationLevel) {
-
-    const results = findMatchingMajors(
-      session.grade,
-      [abilityGuess],
-      session.educationLevel
-    );
-
-if (results.length > 0) {
-
-  session.abilitiesInputText = abilityGuess;
-  session.recommendations = results;
-  await session.save();
+          if (session && session.recommendations && session.recommendations.length > 0) {
+          // สร้างข้อความแนะนำก่อน carousel
           const introText = `🙏 ขอบคุณค่ะ คุณ${session.name || ''} จากข้อมูลที่คุณกรอกมามีดังนี้\n\n` +
                   `🎓 ระดับการศึกษา : ${session.educationLevel || 'ยังไม่ระบุ'}\n` +  // ✅ เพิ่มบรรทัดนี้
                   `📘 เกรดเฉลี่ย : ${session.grade}\n` +
                   `🧠 ความสามารถหรือความถนัดของคุณ : ${session.abilitiesInputText}\n\n` +
                   `🎯 เราขอแนะนำคณะและสาขาที่เหมาะสมกับคุณ 5 ลำดับดังนี้ค่ะ 👇`;
               // สร้าง Flex Message carousel
-const bubbles = results.map((rec) => {
+const bubbles = session.recommendations.map((rec) => {
 const facultyName = rec.faculty || "";
 const majorName = rec.major || "";
   return {
@@ -1776,7 +1766,6 @@ await client.replyMessage(event.replyToken, [
             type: 'text',
             text: replyText,
           });
-        }
       }
     } catch (innerErr) {
             console.error("Error processing event:", innerErr);
