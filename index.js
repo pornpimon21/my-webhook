@@ -63,83 +63,39 @@ async function detectIntentText(sessionId, text, languageCode = 'th') {
 }
 
 
-function normalizeThai(text) {
-  return text
-    .toLowerCase()
-    .replace(/[่้๊๋]/g, '')
-    .replace(/[ืุู]/g, 'ุ')
-    .replace(/[ีิ]/g, 'ิ')
-    .replace(/[า]/g, 'ะ')
-    .replace(/[เแโใไ]/g, '')
-    .replace(/[์]/g, '')
-    .trim();
-}
+// ฟังก์ชันเปรียบเทียบความใกล้เคียง
+function findClosestAbility(userInput, similarityThreshold = 0.60) {
+  // แปลงข้อความเป็นตัวพิมพ์เล็ก และตัดช่องว่าง
+  userInput = userInput.trim().toLowerCase();
 
-function findClosestAbility(userInput, similarityThreshold = 0.35) {
-
-  const normInput = normalizeThai(userInput);
-
+  // รวมทุก ability ของ faculties และ majors (ตัดซ้ำ)
   const allAbilities = [...new Set(
     faculties.flatMap(f => f.majors.flatMap(m => m.ability))
   )].map(a => a.trim().toLowerCase());
 
-  const normalizedAbilities = allAbilities.map(a => ({
-    original: a,
-    normalized: normalizeThai(a)
-  }));
+  // 1️⃣ exact match ถ้าเจอคืนค่าเลย
+  if (allAbilities.includes(userInput)) return userInput;
 
-  // 1) exact
-  const exact = normalizedAbilities.find(a => a.normalized === normInput);
-  if (exact) return { match: exact.original, score: 1 };
-
-  // 2) prefix (กันคำสั้น)
-  if (normInput.length >= 3) {
-    const prefix = normalizedAbilities.find(a =>
-      a.normalized.startsWith(normInput)
-    );
-    if (prefix) return { match: prefix.original, score: 0.9 };
+  // 2️⃣ prefix match เฉพาะ input ≥ 3 ตัวอักษร
+  if (userInput.length >= 3) {
+    const prefixMatch = allAbilities.find(a => a.startsWith(userInput));
+    if (prefixMatch) return prefixMatch;
   }
 
-  // 3) substring (เฉพาะคำยาว)
-  if (normInput.length >= 4) {
-    const substring = normalizedAbilities.find(a => {
-      const lengthDiff = Math.abs(a.normalized.length - normInput.length);
-      return lengthDiff <= 2 &&
-        (a.normalized.includes(normInput) || normInput.includes(a.normalized));
-    });
-    if (substring) return { match: substring.original, score: 0.8 };
-  }
-
-  // 4) similarity (กันคำสั้น)
-  if (normInput.length < 3) return null;
-
-  let best = null;
-  let bestScore = 0;
-
-  for (const ability of normalizedAbilities) {
-    const dist = levenshtein.get(normInput, ability.normalized);
-    const similarity = 1 - (dist / Math.max(normInput.length, ability.normalized.length));
-
-    const lengthDiff = Math.abs(normInput.length - ability.normalized.length);
-
-    if (similarity > bestScore && lengthDiff <= 2) {
-      bestScore = similarity;
-      best = ability.original;
+  // 3️⃣ similarity ratio สำหรับพิมพ์ผิดเล็กน้อย
+  let closest = null;
+  let maxSimilarity = 0;
+  for (const ability of allAbilities) {
+    const dist = levenshtein.get(userInput, ability);
+    const similarity = 1 - (dist / Math.max(userInput.length, ability.length));
+    // รับเฉพาะ similarity สูงมากๆ
+    if (similarity > maxSimilarity && similarity >= similarityThreshold) {
+      maxSimilarity = similarity;
+      closest = ability;
     }
   }
 
-  if (!best) return null;
-
-  // ⭐ ตัดสินใจจากความมั่นใจ
-  if (bestScore >= similarityThreshold) {
-    return { match: best, score: bestScore };     // มั่นใจพอ
-  }
-
-  if (bestScore >= 0.25) {
-    return { suggest: best, score: bestScore };   // ใกล้เคียง แต่ไม่ชัวร์
-  }
-
-  return null; // ไม่เดา
+  return closest; // คืนค่าเฉพาะถ้า similarity สูงพอ
 }
 
 //จับคู่คณะและสาขา
@@ -388,42 +344,32 @@ return;
       fulfillmentText: "⚠️🙏 กรุณาระบุความสามารถอย่างน้อย 1 อย่างค่ะ 🙏⚠️"
     });
   }
-let validAbilities = new Set();
-let suggestions = [];
-let trulyInvalid = [];
+    let validAbilities = new Set();
+    let invalid = [];
 
-abilities.forEach(a => {
-  const result = findClosestAbility(a);
+    abilities.forEach(a => {
+      const closest = findClosestAbility(a);
+      if (closest) validAbilities.add(closest);
+      else invalid.push(a);
+    });
 
-  if (!result) {
-    trulyInvalid.push(a);
-    return;
-  }
+    validAbilities = Array.from(validAbilities);
 
-  if (result.match) {
-    validAbilities.add(result.match);
-  } else if (result.suggest) {
-    suggestions.push({ from: a, to: result.suggest });
-  }
-});
+    if (invalid.length > 0) {
+      return res.json({
+        fulfillmentText: `⚠️ ขอโทษค่ะ\nคำว่า "${invalid.join(", ")}" เราไม่เข้าใจ\nช่วยกรอกความสามารถใหม่อีกครั้งนะคะ 😊`,
+      });
+    }
 
-// ถ้าไม่มี match แต่มี suggest → ถามยืนยัน
-if (validAbilities.size === 0 && suggestions.length > 0) {
-  const msg = suggestions.map(s => `• "${s.from}" → คุณหมายถึง "${s.to}" ไหม?`).join('\n');
-  return res.json({
-    fulfillmentText: `🤔 ระบบไม่มั่นใจ 100%\n${msg}\n\nพิมพ์ยืนยันคำที่ถูกต้องอีกครั้งได้เลยค่ะ`
-  });
-}
+    const results = findMatchingMajors(grade, validAbilities, session.educationLevel);
 
-// ถ้าไม่มีอะไรเลย
-if (validAbilities.size === 0) {
-  return res.json({
-    fulfillmentText: `⚠️ ระบบยังไม่เข้าใจคำนี้\nลองพิมพ์กิจกรรมหรือทักษะ เช่น คอมพิวเตอร์ คณิต การแสดง 😊`
-  });
-}
-validAbilities = Array.from(validAbilities);
-const abilitiesInputText = validAbilities.join(", ");
-const results = findMatchingMajors(grade, validAbilities, session.educationLevel);
+    if (results.length === 0) {
+      return res.json({
+        fulfillmentText: `❌ ขออภัยค่ะ คุณ${name}\nเราไม่พบคณะที่เหมาะสมกับคุณในขณะนี้\nกรุณาลองใหม่อีกครั้งนะคะ 🙇‍♀️`
+      });
+    }
+
+    const abilitiesInputText = abilities.join(", ");
 
 let reply = `🙏 ขอบคุณค่ะคุณ${name || ''} จากข้อมูลที่คุณกรอกมามีดังนี้  \n` +
   `📘 เกรดเฉลี่ย : ${grade}    \n` +
@@ -467,7 +413,7 @@ reply += `\n✨ ขอให้โชคดีกับการเลือก�
 session.sessionId = sessionId;
 session.name = name;
 session.grade = grade;
-session.abilitiesInputText = validAbilities.join(", ");
+session.abilitiesInputText = abilities.join(", ");
 
 // แล้วค่อย map results
 session.recommendations = results.map((r, i) => {
