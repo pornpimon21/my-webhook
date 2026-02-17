@@ -62,40 +62,55 @@ async function detectIntentText(sessionId, text, languageCode = 'th') {
   return responses[0].queryResult;
 }
 
+///เปรียบเทียบคำ
+function findClosestAbility(userInput, similarityThreshold = 0.43) {
 
-// ฟังก์ชันเปรียบเทียบความใกล้เคียง
-function findClosestAbility(userInput, similarityThreshold = 0.45) {
-  // แปลงข้อความเป็นตัวพิมพ์เล็ก และตัดช่องว่าง
-  userInput = userInput.trim().toLowerCase();
+  const normInput = normalizeThai(userInput);
 
-  // รวมทุก ability ของ faculties และ majors (ตัดซ้ำ)
   const allAbilities = [...new Set(
     faculties.flatMap(f => f.majors.flatMap(m => m.ability))
   )].map(a => a.trim().toLowerCase());
 
-  // 1️⃣ exact match ถ้าเจอคืนค่าเลย
-  if (allAbilities.includes(userInput)) return userInput;
+  // 👉 normalize abilities ด้วย
+  const normalizedAbilities = allAbilities.map(a => ({
+    original: a,
+    normalized: normalizeThai(a)
+  }));
 
-  // 2️⃣ prefix match เฉพาะ input ≥ 3 ตัวอักษร
-  if (userInput.length >= 3) {
-    const prefixMatch = allAbilities.find(a => a.startsWith(userInput));
-    if (prefixMatch) return prefixMatch;
+  // 1️⃣ exact match หลัง normalize
+  const exact = normalizedAbilities.find(a => a.normalized === normInput);
+  if (exact) return exact.original;
+
+  // 2️⃣ prefix match หลัง normalize
+  if (normInput.length >= 2) {
+    const prefix = normalizedAbilities.find(a =>
+      a.normalized.startsWith(normInput)
+    );
+    if (prefix) return prefix.original;
   }
 
-  // 3️⃣ similarity ratio สำหรับพิมพ์ผิดเล็กน้อย
+if (normInput.length >= 3) {
+  const substring = normalizedAbilities.find(a =>
+    a.normalized.includes(normInput) ||
+    normInput.includes(a.normalized)
+  );
+  if (substring) return substring.original;
+}
+  // 3️⃣ similarity match
   let closest = null;
   let maxSimilarity = 0;
-  for (const ability of allAbilities) {
-    const dist = levenshtein.get(userInput, ability);
-    const similarity = 1 - (dist / Math.max(userInput.length, ability.length));
-    // รับเฉพาะ similarity สูงมากๆ
+
+  for (const ability of normalizedAbilities) {
+    const dist = levenshtein.get(normInput, ability.normalized);
+    const similarity = 1 - (dist / Math.max(normInput.length, ability.normalized.length));
+
     if (similarity > maxSimilarity && similarity >= similarityThreshold) {
       maxSimilarity = similarity;
-      closest = ability;
+      closest = ability.original;
     }
   }
 
-  return closest; // คืนค่าเฉพาะถ้า similarity สูงพอ
+  return closest;
 }
 
 //จับคู่คณะและสาขา
