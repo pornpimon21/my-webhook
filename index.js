@@ -358,8 +358,15 @@ setTimeout(() => {
 }, 300);
 
 return;
-}if (intent === "get skills") {
-  let abilities = params.ability;
+}
+
+if (intent === "get skills") {
+let abilities = params.ability;
+
+// ⭐ ถ้า Dialogflow จับ entity ไม่ได้ ใช้ข้อความดิบแทน
+if (!abilities || (Array.isArray(abilities) && abilities.length === 0)) {
+  abilities = [req.body.queryResult.queryText];
+}
   if (typeof abilities === "string") {
     abilities = abilities.split(/[,\s]+/).map(a => a.trim());  // 🔁 ใช้ regex แยกทั้งคอมม่าและเว้นวรรค
     } else if (Array.isArray(abilities)) {
@@ -390,7 +397,7 @@ let corrected = [];
 let trulyInvalid = [];
 
 abilities.forEach(a => {
-  const closest = findClosestAbility(a, 0.35); // 🔥 ลด threshold ให้จับคำผิดได้มากขึ้น
+  const closest = findClosestAbility(a, 0.25); // 🔥 ลด threshold ให้จับคำผิดได้มากขึ้น
   if (closest) {
     validAbilities.add(closest);
     if (closest !== a.toLowerCase()) {
@@ -411,9 +418,17 @@ if (corrected.length > 0) {
 
 // ❗ ถ้ามีคำที่ไม่เข้าใจจริง ๆ แต่ยังมีคำอื่นใช้ได้ → ไปต่อได้
 if (validAbilities.length === 0) {
-  return res.json({
-    fulfillmentText: `⚠️ คำว่า "${trulyInvalid.join(", ")}" ระบบไม่เข้าใจค่ะ\nลองพิมพ์ใหม่อีกครั้งนะคะ 😊`,
-  });
+
+  const fallback = findClosestAbility(req.body.queryResult.queryText, 0.25);
+
+  if (fallback) {
+    validAbilities.push(fallback);
+    notice += `🔎 เราคาดว่าคุณหมายถึง "${fallback}"\n\n`;
+  } else {
+    return res.json({
+      fulfillmentText: `⚠️ ระบบยังไม่เข้าใจคำนี้\nลองพิมพ์ใหม่อีกครั้งนะคะ 😊`
+    });
+  }
 }
 const abilitiesInputText = validAbilities.join(", ");
 const results = findMatchingMajors(grade, validAbilities, session.educationLevel);
