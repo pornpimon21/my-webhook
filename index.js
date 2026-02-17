@@ -63,7 +63,7 @@ async function detectIntentText(sessionId, text, languageCode = 'th') {
 }
 
 ///เปรียบเทียบคำ
-function findClosestAbility(userInput, similarityThreshold = 0.43) {
+function findClosestAbility(userInput, similarityThreshold = 0.35) {
 
   const normInput = normalizeThai(userInput);
 
@@ -364,7 +364,7 @@ let corrected = [];
 let trulyInvalid = [];
 
 abilities.forEach(a => {
-  const closest = findClosestAbility(a, 0.45); // 🔥 ลด threshold ให้จับคำผิดได้มากขึ้น
+  const closest = findClosestAbility(a, 0.35); // 🔥 ลด threshold ให้จับคำผิดได้มากขึ้น
   if (closest) {
     validAbilities.add(closest);
     if (closest !== a.toLowerCase()) {
