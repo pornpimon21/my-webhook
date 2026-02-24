@@ -1,59 +1,44 @@
 /**
  * ฟังก์ชันวิเคราะห์ผลตามทฤษฎี RIASEC (Holland Codes)
- * อัปเกรดรองรับคำถาม 12 ข้อ และการให้คะแนน 5 ระดับ (Likert Scale)
- * อ้างอิง: O*NET Interest Profiler และ กรมการจัดหางาน
+ * แก้ไข: ให้แสดงจุดเด่น (Traits) เฉพาะของสายงานที่ได้คะแนนสูงสุดเท่านั้น
  */
 function analyzeAnswers(answers) {
-  // 1. กำหนดคะแนนเริ่มต้นสำหรับ 6 ด้าน
   const trackScores = {
     'R': 0, 'I': 0, 'A': 0, 'S': 0, 'E': 0, 'C': 0
   };
 
-  // เก็บจุดเด่นของผู้ใช้
-  const traits = [];
-
-  // 2. ฟังก์ชันให้คะแนน 5 ระดับ (Weighting)
+  // 1. ฟังก์ชันให้คะแนน (Weighting)
   const getWeight = (text) => {
     if (text.includes('ชอบมากที่สุด')) return 5;
     if (text.includes('ชอบมาก')) return 4;
     if (text.includes('เฉยๆ')) return 3;
     if (text.includes('ไม่ค่อยชอบ')) return 2;
     if (text.includes('ไม่ชอบเลย')) return 1;
-    return 0; // กรณี Error หรือไม่มีค่า
+    return 0;
   };
 
-  // 3. ลำดับการ Mapping (2 ข้อต่อ 1 ด้านบุคลิกภาพ)
+  // 2. Mapping คำถาม 12 ข้อ
   const mapping = [
-    'R', 'R', // ข้อ 1, 2
-    'I', 'I', // ข้อ 3, 4
-    'A', 'A', // ข้อ 5, 6
-    'S', 'S', // ข้อ 7, 8
-    'E', 'E', // ข้อ 9, 10
-    'C', 'C'  // ข้อ 11, 12
+    'R', 'R', 'I', 'I', 'A', 'A', 'S', 'S', 'E', 'E', 'C', 'C'
   ];
 
   const traitDefinitions = {
     'R': 'ถนัดการลงมือทำและใช้เครื่องมือ',
     'I': 'ชอบคิดวิเคราะห์และใช้ตรรกะ',
-    'A': 'มีความคิดสร้างสรรค์และศิลปะ',
+    'A': 'มีความคิดสร้างสรรค์และรักอิสระ',
     'S': 'ชอบช่วยเหลือและถ่ายทอดความรู้',
     'E': 'มีทักษะผู้นำและการจัดการธุรกิจ',
-    'C': 'ละเอียดรอบคอบและเป็นระบบ'
+    'C': 'ละเอียดรอบคอบและเป็นระเบียบ'
   };
 
-  // 4. วนลูปคำนวณคะแนน
+  // 3. คำนวณคะแนนรวม (เอา Logic เก็บ Traits ออกไปแล้ว)
   answers.forEach((ans, index) => {
     const code = mapping[index];
     const score = getWeight(ans);
-    trackScores[code] += score; // สะสมคะแนน (แต่ละด้านจะมีคะแนนเต็ม 10)
-
-    // เก็บจุดเด่น: ถ้าคะแนนข้อนั้นๆ สูง (4 หรือ 5) ให้บันทึก trait
-    if (score >= 4 && !traits.includes(traitDefinitions[code])) {
-      traits.push(traitDefinitions[code]);
-    }
+    trackScores[code] += score;
   });
 
-  // 5. หาคะแนนที่สูงที่สุด (รองรับกรณีคะแนนเท่ากัน)
+  // 4. หาคะแนนสูงสุด (Max Score)
   let maxScore = -1;
   for (const code in trackScores) {
     if (trackScores[code] > maxScore) {
@@ -61,46 +46,28 @@ function analyzeAnswers(answers) {
     }
   }
 
-  // เก็บสายงานที่มีคะแนนเท่ากับ maxScore ทั้งหมด
+  // 5. หาผู้ชนะ (Winner)
   let bestCodes = [];
   for (const code in trackScores) {
     if (trackScores[code] === maxScore && maxScore > 0) {
       bestCodes.push(code);
     }
   }
+  if (bestCodes.length === 0) bestCodes = ['I']; // กันเหนียว
 
-  // กรณีคะแนนต่ำมากหรือไม่เลือกเลย ให้ Default ที่สายวิเคราะห์
-  if (bestCodes.length === 0) bestCodes = ['I'];
+  // 6. สร้างจุดเด่น (Traits) จาก "ผู้ชนะ" เท่านั้น ✅ (แก้ตรงนี้)
+  const finalTraits = bestCodes.map(code => traitDefinitions[code]);
 
-  // 6. ฐานข้อมูลคณะและสาขาวิชา (Mapping Table)
+  // 7. เตรียมข้อมูลคณะ
   const resultData = {
-    'R': {
-      title: 'สายปฏิบัติ (Realistic)',
-      faculties: ['คณะเทคโนโลยีอุตสาหกรรม', 'คณะเกษตรศาสตร์', 'วิทยาศาสตร์การกีฬา']
-    },
-    'I': {
-      title: 'สายวิเคราะห์ (Investigative)',
-      faculties: ['คณะวิทยาศาสตร์และเทคโนโลยี', 'สาขาวิทยาการคอมพิวเตอร์/IT', 'พยาบาลศาสตร์']
-    },
-    'A': {
-      title: 'สายศิลปิน (Artistic)',
-      faculties: ['คณะมนุษยศาสตร์และสังคมศาสตร์', 'นิเทศศาสตร์', 'ดนตรี/ศิลปะและการออกแบบ']
-    },
-    'S': {
-      title: 'สายสังคม (Social)',
-      faculties: ['คณะครุศาสตร์ (ทุกสาขา)', 'สาธารณสุขศาสตร์', 'การพัฒนาชุมชน']
-    },
-    'E': {
-      title: 'สายบริหาร (Enterprising)',
-      faculties: ['คณะวิทยาการจัดการ', 'บริหารธุรกิจ', 'นิติศาสตร์/รัฐศาสตร์']
-    },
-    'C': {
-      title: 'สายจัดการ (Conventional)',
-      faculties: ['สาขาการบัญชี', 'การเงินและการธนาคาร', 'เศรษฐศาสตร์']
-    }
+    'R': { title: 'สายปฏิบัติ (Realistic)', faculties: ['คณะเทคโนโลยีอุตสาหกรรม', 'คณะเกษตรศาสตร์', 'วิทยาศาสตร์การกีฬา'] },
+    'I': { title: 'สายวิเคราะห์ (Investigative)', faculties: ['คณะวิทยาศาสตร์และเทคโนโลยี', 'สาขาวิทยาการคอมพิวเตอร์/IT', 'พยาบาลศาสตร์'] },
+    'A': { title: 'สายศิลปิน (Artistic)', faculties: ['คณะมนุษยศาสตร์และสังคมศาสตร์', 'นิเทศศาสตร์', 'ดนตรี/ศิลปะและการออกแบบ'] },
+    'S': { title: 'สายสังคม (Social)', faculties: ['คณะครุศาสตร์ (ทุกสาขา)', 'สาธารณสุขศาสตร์', 'การพัฒนาชุมชน'] },
+    'E': { title: 'สายบริหาร (Enterprising)', faculties: ['คณะวิทยาการจัดการ', 'บริหารธุรกิจ', 'นิติศาสตร์/รัฐศาสตร์'] },
+    'C': { title: 'สายจัดการ (Conventional)', faculties: ['สาขาการบัญชี', 'การเงินและการธนาคาร', 'เศรษฐศาสตร์'] }
   };
 
-  // 7. รวบรวมผลลัพธ์ (ชื่อสายงานและรายชื่อคณะ)
   const finalTitles = bestCodes.map(code => resultData[code].title);
   const finalFaculties = new Set();
   bestCodes.forEach(code => {
@@ -109,7 +76,7 @@ function analyzeAnswers(answers) {
 
   return {
     bestTrack: finalTitles.join(' และ '),
-    traits: traits.length > 0 ? traits : ["มีความตั้งใจในการเรียนรู้สิ่งใหม่"],
+    traits: finalTraits, // ส่งเฉพาะจุดเด่นของผู้ชนะกลับไป
     recommendedFaculties: Array.from(finalFaculties),
     allScores: trackScores
   };
