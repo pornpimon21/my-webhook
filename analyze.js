@@ -3,28 +3,44 @@
  * อ้างอิง: O*NET Interest Profiler และ กรมการจัดหางาน
  */
 function analyzeAnswers(answers) {
-  // 1. กำหนดโครงสร้างคะแนน 6 ด้าน
   const trackScores = {
     'R': 0, 'I': 0, 'A': 0, 'S': 0, 'E': 0, 'C': 0
   };
 
-  // 2. ฟังก์ชันตรวจสอบคะแนนจากข้อความบนปุ่ม (Weighted Scoring)
+  // สร้างตัวแปรไว้เก็บจุดเด่นเพื่อส่งกลับไปแสดงใน Flex Message
+  const traits = [];
+
   const getWeight = (text) => {
-    if (text.includes('ชอบมาก')) return 3; // คะแนนเต็มสำหรับด้านนั้น
-    if (text.includes('เฉยๆ')) return 1;  // คะแนนปานกลาง
-    return 0; // ไม่ชอบ ได้ 0
+    if (text.includes('ชอบมาก')) return 3; 
+    if (text.includes('เฉยๆ')) return 1;  
+    return 0; 
   };
 
-  // 3. สะสมคะแนนแยกตามข้อ (1 ข้อ รับผิดชอบ 1 ด้าน RIASEC)
   const mapping = ['R', 'I', 'A', 'S', 'E', 'C'];
+  
+  // นิยามจุดเด่นสำหรับแต่ละด้าน
+  const traitDefinitions = {
+    'R': 'ถนัดการลงมือทำและใช้เครื่องมือ',
+    'I': 'ชอบคิดวิเคราะห์และใช้ตรรกะ',
+    'A': 'มีความคิดสร้างสรรค์และรักอิสระ',
+    'S': 'มีจิตอาสาและชอบช่วยเหลือผู้อื่น',
+    'E': 'มีความเป็นผู้นำและกล้าตัดสินใจ',
+    'C': 'มีความรอบคอบและเป็นระเบียบ'
+  };
+
   answers.forEach((ans, index) => {
     const code = mapping[index];
-    trackScores[code] = getWeight(ans);
+    const score = getWeight(ans);
+    trackScores[code] = score;
+
+    // ถ้าคะแนนเป็น "ชอบมาก" (3 แต้ม) ให้เพิ่มจุดเด่นลงในอาเรย์ traits
+    if (score === 3) {
+      traits.push(traitDefinitions[code]);
+    }
   });
 
-  // 4. หาสายงานที่ได้คะแนนสูงสุด (Dominant Type)
   let maxScore = -1;
-  let bestCode = 'I'; // Default กรณีคะแนนเท่ากันหมด
+  let bestCode = 'I'; 
   for (const code in trackScores) {
     if (trackScores[code] > maxScore) {
       maxScore = trackScores[code];
@@ -32,7 +48,6 @@ function analyzeAnswers(answers) {
     }
   }
 
-  // 5. ฐานข้อมูลคณะและสาขาวิชา (Mapping Table)
   const resultData = {
     'R': {
       title: 'สายปฏิบัติ (Realistic)',
@@ -68,9 +83,11 @@ function analyzeAnswers(answers) {
 
   const finalResult = resultData[bestCode];
 
+  // คืนค่า traits กลับไปด้วยเสมอ (ถ้าไม่มีให้คืนอาเรย์ว่าง []) ป้องกัน Error .length
   return {
     bestTrack: finalResult.title,
     description: finalResult.desc,
+    traits: traits.length > 0 ? traits : ["มีความมุ่งมั่นในการเรียนรู้"],
     recommendedFaculties: finalResult.faculties,
     allScores: trackScores
   };
