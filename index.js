@@ -821,125 +821,129 @@ if (userSessions[userId]) {
     // วิเคราะห์คำตอบทั้งหมด
     const result = analyzeAnswers(session.answers);
 
-    // สร้าง flex message สำหรับแสดงผลลัพธ์
-    const flexResult = {
-      type: "flex",
-      altText: "ผลการวิเคราะห์ความถนัดของคุณ",
-      contents: {
-        type: "bubble",
-        size: "mega",
-        body: {
-          type: "box",
-          layout: "vertical",
-          spacing: "lg",
-          contents: [
-            {
-              type: "text",
-              text: "🎯 ผลการวิเคราะห์ความถนัด",
-              weight: "bold",
-              size: "lg",
-              color: "#1DB446",
-            },
-            {
-              type: "separator",
-              margin: "md",
-              color: "#666666"
-            },
-            {
-              type: "box",
-              layout: "vertical",
-              spacing: "sm",
-              margin: "lg",
-              contents: [
-                {
-                  type: "text",
-                  text: "📌 คุณเหมาะกับสายงาน",
-                  size: "md",
-                  weight: "bold",
-                  color: "#333333"
-                },
-                {
-                  type: "text",
-                  text: result.bestTrack || "ไม่สามารถวิเคราะห์ได้",
-                  size: "md",
-                  weight: "bold",
-                  color: "#0D99FF",
-                  wrap: true
-                }
-              ]
-            },
-            {
-              type: "box",
-              layout: "vertical",
-              spacing: "sm",
-              margin: "lg",
-              contents: [
-                {
-                  type: "text",
-                  text: "💡 จุดเด่นของคุณ",
-                  size: "md",
-                  weight: "bold",
-                  color: "#333333"
-                },
-                {
-                  type: "text",
-                  text: result.traits.length > 0 ? result.traits.join(', ') : "ไม่มีข้อมูล",
-                  wrap: true,
-                  color: "#555555"
-                }
-              ]
-            },
-            {
-              type: "box",
-              layout: "vertical",
-              spacing: "sm",
-              margin: "lg",
-              contents: [
-                {
-                  type: "text",
-                  text: "📎 คำแนะนำ",
-                  size: "md",
-                  weight: "bold",
-                  color: "#333333"
-                },
-                {
-                  type: "text",
-                  text: "ลองมุ่งเน้นพัฒนาทักษะที่เกี่ยวข้องกับสายงานนี้เพื่อความก้าวหน้าในอนาคต 😊",
-                  wrap: true,
-                  color: "#555555"
-                }
-              ]
-            }
-          ]
-        },
-    footer: {
+// สร้าง flex message สำหรับแสดงผลลัพธ์ RIASEC
+const flexResult = {
+  type: "flex",
+  altText: "ผลการวิเคราะห์คณะที่เหมาะกับคุณ",
+  contents: {
+    type: "bubble",
+    size: "mega",
+    body: {
       type: "box",
       layout: "vertical",
+      spacing: "md",
       contents: [
         {
           type: "text",
-          text: "ขอบคุณที่ร่วมสนุกกับเรา 💚",
-          size: "sm",
-          align: "center",
-          color: "#888888",
+          text: "🎯 ผลการวิเคราะห์คณะที่แนะนำ",
+          weight: "bold",
+          size: "lg",
+          color: "#1DB446"
+        },
+        {
+          type: "separator",
           margin: "md"
+        },
+        {
+          type: "box",
+          layout: "vertical",
+          margin: "lg",
+          spacing: "sm",
+          contents: [
+            {
+              type: "text",
+              text: "📌 บุคลิกภาพเด่นของคุณคือ",
+              size: "sm",
+              color: "#888888"
+            },
+            {
+              type: "text",
+              text: result.bestTrack || "กำลังประมวลผล...", 
+              weight: "bold",
+              size: "xl",
+              color: "#0D99FF",
+              wrap: true
+            }
+          ]
+        },
+        {
+          type: "box",
+          layout: "vertical",
+          margin: "md",
+          spacing: "sm",
+          contents: [
+            {
+              type: "text",
+              text: "💡 จุดเด่นของคุณ",
+              weight: "bold",
+              size: "md",
+              color: "#333333"
+            },
+            {
+              type: "text",
+              text: result.traits.length > 0 ? result.traits.join(', ') : "มีความสามารถเฉพาะตัวสูง",
+              wrap: true,
+              size: "sm",
+              color: "#555555"
+            }
+          ]
+        },
+        // ส่วนที่เพิ่มใหม่: แสดงรายชื่อคณะและสาขา
+        {
+          type: "box",
+          layout: "vertical",
+          margin: "md",
+          spacing: "sm",
+          backgroundColor: "#F0F9FF",
+          paddingAll: "10px",
+          cornerRadius: "md",
+          contents: [
+            {
+              type: "text",
+              text: "🎓 คณะ/สาขาที่แนะนำ",
+              weight: "bold",
+              size: "md",
+              color: "#0D99FF"
+            },
+            {
+              type: "text",
+              text: result.recommendedFaculties ? result.recommendedFaculties.join('\n\n') : "กรุณาติดต่อเจ้าหน้าที่แนะแนว",
+              wrap: true,
+              size: "sm",
+              color: "#444444"
+            }
+          ]
+        }
+      ]
+    },
+    footer: {
+      type: "box",
+      layout: "vertical",
+      spacing: "sm",
+      contents: [
+        {
+          type: "text",
+          text: "ข้อมูลนี้อ้างอิงตามทฤษฎี RIASEC 🎓",
+          size: "xs",
+          align: "center",
+          color: "#AAAAAA"
         },
         {
           type: "button",
           action: {
             type: "message",
-            label: "🔁 เริ่มค้นหาความถนัดใหม่",
+            label: "🔁 เริ่มทำแบบทดสอบใหม่",
             text: "ค้นหาความถนัด"
           },
           style: "primary",
-          color: "#1DB446",
-          margin: "md"
+          color: "#1DB446"
         }
       ]
     }
   }
 };
-    // ส่งข้อความแจ้งผลลัพธ์ใน replyMessage ครั้งเดียว
+
+// ส่งข้อความแจ้งผลลัพธ์ใน replyMessage ครั้งเดียว
     await client.replyMessage(event.replyToken, flexResult);
 
     // ลบ session หลังจบ
