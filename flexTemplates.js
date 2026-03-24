@@ -70,7 +70,7 @@ function createPlanCard(facultyName, majorName, rec) {
               type: "button",
               action: {
                 type: "uri",
-                label: "🔗 PDF",
+                label: "🔗 หลักสูตร",
                 uri: rec.studyPlanPdf || "https://example.com/default.pdf"
               },
               style: "primary",
